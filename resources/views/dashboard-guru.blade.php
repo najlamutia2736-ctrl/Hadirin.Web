@@ -30,6 +30,9 @@ body { font-family: 'Inter', sans-serif; background: #f1f5f9; }
 .badge-alpha { background: #fee2e2; color: #991b1b; padding: 4px 10px; border-radius: 999px; font-size: 11px; }
 .progress-bar { height: 8px; border-radius: 4px; background: #e2e8f0; overflow: hidden; }
 .progress-fill { height: 100%; border-radius: 4px; }
+.badge-scan { background: #e0e7ff; color: #4338ca; padding: 4px 10px; border-radius: 999px; font-size: 11px; }
+.badge-id { background: #d1fae5; color: #065f46; padding: 4px 10px; border-radius: 999px; font-size: 11px; }
+.badge-izin-metode { background: #fef3c7; color: #92400e; padding: 4px 10px; border-radius: 999px; font-size: 11px; }
 </style>
 </head>
 <body>
@@ -220,46 +223,59 @@ body { font-family: 'Inter', sans-serif; background: #f1f5f9; }
         </div>
     </div>
 
-    <!-- SECTION REALTIME -->
-    <div id="section-realtime" class="section-content p-6">
-        <div class="bg-white rounded-xl border p-6">
-            <h3 class="font-semibold mb-4">⏰ Real-Time Monitoring
+<!-- SECTION REALTIME -->
+<div id="section-realtime" class="section-content p-6">
+    <div class="bg-white rounded-xl border p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="font-semibold">⏰ Real-Time Monitoring
                 <span class="text-xs bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded-full ml-2">
                     <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full inline-block animate-pulse"></span> Live
                 </span>
             </h3>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                <div class="bg-emerald-50 rounded-xl p-4 text-center">
-                    <p class="text-2xl font-bold text-emerald-600" id="rtHadir">0</p>
-                    <p class="text-xs">Hadir</p>
-                </div>
-                <div class="bg-amber-50 rounded-xl p-4 text-center">
-                    <p class="text-2xl font-bold text-amber-600" id="rtIzin">0</p>
-                    <p class="text-xs">Izin</p>
-                </div>
-                <div class="bg-red-50 rounded-xl p-4 text-center">
-                    <p class="text-2xl font-bold text-red-600" id="rtSakit">0</p>
-                    <p class="text-xs">Sakit</p>
-                </div>
-                <div class="bg-gray-50 rounded-xl p-4 text-center">
-                    <p class="text-2xl font-bold text-gray-600" id="rtAlpha">0</p>
-                    <p class="text-xs">Alpha</p>
-                </div>
+            <button onclick="loadRealtimeFromStorage()" class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 px-3 py-1.5 rounded-lg transition">
+                <i class="fas fa-sync-alt mr-1"></i> Refresh
+            </button>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+            <div class="bg-emerald-50 rounded-xl p-4 text-center">
+                <p class="text-2xl font-bold text-emerald-600" id="rtHadir">0</p>
+                <p class="text-xs">Hadir</p>
             </div>
+            <div class="bg-amber-50 rounded-xl p-4 text-center">
+                <p class="text-2xl font-bold text-amber-600" id="rtIzin">0</p>
+                <p class="text-xs">Izin</p>
+            </div>
+            <div class="bg-red-50 rounded-xl p-4 text-center">
+                <p class="text-2xl font-bold text-red-600" id="rtSakit">0</p>
+                <p class="text-xs">Sakit</p>
+            </div>
+            <div class="bg-gray-50 rounded-xl p-4 text-center">
+                <p class="text-2xl font-bold text-gray-600" id="rtAlpha">0</p>
+                <p class="text-xs">Alpha</p>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead>
                     <tr class="bg-slate-50 border-b">
                         <th class="px-4 py-2 text-left">Waktu</th>
                         <th class="px-4 py-2 text-left">Nama</th>
+                        <th class="px-4 py-2 text-left">Kelas</th>
                         <th class="px-4 py-2 text-left">Metode</th>
                         <th class="px-4 py-2 text-left">Status</th>
+                        <th class="px-4 py-2 text-left">Keterangan</th>
                     </tr>
                 </thead>
                 <tbody id="realtimeBody"></tbody>
             </table>
         </div>
+
+        <div class="mt-4 text-xs text-slate-400 text-center" id="realtimeEmpty" style="display:none;">
+            <i class="fas fa-inbox mr-1"></i> Belum ada siswa yang melakukan absensi hari ini
+        </div>
     </div>
-</div>
 </div>
 
 <script>
@@ -355,6 +371,11 @@ function showSection(nama, element) {
     };
     document.getElementById('breadcrumb').textContent = titles[nama] || 'Dashboard';
     document.getElementById('pageTitle').textContent = titles[nama] || 'Dashboard';
+
+// ✅ Muat data real-time dari localStorage saat section dibuka
+if (nama === 'realtime') {
+    loadRealtimeFromStorage();  // ← HARUS loadRealtimeFromStorage, bukan renderRealtime
+}
 }
 
 // ============================================================
@@ -390,7 +411,6 @@ function cekIdentitasGuru() {
 // ============================================================
 function loadDataKelas(kelas) {
     presensiList = [];
-    // ✅ Ambil dari global data
     const students = globalData.siswaPerKelas[kelas] || globalData.siswaPerKelas['XII.RPL'] || [];
     const statuses = ['Hadir', 'Hadir', 'Hadir', 'Izin', 'Sakit'];
     const metodes = ['Scan QR', 'ID Unik', 'Izin/Sakit'];
@@ -411,12 +431,171 @@ function loadDataKelas(kelas) {
         });
     }
 
+    // Render semua section KECUALI realtime
     renderDashboard();
     renderProgres();
     renderKelola(kelas);
     renderLaporan();
-    renderRealtime();
     initCharts();
+}
+/* ============================================================ */
+/* REAL-TIME MONITORING - Sinkron dengan halaman absen siswa    */
+/* ============================================================ */
+
+const STORAGE_KEY_SISWA_ABSEN = 'siswa_absen';
+const STORAGE_KEY_DAFTAR_ABSEN = 'daftar_absen';
+
+// Ambil semua data absensi dari localStorage
+function loadAllAbsensiSiswa() {
+    let semua = [];
+
+    // Sumber utama: daftar_absen
+    try {
+        const daftar = JSON.parse(localStorage.getItem(STORAGE_KEY_DAFTAR_ABSEN) || '[]');
+        if (Array.isArray(daftar)) semua = daftar;
+    } catch (e) {
+        console.warn('Gagal parse daftar_absen:', e);
+    }
+
+    // Fallback: siswa_absen (kalau belum ada di daftar)
+    try {
+        const terakhir = JSON.parse(localStorage.getItem(STORAGE_KEY_SISWA_ABSEN) || 'null');
+        if (terakhir && terakhir.timestamp) {
+            const sudahAda = semua.some(d =>
+                d.nama === terakhir.nama &&
+                d.timestamp === terakhir.timestamp
+            );
+            if (!sudahAda) semua.push(terakhir);
+        }
+    } catch (e) {
+        console.warn('Gagal parse siswa_absen:', e);
+    }
+
+    // Urutkan terbaru di atas
+    semua.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    return semua;
+}
+
+// Format waktu
+function formatWaktuRealtime(item) {
+    if (item.waktu && typeof item.waktu === 'string' && item.waktu.trim() !== '') {
+        return item.waktu;
+    }
+    if (item.timestamp) {
+        const d = new Date(item.timestamp);
+        return d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    }
+    return '-';
+}
+
+// Badge metode
+function metodeBadgeRealtime(metode) {
+    if (!metode) return `<span class="text-slate-300 italic">-</span>`;
+    const m = String(metode);
+    if (m.includes('Scan QR')) {
+        return `<span class="badge-scan"><i class="fas fa-camera mr-1"></i> Scan QR</span>`;
+    }
+    if (m.includes('ID Unik')) {
+        return `<span class="badge-id"><i class="fas fa-keyboard mr-1"></i> ID Unik</span>`;
+    }
+    if (m.includes('Izin') || m.includes('Sakit')) {
+        return `<span class="badge-izin-metode"><i class="fas fa-file-medical-alt mr-1"></i> Izin/Sakit</span>`;
+    }
+    return `<span class="badge-alpha">${m}</span>`;
+}
+
+// Badge status
+function statusBadgeRealtime(status) {
+    if (status === 'Hadir') return `<span class="badge-hadir"><i class="fas fa-check-circle mr-1"></i> Hadir</span>`;
+    if (status === 'Izin')  return `<span class="badge-izin"><i class="fas fa-pen mr-1"></i> Izin</span>`;
+    if (status === 'Sakit') return `<span class="badge-sakit"><i class="fas fa-thermometer-half mr-1"></i> Sakit</span>`;
+    return `<span class="badge-alpha"><i class="fas fa-times-circle mr-1"></i> Alpha</span>`;
+}
+
+// Render real-time monitoring dari localStorage — INI YANG DIPAKAI
+function loadRealtimeFromStorage() {
+    const tbody = document.getElementById('realtimeBody');
+    const emptyEl = document.getElementById('realtimeEmpty');
+    if (!tbody) return;
+
+    // ✅ Ambil data asli dari halaman absen siswa
+    const semua = loadAllAbsensiSiswa();
+
+    // Hitung statistik
+    let hadir = 0, izin = 0, sakit = 0, alpha = 0;
+    semua.forEach(d => {
+        if (d.status === 'Hadir') hadir++;
+        else if (d.status === 'Izin') izin++;
+        else if (d.status === 'Sakit') sakit++;
+        else alpha++;
+    });
+
+    const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    setTxt('rtHadir', hadir);
+    setTxt('rtIzin', izin);
+    setTxt('rtSakit', sakit);
+    setTxt('rtAlpha', alpha);
+
+    // Update dashboard stat cards juga
+    setTxt('statTotalSiswa', semua.length);
+    setTxt('statHadir', hadir);
+    setTxt('statIzin', izin + sakit);
+    setTxt('statAlpha', alpha);
+
+    // Kalau tidak ada data
+    if (semua.length === 0) {
+        tbody.innerHTML = '';
+        if (emptyEl) emptyEl.style.display = 'block';
+        return;
+    }
+    if (emptyEl) emptyEl.style.display = 'none';
+
+    // Render baris tabel
+    tbody.innerHTML = semua.map(d => {
+        const waktu      = formatWaktuRealtime(d);
+        const nama       = d.nama || '-';
+        const nis        = d.nis || '-';
+        const kelas      = d.kelas || '-';
+        const metode     = d.metode || '-';
+        const status     = d.status || 'Alpha';
+        const keterangan = (d.keterangan && String(d.keterangan).trim() !== '')
+            ? `<span class="text-slate-700">${d.keterangan}</span>`
+            : `<span class="text-slate-300 italic">-</span>`;
+
+        return `
+            <tr class="border-b hover:bg-slate-50">
+                <td class="px-4 py-3 font-mono text-slate-600 whitespace-nowrap">${waktu}</td>
+                <td class="px-4 py-3 font-medium text-slate-800">
+                    ${nama}
+                    <div class="text-[10px] text-slate-400">NIS: ${nis}</div>
+                </td>
+                <td class="px-4 py-3 text-slate-600">${kelas}</td>
+                <td class="px-4 py-3">${metodeBadgeRealtime(metode)}</td>
+                <td class="px-4 py-3">${statusBadgeRealtime(status)}</td>
+                <td class="px-4 py-3 text-sm max-w-xs">${keterangan}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// Real-time lintas tab
+window.addEventListener('storage', function(e) {
+    if (e.key === STORAGE_KEY_SISWA_ABSEN || e.key === STORAGE_KEY_DAFTAR_ABSEN) {
+        console.log('🔄 Data absensi berubah dari tab lain, refresh realtime...');
+        loadRealtimeFromStorage();
+    }
+});
+
+// Auto-refresh tiap 3 detik
+let realtimeIntervalId = null;
+function startRealtimeAutoRefresh() {
+    if (realtimeIntervalId) clearInterval(realtimeIntervalId);
+    realtimeIntervalId = setInterval(() => {
+        const sec = document.getElementById('section-realtime');
+        if (sec && sec.classList.contains('active')) {
+            loadRealtimeFromStorage();
+        }
+    }, 3000);
 }
 
 // ============================================================
@@ -534,39 +713,6 @@ function renderLaporan() {
     tbody.innerHTML = html;
 }
 
-// ============================================================
-// RENDER REALTIME
-// ============================================================
-function renderRealtime() {
-    let hadir = 0, izin = 0, sakit = 0, alpha = 0;
-    presensiList.forEach(s => {
-        if (s.status === 'Hadir') hadir++;
-        else if (s.status === 'Izin') izin++;
-        else if (s.status === 'Sakit') sakit++;
-        else alpha++;
-    });
-    document.getElementById('rtHadir').textContent = hadir;
-    document.getElementById('rtIzin').textContent = izin;
-    document.getElementById('rtSakit').textContent = sakit;
-    document.getElementById('rtAlpha').textContent = alpha;
-
-    const tbody = document.getElementById('realtimeBody');
-    let html = '';
-    presensiList.forEach(s => {
-        const h = String(s.waktu.getHours()).padStart(2, '0');
-        const m = String(s.waktu.getMinutes()).padStart(2, '0');
-        const badge = s.status === 'Hadir' ? 'badge-hadir' : s.status === 'Izin' ? 'badge-izin' : 'badge-sakit';
-        html += `
-            <tr class="border-b">
-                <td class="px-4 py-2">${h}.${m}</td>
-                <td class="px-4 py-2 font-medium">${s.nama}</td>
-                <td class="px-4 py-2">${s.metode}</td>
-                <td class="px-4 py-2"><span class="${badge}">${s.status}</span></td>
-            </tr>
-        `;
-    });
-    tbody.innerHTML = html;
-}
 
 // ============================================================
 // CHARTS
@@ -709,6 +855,12 @@ function logout() {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('📊 Dashboard Guru siap!');
     cekIdentitasGuru();
+
+    // ✅ Muat data real-time & mulai auto-refresh
+    setTimeout(() => {
+        loadRealtimeFromStorage();
+        startRealtimeAutoRefresh();
+    }, 300);
 });
 </script>
 

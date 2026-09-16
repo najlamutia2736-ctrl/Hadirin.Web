@@ -324,37 +324,45 @@
         // ============================================================
         // 3. SIMPAN ABSENSI (INTI)
         // ============================================================
-        function simpanAbsensi(status, metode, keterangan = '') {
-            if (!identitasSiswa) {
-                showNotification('⚠️ Data identitas tidak ditemukan!');
-                return false;
-            }
-            
-            const now = new Date();
-            const dataAbsen = {
-                nama: identitasSiswa.nama,
-                kelas: `${identitasSiswa.kelas}.${identitasSiswa.jurusan}`,
-                jurusan: identitasSiswa.jurusan,
-                nis: String(10000 + Math.floor(Math.random() * 9000)),
-                status: status,
-                metode: metode,
-                keterangan: keterangan,
-                waktu: now.toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit'}),
-                tanggal: now.toLocaleDateString('id-ID'),
-                timestamp: now.getTime()
-            };
-            
-            // Simpan ke localStorage
-            localStorage.setItem('siswa_absen', JSON.stringify(dataAbsen));
-            
-            // Simpan ke daftar absensi
-            let daftarAbsen = JSON.parse(localStorage.getItem('daftar_absen') || '[]');
-            daftarAbsen.push(dataAbsen);
-            localStorage.setItem('daftar_absen', JSON.stringify(daftarAbsen));
-            
-            console.log('✅ Data absensi tersimpan:', dataAbsen);
-            return true;
-        }
+function simpanAbsensi(status, metode, keterangan = '') {
+    if (!identitasSiswa) {
+        showNotification('⚠️ Data identitas tidak ditemukan!');
+        return false;
+    }
+    
+    const now = new Date();
+    const dataAbsen = {
+        nama: identitasSiswa.nama,
+        kelas: `${identitasSiswa.kelas}.${identitasSiswa.jurusan}`,
+        jurusan: identitasSiswa.jurusan,
+        nis: String(10000 + Math.floor(Math.random() * 9000)),
+        status: status,
+        metode: metode,
+        keterangan: keterangan || '',
+        waktu: now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+        tanggal: now.toLocaleDateString('id-ID'),
+        timestamp: now.getTime()
+    };
+    
+    // ✅ Simpan absensi terakhir
+    localStorage.setItem('siswa_absen', JSON.stringify(dataAbsen));
+    
+    // ✅ Tambahkan ke daftar_absen (kumpulan semua absensi)
+    let daftarAbsen = [];
+    try {
+        daftarAbsen = JSON.parse(localStorage.getItem('daftar_absen') || '[]');
+        if (!Array.isArray(daftarAbsen)) daftarAbsen = [];
+    } catch (e) {
+        daftarAbsen = [];
+    }
+    
+    daftarAbsen.push(dataAbsen);
+    localStorage.setItem('daftar_absen', JSON.stringify(daftarAbsen));
+    
+    console.log('✅ Data absensi tersimpan:', dataAbsen);
+    console.log('📚 Total di daftar_absen:', daftarAbsen.length);
+    return true;
+}
 
         // ============================================================
         // 4. FUNGSI KAMERA
