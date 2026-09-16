@@ -4,62 +4,49 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Hadirin.web · Verifikasi Absensi</title>
-    <!-- Tailwind via CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
-    <!-- Font tambahan -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet" />
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        .success-card {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-        }
-        .check-animation {
-            animation: checkPop 0.6s ease-out;
-        }
+        body { font-family: 'Inter', sans-serif; }
+        .success-card { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .check-animation { animation: checkPop 0.6s ease-out; }
         @keyframes checkPop {
             0% { transform: scale(0) rotate(-20deg); opacity: 0; }
             50% { transform: scale(1.3) rotate(5deg); }
             70% { transform: scale(0.9) rotate(-5deg); }
             100% { transform: scale(1) rotate(0deg); opacity: 1; }
         }
-        .table-row-hover:hover {
-            background-color: #f1f5f9;
-            transition: background-color 0.2s ease;
-        }
-        .badge-hadir {
-            background: #dcfce7;
-            color: #166534;
-        }
-        .badge-izin {
-            background: #fef9c3;
-            color: #854d0e;
-        }
-        .badge-sakit {
-            background: #fce4ec;
-            color: #b91c1c;
-        }
-        .badge-alpha {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-        .new-row {
-            animation: slideIn 0.5s ease-out;
-        }
+        .table-row-hover:hover { background-color: #f1f5f9; }
+        .badge-hadir { background: #dcfce7; color: #166534; }
+        .badge-izin { background: #fef9c3; color: #854d0e; }
+        .badge-sakit { background: #fce4ec; color: #b91c1c; }
+        .badge-alpha { background: #fee2e2; color: #991b1b; }
+        .badge-metode-scan { background: #e0e7ff; color: #4338ca; }
+        .badge-metode-id { background: #d1fae5; color: #065f46; }
+        .badge-metode-izin { background: #fef3c7; color: #92400e; }
+        .new-row { animation: slideIn 0.5s ease-out; }
         @keyframes slideIn {
             0% { opacity: 0; transform: translateY(-20px); }
             100% { opacity: 1; transform: translateY(0); }
         }
-        .pulse-dot {
-            animation: pulse 1.5s ease-in-out infinite;
-        }
+        .pulse-dot { animation: pulse 1.5s ease-in-out infinite; }
         @keyframes pulse {
             0%, 100% { opacity: 1; transform: scale(1); }
             50% { opacity: 0.5; transform: scale(0.8); }
         }
+        .btn-export {
+            background: #7c3aed; color: white; padding: 8px 16px;
+            border-radius: 8px; font-size: 13px; transition: 0.2s;
+            border: none; cursor: pointer;
+        }
+        .btn-export:hover { background: #6d28d9; }
+        .toast-notification { animation: slideDown 0.3s ease-out; }
+        @keyframes slideDown {
+            0% { transform: translate(-50%, -20px); opacity: 0; }
+            100% { transform: translate(-50%, 0); opacity: 1; }
+        }
+        .empty-state { padding: 40px 20px; text-align: center; color: #94a3b8; }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen flex flex-col">
@@ -68,49 +55,42 @@
     <header class="w-full bg-white/80 backdrop-blur-sm border-b border-slate-200/60 sticky top-0 z-10">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <nav class="flex items-center justify-between h-16 md:h-20">
-                <!-- Brand / Logo -->
                 <div class="flex items-center gap-2">
                     <a href="{{ route('home') }}" class="text-2xl font-bold text-indigo-700 tracking-tight">
                         Hadirin.<span class="text-slate-700">web</span>
                     </a>
                     <span class="hidden sm:inline-block text-[10px] font-medium bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full">beta</span>
                 </div>
-
-                <!-- Menu Desktop -->
                 <div class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
                     <a href="{{ route('beranda') }}" class="hover:text-indigo-600 transition">Beranda</a>
-                    <a href="{{ route('absen.siswa.qr') }}" class="hover:text-indigo-600 transition text-indigo-600 font-semibold">Absen Siswa</a>
-                    <a href="{{ route('dashboard.guru') }}" class="hover:text-indigo-600 transition">Dashboard Guru</a>
+                    <a href="{{ route('identitas.siswa') }}" class="hover:text-indigo-600 transition text-indigo-600 font-semibold">Absen Siswa</a>
+                    <a href="{{ route('identitas.guru') }}" class="hover:text-indigo-600 transition">Dashboard Guru</a>
                     <a href="{{ route('rekap.laporan') }}" class="hover:text-indigo-600 transition">Rekap</a>
                 </div>
-
-                <!-- Tombol User -->
+                <!-- ✅ TOMBOL USER DINAMIS -->
                 <div class="hidden md:block">
                     <div class="flex items-center gap-3">
-                        <span class="text-sm text-slate-600">
+                        <span class="text-sm text-slate-600 flex items-center gap-2">
                             <i class="fas fa-user-circle text-indigo-600 text-lg"></i>
-                            Najla Mutia
+                            <span id="userNavName">Siswa</span>
                         </span>
                         <a href="{{ route('login') }}" class="text-sm text-red-500 hover:text-red-700 transition">
                             <i class="fas fa-sign-out-alt"></i> Logout
                         </a>
                     </div>
                 </div>
-
-                <!-- Mobile Menu -->
                 <div class="md:hidden flex items-center gap-3">
-                    <span class="text-sm font-medium text-slate-600">
-                        <i class="fas fa-user-circle text-indigo-600"></i> Najla
+                    <span class="text-sm font-medium text-slate-600 flex items-center gap-1">
+                        <i class="fas fa-user-circle text-indigo-600"></i>
+                        <span id="userNavNameMobile">Siswa</span>
                     </span>
-                    <button class="text-slate-500 hover:text-indigo-600 transition">
-                        <i class="fas fa-bars text-xl"></i>
-                    </button>
+                    <button class="text-slate-500 hover:text-indigo-600 transition"><i class="fas fa-bars text-xl"></i></button>
                 </div>
             </nav>
         </div>
     </header>
 
-    <!-- ========== MAIN: VERIFIKASI ABSENSI ========== -->
+    <!-- ========== MAIN ========== -->
     <main class="flex-1 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
 
         <!-- Header -->
@@ -118,81 +98,99 @@
             <div class="inline-block bg-emerald-100/80 text-emerald-700 text-xs font-semibold px-4 py-1.5 rounded-full border border-emerald-200/60 mb-3">
                 <i class="fas fa-check-circle mr-2"></i> Absensi Mandiri
             </div>
-            <h1 class="text-3xl md:text-4xl font-extrabold text-slate-800">
-                Absen hari ini
-            </h1>
-            <p class="text-sm text-slate-500 mt-2">
+            <h1 class="text-3xl md:text-4xl font-extrabold text-slate-800">Absen hari ini</h1>
+            <p class="text-sm text-slate-500 mt-2 flex items-center justify-center gap-2">
                 <i class="fas fa-clock text-emerald-500 mr-1"></i>
                 <span id="currentTime">Memuat waktu...</span>
+                <span class="text-emerald-500 flex items-center gap-1 text-xs">
+                    <span class="w-1.5 h-1.5 bg-emerald-400 rounded-full pulse-dot"></span> Live
+                </span>
             </p>
         </div>
 
-        <!-- Tabs: Scan QR Code / ID Unik -->
-        <div class="flex justify-center gap-4 mb-8">
-            <a href="{{ route('absen.siswa.qr') }}" class="inline-flex items-center gap-2 px-6 py-2.5 bg-indigo-50 text-indigo-600 rounded-full text-sm font-medium border border-indigo-200/60 hover:bg-indigo-100 transition">
+        <!-- Tabs -->
+        <div class="flex flex-wrap justify-center gap-3 mb-8">
+            <a href="{{ route('absen.siswa.qr') }}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-50 text-indigo-600 rounded-full text-sm font-medium border border-indigo-200/60 hover:bg-indigo-100 transition">
                 <i class="fas fa-camera"></i> Scan QR Code
             </a>
-            <a href="{{ route('absen.siswa.qr') }}" class="inline-flex items-center gap-2 px-6 py-2.5 bg-slate-100 text-slate-600 rounded-full text-sm font-medium border border-slate-200/60 hover:bg-slate-200 transition">
+            <a href="{{ route('absen.siswa.qr') }}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-100 text-slate-600 rounded-full text-sm font-medium border border-slate-200/60 hover:bg-slate-200 transition">
                 <i class="fas fa-keyboard"></i> ID Unik
+            </a>
+            <a href="{{ route('absen.siswa.qr') }}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-50 text-amber-600 rounded-full text-sm font-medium border border-amber-200/60 hover:bg-amber-100 transition">
+                <i class="fas fa-file-medical-alt"></i> Izin / Sakit
             </a>
         </div>
 
-        <!-- ====== KARTU SUKSES ====== -->
-        <div class="success-card rounded-3xl shadow-xl shadow-emerald-200/60 p-8 md:p-10 text-center mb-8">
+        <!-- KARTU SUKSES -->
+        <div id="successCard" class="success-card rounded-3xl shadow-xl shadow-emerald-200/60 p-8 md:p-10 text-center mb-8 hidden">
             <div class="check-animation inline-block bg-white/20 backdrop-blur-sm rounded-full p-4 mb-4">
                 <i class="fas fa-check-circle text-6xl text-white"></i>
             </div>
             <h2 class="text-2xl md:text-3xl font-bold text-white mb-2">
-                Anda Telah Berhasil Melakukan absensi
+                Absensi Berhasil!
             </h2>
-            <p class="text-emerald-100/90 text-sm mb-6">
-                <i class="fas fa-clock mr-1"></i> 
-                <span id="successTime">Memuat waktu...</span>
+            <p class="text-emerald-100/90 text-sm mb-1" id="successNama">-</p>
+            <p class="text-emerald-100/90 text-xs mb-6">
+                <i class="fas fa-clock mr-1"></i>
+                <span id="successTime">-</span>
             </p>
-            <button onclick="absenUlang()" class="inline-block bg-white text-emerald-700 hover:bg-emerald-50 font-semibold px-8 py-3 rounded-xl shadow-lg transition hover:scale-105">
-                <i class="fas fa-redo mr-2"></i> Absensi Ulang
-            </button>
+            <a href="{{ route('absen.siswa.qr') }}" class="inline-block bg-white text-emerald-700 hover:bg-emerald-50 font-semibold px-8 py-3 rounded-xl shadow-lg transition hover:scale-105">
+                <i class="fas fa-redo mr-2"></i> Absensi Lagi
+            </a>
         </div>
 
-        <!-- ====== DAFTAR NAMA SISWA ====== -->
+        <!-- KARTU KOSONG -->
+        <div id="emptyCard" class="bg-white rounded-3xl shadow-sm border border-slate-200/60 p-8 text-center mb-8">
+            <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-inbox text-3xl text-slate-400"></i>
+            </div>
+            <h2 class="text-xl font-bold text-slate-800 mb-2">Belum Ada Data Absensi</h2>
+            <p class="text-sm text-slate-500 mb-6">Silakan lakukan absensi terlebih dahulu di halaman absensi</p>
+            <a href="{{ route('absen.siswa.qr') }}" class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-8 py-3 rounded-xl shadow-md shadow-indigo-200/60 transition">
+                <i class="fas fa-arrow-right mr-2"></i> Ke Halaman Absensi
+            </a>
+        </div>
+
+        <!-- DAFTAR ABSENSI SISWA -->
         <div class="bg-white rounded-2xl shadow-lg border border-slate-200/60 overflow-hidden">
-            <!-- Header Tabel -->
             <div class="px-6 py-4 border-b border-slate-200/60 bg-slate-50/50 flex items-center justify-between">
                 <div class="flex items-center gap-3">
                     <i class="fas fa-users text-indigo-500"></i>
-                    <h3 class="font-semibold text-slate-800">Daftar Nama Siswa</h3>
+                    <h3 class="font-semibold text-slate-800">Riwayat Absensi</h3>
                     <span class="text-xs bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full">
-                        <span id="totalSiswa">0</span> Siswa
+                        <span id="totalSiswa">0</span> Data
                     </span>
                     <span class="text-xs bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded-full">
                         <i class="fas fa-arrow-up text-[8px] mr-1"></i> Terbaru di atas
                     </span>
                 </div>
-                <div class="flex items-center gap-2 text-xs text-slate-400">
-                    <i class="fas fa-calendar-alt"></i>
-                    <span id="currentDate">Memuat tanggal...</span>
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-2 text-xs text-slate-400">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span id="currentDate">Memuat tanggal...</span>
+                    </div>
+                    <button onclick="exportData()" class="btn-export">
+                        <i class="fas fa-download mr-1"></i> Export
+                    </button>
                 </div>
             </div>
 
-            <!-- Tabel -->
             <div class="overflow-x-auto">
                 <table class="w-full">
                     <thead>
                         <tr class="bg-slate-50/80 border-b border-slate-200/60">
                             <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">No</th>
                             <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Nama Siswa</th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">NIS</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Kelas</th>
                             <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
                             <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Waktu</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Metode</th>
                         </tr>
                     </thead>
-                    <tbody id="studentTableBody" class="divide-y divide-slate-200/60">
-                        <!-- Data akan diisi oleh JavaScript secara real-time -->
-                    </tbody>
+                    <tbody id="studentTableBody" class="divide-y divide-slate-200/60"></tbody>
                 </table>
             </div>
 
-            <!-- Footer Tabel: Summary -->
             <div class="px-6 py-4 border-t border-slate-200/60 bg-slate-50/50 flex flex-wrap items-center justify-between gap-2">
                 <div class="flex flex-wrap items-center gap-4 text-xs text-slate-500">
                     <span class="flex items-center gap-1">
@@ -213,19 +211,9 @@
                     </span>
                 </div>
                 <div class="text-xs text-slate-400">
-                    <i class="fas fa-print mr-1"></i> Total: <span id="totalAll">0</span> Siswa
+                    <i class="fas fa-print mr-1"></i> Total: <span id="totalAll">0</span> Data
                 </div>
             </div>
-        </div>
-
-        <!-- Tombol Simulasi Absensi Baru -->
-        <div class="mt-6 text-center">
-            <button onclick="simulateNewAbsensi()" class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-3 rounded-xl transition shadow-md shadow-indigo-200/60">
-                <i class="fas fa-user-plus"></i> Simulasi Absensi Baru
-            </button>
-            <p class="text-xs text-slate-400 mt-2">
-                <i class="fas fa-info-circle"></i> Klik untuk mensimulasikan siswa baru melakukan absensi (Waktu REAL-TIME)
-            </p>
         </div>
 
         <!-- Tombol Kembali -->
@@ -237,119 +225,105 @@
 
     </main>
 
-    <!-- ========== FOOTER ========== -->
+    <!-- FOOTER -->
     <footer class="w-full border-t border-slate-200/60 py-4 text-center text-[10px] text-slate-400 bg-white/40 backdrop-blur-sm">
         <div class="max-w-7xl mx-auto px-4 flex flex-wrap items-center justify-center gap-3">
             <span>© 2026 Sistem Absensi</span>
             <span class="w-px h-3 bg-slate-300"></span>
             <span>Hadirin.web</span>
             <span class="w-px h-3 bg-slate-300"></span>
-            <span><i class="fas fa-image mr-1"></i> Absensi Siswa QR3.png</span>
+            <span><i class="fas fa-image mr-1"></i> Absensi Siswa Verifikasi</span>
         </div>
     </footer>
 
-    <!-- ============================================================ -->
-    <!-- ========== JAVASCRIPT REAL-TIME (LENGKAP) ========== -->
-    <!-- ============================================================ -->
+    <!-- ========== JAVASCRIPT ========== -->
     <script>
         // ================================================================
-        // 1. DATA SISWA (HANYA NAMA & NIS, TANPA WAKTU)
-        // ================================================================
-        const studentData = [
-            { name: 'Alex', nis: '12345' },
-            { name: 'Yasmin', nis: '12346' },
-            { name: 'Dina', nis: '12347' },
-            { name: 'Arjuna', nis: '12348' },
-            { name: 'Najla', nis: '12349' }
-        ];
-
-        // ================================================================
-        // 2. STATUS YANG TERSEDIA
-        // ================================================================
-        const statusList = ['Hadir', 'Hadir', 'Hadir', 'Izin', 'Sakit'];
-
-        // ================================================================
-        // 3. STATE / VARIABEL GLOBAL
+        // 1. STATE
         // ================================================================
         let absensiList = [];
-        let nextId = 1;
 
         // ================================================================
-        // 4. INISIALISASI DATA (SEMUA WAKTU REAL-TIME)
+        // 2. AMBIL DATA DARI LOCALSTORAGE
         // ================================================================
-        function initAbsensi() {
-            absensiList = [];
+        function loadDataAbsensi() {
+            const siswaAbsen = localStorage.getItem('siswa_absen');
             
-            // === SEMUA SISWA DIABSEN DENGAN WAKTU REAL ===
-            const now = new Date();
-            
-            // Status untuk setiap siswa (urutan tetap)
-            const statusOptions = ['Hadir', 'Hadir', 'Izin', 'Sakit', 'Hadir'];
-            
-            studentData.forEach((student, index) => {
-                // Waktu: sekarang - (jumlah siswa - 1 - index) * 5 menit
-                // Jadi siswa pertama (Alex) absen paling lama, siswa terakhir (Najla) absen paling baru
-                const time = new Date(now);
-                time.setMinutes(now.getMinutes() - ((studentData.length - 1 - index) * 5));
-                
-                absensiList.push({
-                    id: nextId++,
-                    name: student.name,
-                    nis: student.nis,
-                    status: statusOptions[index] || 'Hadir',
-                    time: time, // ✅ WAKTU REAL-TIME
-                    isNew: false
-                });
-            });
-            
-            // Urutkan dari terbaru ke terlama (descending)
-            absensiList.sort((a, b) => b.time - a.time);
+            if (siswaAbsen) {
+                try {
+                    const data = JSON.parse(siswaAbsen);
+                    console.log('✅ Data absensi ditemukan:', data);
+                    
+                    absensiList.push({
+                        id: Date.now(),
+                        nama: data.nama,
+                        kelas: data.kelas,
+                        jurusan: data.jurusan,
+                        nis: data.nis,
+                        status: data.status,
+                        metode: data.metode,
+                        keterangan: data.keterangan || '',
+                        waktu: data.waktu,
+                        tanggal: data.tanggal,
+                        isNew: true
+                    });
+                    
+                    tampilkanKartuSukses(data);
+                    
+                } catch(e) {
+                    console.error('❌ Error parsing data absensi:', e);
+                    tampilkanKartuKosong();
+                }
+            } else {
+                console.log('⚠️ Tidak ada data absensi');
+                tampilkanKartuKosong();
+            }
             
             renderTable();
             updateStats();
         }
 
         // ================================================================
-        // 5. FUNGSI ABSENSI BARU (REAL-TIME)
+        // 3. TAMPILKAN KARTU SUKSES
         // ================================================================
-        function absenBaru(nama, status) {
-            // ✅ Gunakan WAKTU SEKARANG (REAL-TIME)
-            const now = new Date();
-            
-            const newAbsen = {
-                id: nextId++,
-                name: nama,
-                nis: String(10000 + absensiList.length + 1),
-                status: status || 'Hadir',
-                time: now, // ✅ WAKTU REAL-TIME SEKARANG
-                isNew: true
-            };
-            
-            absensiList.push(newAbsen);
-            
-            // Urutkan dari terbaru ke terlama
-            absensiList.sort((a, b) => b.time - a.time);
-            
-            renderTable();
-            updateStats();
-            
-            // Update waktu sukses di kartu
-            document.getElementById('successTime').textContent = formatTime(now) + ' WIB';
-            
-            // Tampilkan notifikasi
-            showNotification(`✅ ${nama} berhasil absen dengan status ${status}!`);
+        function tampilkanKartuSukses(data) {
+            document.getElementById('successCard').classList.remove('hidden');
+            document.getElementById('emptyCard').classList.add('hidden');
+            document.getElementById('successNama').textContent = `${data.nama} • ${data.kelas}`;
+            document.getElementById('successTime').textContent = `${data.waktu} • ${data.tanggal}`;
+        }
+
+        function tampilkanKartuKosong() {
+            document.getElementById('successCard').classList.add('hidden');
+            document.getElementById('emptyCard').classList.remove('hidden');
         }
 
         // ================================================================
-        // 6. RENDER TABEL
+        // 4. RENDER TABEL
         // ================================================================
         function renderTable() {
             const tbody = document.getElementById('studentTableBody');
             
+            if (absensiList.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="empty-state">
+                            <i class="fas fa-inbox text-4xl mb-2 block"></i>
+                            <p>Belum ada data absensi</p>
+                        </td>
+                    </tr>
+                `;
+                document.getElementById('totalSiswa').textContent = 0;
+                document.getElementById('totalAll').textContent = 0;
+                return;
+            }
+            
+            absensiList.sort((a, b) => new Date(b.tanggal + ' ' + b.waktu) - new Date(a.tanggal + ' ' + a.waktu));
+            
             let html = '';
             absensiList.forEach((item, index) => {
                 const statusBadge = getStatusBadge(item.status);
-                const timeStr = formatTime(item.time);
+                const metodeBadge = getMetodeBadge(item.metode);
                 const isNew = item.isNew ? 'new-row' : '';
                 const highlight = item.isNew ? 'bg-emerald-50/70 border-l-4 border-emerald-500' : '';
                 const newLabel = item.isNew ? `<span class="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-medium ml-2"><i class="fas fa-star text-[8px]"></i> Baru</span>` : '';
@@ -359,35 +333,32 @@
                         <td class="px-6 py-4 text-sm text-slate-500">${index + 1}</td>
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-${getColor(item.name)}-100 flex items-center justify-center text-${getColor(item.name)}-600 text-sm font-bold">
-                                    ${item.name.charAt(0)}
+                                <div class="w-8 h-8 rounded-full bg-${getColor(item.nama)}-100 flex items-center justify-center text-${getColor(item.nama)}-600 text-sm font-bold">
+                                    ${item.nama.charAt(0).toUpperCase()}
                                 </div>
-                                <span class="font-medium text-slate-800">${item.name}</span>
+                                <span class="font-medium text-slate-800">${item.nama}</span>
                                 ${newLabel}
                             </div>
                         </td>
-                        <td class="px-6 py-4 text-sm text-slate-600">${item.nis}</td>
+                        <td class="px-6 py-4 text-sm text-slate-600">${item.kelas}</td>
                         <td class="px-6 py-4">${statusBadge}</td>
                         <td class="px-6 py-4 text-sm ${item.isNew ? 'font-medium text-emerald-600' : 'text-slate-500'}">
-                            ${timeStr}
+                            ${item.waktu}
                             ${item.isNew ? '<span class="text-[10px] text-emerald-400 ml-1">(baru saja)</span>' : ''}
                         </td>
+                        <td class="px-6 py-4">${metodeBadge}</td>
                     </tr>
                 `;
             });
             
             tbody.innerHTML = html;
-            
-            // Reset new flag setelah render
             absensiList.forEach(item => item.isNew = false);
-            
-            // Update total siswa
             document.getElementById('totalSiswa').textContent = absensiList.length;
             document.getElementById('totalAll').textContent = absensiList.length;
         }
 
         // ================================================================
-        // 7. GET STATUS BADGE
+        // 5. GET STATUS BADGE
         // ================================================================
         function getStatusBadge(status) {
             const badges = {
@@ -399,26 +370,23 @@
             return badges[status] || badges['Alpha'];
         }
 
-        // ================================================================
-        // 8. GET COLOR FOR AVATAR
-        // ================================================================
+        function getMetodeBadge(metode) {
+            const badges = {
+                'Scan QR': `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs badge-metode-scan"><i class="fas fa-camera text-[10px]"></i> Scan QR</span>`,
+                'Scan QR (Simulasi)': `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs badge-metode-scan"><i class="fas fa-camera text-[10px]"></i> Scan QR</span>`,
+                'ID Unik': `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs badge-metode-id"><i class="fas fa-keyboard text-[10px]"></i> ID Unik</span>`,
+                'Izin/Sakit': `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs badge-metode-izin"><i class="fas fa-file-medical-alt text-[10px]"></i> Izin/Sakit</span>`
+            };
+            return badges[metode] || badges['Scan QR'];
+        }
+
         function getColor(name) {
             const colors = ['indigo', 'emerald', 'amber', 'red', 'purple', 'blue', 'pink', 'orange'];
             return colors[name.length % colors.length];
         }
 
         // ================================================================
-        // 9. FORMAT TIME (REAL-TIME)
-        // ================================================================
-        function formatTime(date) {
-            if (!date) return '-';
-            const hours = String(date.getHours()).padStart(2, '0');
-            const minutes = String(date.getMinutes()).padStart(2, '0');
-            return `${hours}:${minutes} WIB`;
-        }
-
-        // ================================================================
-        // 10. UPDATE STATISTICS
+        // 6. UPDATE STATISTIK
         // ================================================================
         function updateStats() {
             const hadir = absensiList.filter(s => s.status === 'Hadir').length;
@@ -433,52 +401,52 @@
         }
 
         // ================================================================
-        // 11. SIMULASI ABSENSI BARU (TANPA SETTIMEOUT)
+        // 7. ✅ UPDATE NAVBAR NAME (DARI EMAIL YANG DIDAFTARKAN)
         // ================================================================
-        function simulateNewAbsensi() {
-            const names = ['Budi', 'Siti', 'Ahmad', 'Dewi', 'Rizky', 'Sarah', 'Doni', 'Maya', 'Faisal', 'Hana'];
+        function updateNavbarName() {
+            const nama = localStorage.getItem('user_nama');
+            const email = localStorage.getItem('user_email');
             
-            // Cari nama yang belum dipakai
-            let availableNames = names.filter(n => !absensiList.some(a => a.name === n));
-            if (availableNames.length === 0) {
-                const newName = `Siswa ${absensiList.length + 1}`;
-                availableNames = [newName];
+            console.log('📧 Email:', email);
+            console.log('👤 Nama:', nama);
+            
+            if (nama) {
+                const navName = document.getElementById('userNavName');
+                const navNameMobile = document.getElementById('userNavNameMobile');
+                
+                if (navName) navName.textContent = nama;
+                if (navNameMobile) navNameMobile.textContent = nama.split(' ')[0];
+                
+                console.log('✅ Navbar diupdate:', nama);
+            } else {
+                console.warn('⚠️ Nama tidak ditemukan, pakai default');
             }
-            
-            const name = availableNames[Math.floor(Math.random() * availableNames.length)];
-            const status = statusList[Math.floor(Math.random() * statusList.length)];
-            
-            // ✅ LANGSUNG TAMBAHKAN DENGAN WAKTU SEKARANG (REAL-TIME)
-            absenBaru(name, status);
         }
 
         // ================================================================
-        // 12. ABSENSI ULANG (RESET)
+        // 8. EXPORT DATA
         // ================================================================
-        function absenUlang() {
-            // Reset ke data awal dengan waktu REAL-TIME
-            initAbsensi();
-            document.getElementById('successTime').textContent = formatTime(new Date()) + ' WIB';
-            showNotification('🔄 Data absensi direset dengan waktu real-time!');
+        function exportData() {
+            if (absensiList.length === 0) {
+                showNotification('⚠️ Tidak ada data untuk di-export!');
+                return;
+            }
+            showNotification('📥 Mengexport data absensi...');
+            setTimeout(() => {
+                showNotification('✅ Data berhasil di-export!');
+            }, 1500);
         }
 
         // ================================================================
-        // 13. NOTIFICATION
+        // 9. NOTIFICATION
         // ================================================================
         function showNotification(message) {
             const oldNotif = document.querySelector('.notification-toast');
             if (oldNotif) oldNotif.remove();
-
             const notification = document.createElement('div');
             notification.className = 'notification-toast fixed top-24 left-1/2 transform -translate-x-1/2 bg-indigo-600 text-white px-6 py-3 rounded-xl shadow-lg z-50 transition-all duration-500';
-            notification.innerHTML = `
-                <div class="flex items-center gap-3">
-                    <i class="fas fa-info-circle text-xl"></i>
-                    <span class="text-sm font-medium">${message}</span>
-                </div>
-            `;
+            notification.innerHTML = `<div class="flex items-center gap-3"><i class="fas fa-info-circle text-xl"></i><span class="text-sm font-medium">${message}</span></div>`;
             document.body.appendChild(notification);
-
             setTimeout(() => {
                 notification.style.opacity = '0';
                 notification.style.transform = 'translate(-50%, -20px)';
@@ -487,82 +455,38 @@
         }
 
         // ================================================================
-        // 14. UPDATE CLOCK REAL-TIME
+        // 10. UPDATE CLOCK
         // ================================================================
         function updateClock() {
             const now = new Date();
-            
-            // Update waktu saat ini
             const timeStr = now.toLocaleTimeString('id-ID', { 
-                hour: '2-digit', 
-                minute: '2-digit', 
-                second: '2-digit',
-                hour12: false 
+                hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false 
             });
             document.getElementById('currentTime').textContent = timeStr + ' WIB';
             
-            // Update tanggal
             const dateStr = now.toLocaleDateString('id-ID', { 
-                weekday: 'long', 
-                day: '2-digit', 
-                month: '2-digit', 
-                year: 'numeric' 
+                weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' 
             });
             document.getElementById('currentDate').textContent = dateStr;
-            
-            // Update waktu sukses (jika belum di-set)
-            if (!document.getElementById('successTime').textContent.includes(':')) {
-                document.getElementById('successTime').textContent = formatTime(now) + ' WIB';
-            }
         }
 
         // ================================================================
-        // 15. INIT
+        // 11. INIT
         // ================================================================
         document.addEventListener('DOMContentLoaded', function() {
-            // Inisialisasi data dengan waktu REAL-TIME
-            initAbsensi();
+            console.log('📷 Halaman Verifikasi siap!');
             
-            // Update clock setiap detik
+            // Load data absensi
+            loadDataAbsensi();
+            
+            // ✅ Update nama di navbar
+            updateNavbarName();
+            
+            // Update clock
             updateClock();
             setInterval(updateClock, 1000);
-            
-            // Update waktu sukses
-            document.getElementById('successTime').textContent = formatTime(new Date()) + ' WIB';
-            
-            // Animasi fade-in kartu sukses
-            const successCard = document.querySelector('.success-card');
-            if (successCard) {
-                successCard.style.opacity = '0';
-                successCard.style.transform = 'translateY(20px)';
-                setTimeout(() => {
-                    successCard.style.transition = 'all 0.6s ease-out';
-                    successCard.style.opacity = '1';
-                    successCard.style.transform = 'translateY(0)';
-                }, 300);
-            }
         });
 
-        // ================================================================
-        // 16. KEYBOARD SHORTCUT
-        // ================================================================
-        document.addEventListener('keydown', function(e) {
-            // Tekan 'A' untuk simulasi absensi baru
-            if ((e.key === 'a' || e.key === 'A') && !e.ctrlKey && !e.metaKey) {
-                simulateNewAbsensi();
-            }
-            // Tekan 'R' untuk reset
-            if ((e.key === 'r' || e.key === 'R') && !e.ctrlKey && !e.metaKey) {
-                absenUlang();
-            }
-        });
-
-        // ================================================================
-        // 17. CONSOLE INFO
-        // ================================================================
-        console.log('📋 Shortcut: Tekan "A" untuk absensi baru, "R" untuk reset data');
-        console.log('✅ SEMUA WAKTU ABSENSI MENGGUNAKAN REAL-TIME!');
-        console.log(`📊 Total siswa: ${absensiList.length}`);
     </script>
 
 </body>

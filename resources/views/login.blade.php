@@ -36,37 +36,38 @@
                 </div>
 
                 <!-- Form Login -->
-                <form action="{{ route('login2') }}" method="GET" class="space-y-5">
-                    <!-- Email -->
-                    <div>
-                        <label for="email" class="block text-sm font-medium text-slate-700 mb-1.5">
-                            <i class="fas fa-envelope text-indigo-400 mr-1.5"></i> Email
-                        </label>
-                        <div class="relative">
-                            <input type="email" id="email" name="email" placeholder="Type here" required
-                                   class="w-full pl-4 pr-10 py-3 bg-slate-50/80 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition" />
-                            <span class="absolute right-3 top-3.5 text-slate-300 text-sm"><i class="fas fa-envelope"></i></span>
-                        </div>
-                    </div>
+<form action="{{ route('login2') }}" method="GET" onsubmit="simpanEmail(event)">
+    @csrf
+    <!-- Email -->
+    <div>
+        <label for="email" class="block text-sm font-medium text-slate-700 mb-1.5">
+            <i class="fas fa-envelope text-indigo-400 mr-1.5"></i> Email
+        </label>
+        <div class="relative">
+            <input type="email" id="email" name="email" placeholder="Type here" required
+                   class="w-full pl-4 pr-10 py-3 bg-slate-50/80 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300" />
+            <span class="absolute right-3 top-3.5 text-slate-300 text-sm"><i class="fas fa-envelope"></i></span>
+        </div>
+    </div>
 
-                    <!-- Password -->
-                    <div>
-                        <label for="password" class="block text-sm font-medium text-slate-700 mb-1.5">
-                            <i class="fas fa-lock text-indigo-400 mr-1.5"></i> Password
-                        </label>
-                        <div class="relative">
-                            <input type="password" id="password" name="password" placeholder="Type here" required
-                                   class="w-full pl-4 pr-10 py-3 bg-slate-50/80 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition" />
-                            <span class="absolute right-3 top-3.5 text-slate-300 text-sm"><i class="fas fa-lock"></i></span>
-                        </div>
-                    </div>
+    <!-- Password -->
+    <div>
+        <label for="password" class="block text-sm font-medium text-slate-700 mb-1.5">
+            <i class="fas fa-lock text-indigo-400 mr-1.5"></i> Password
+        </label>
+        <div class="relative">
+            <input type="password" id="password" name="password" placeholder="Type here" required
+                   class="w-full pl-4 pr-10 py-3 bg-slate-50/80 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300" />
+            <span class="absolute right-3 top-3.5 text-slate-300 text-sm"><i class="fas fa-lock"></i></span>
+        </div>
+    </div>
 
-                    <!-- Tombol Log in -->
-                    <button type="submit"
-                            class="w-full mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3.5 rounded-xl shadow-md shadow-indigo-200/60 transition flex items-center justify-center gap-2 text-base">
-                        <i class="fas fa-sign-in-alt"></i> Log in
-                    </button>
-                </form>
+    <!-- Tombol Log in -->
+    <button type="submit"
+            class="w-full mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3.5 rounded-xl shadow-md shadow-indigo-200/60 transition flex items-center justify-center gap-2 text-base">
+        <i class="fas fa-sign-in-alt"></i> Log in
+    </button>
+</form>
 
                 <p class="text-xs text-slate-400 text-center mt-6">
                     <i class="far fa-circle-check text-indigo-300 mr-1"></i> aman & terenkripsi
@@ -87,6 +88,42 @@
             <span>Absensi Siswa Harian</span>
         </div>
     </footer>
+
+<script>
+// ============================================================
+// SIMPAN EMAIL KE LOCALSTORAGE SAAT SUBMIT
+// ============================================================
+function simpanEmail(event) {
+    const emailInput = document.getElementById('email');
+    const email = emailInput.value.trim();
+    
+    console.log('📧 Email diinput:', email);
+    
+    if (email) {
+        // Simpan email ke localStorage
+        localStorage.setItem('user_email', email);
+        
+        // Extract nama dari email
+        const namaFromEmail = extractNamaFromEmail(email);
+        localStorage.setItem('user_nama', namaFromEmail);
+        
+        console.log('✅ Email tersimpan:', email);
+        console.log('✅ Nama di-extract:', namaFromEmail);
+    }
+}
+
+// ============================================================
+// FUNGSI EKSTRAK NAMA DARI EMAIL
+// ============================================================
+function extractNamaFromEmail(email) {
+    const localPart = email.split('@')[0];
+    const namaParts = localPart.split(/[._-]/);
+    const namaFormatted = namaParts
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+        .join(' ');
+    return namaFormatted;
+}
+</script>
 
 </body>
 </html>

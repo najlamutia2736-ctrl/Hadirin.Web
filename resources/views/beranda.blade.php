@@ -4,23 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Hadirin.web · Beranda</title>
-    <!-- Tailwind via CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
-    <!-- Font tambahan -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet" />
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        .gradient-bg {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-        .card-hover:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.2);
-        }
+        body { font-family: 'Inter', sans-serif; }
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .card-hover:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(102, 126, 234, 0.2); }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen flex flex-col">
@@ -40,17 +30,17 @@
                 <!-- Menu Desktop -->
                 <div class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
                     <a href="{{ route('beranda') }}" class="hover:text-indigo-600 transition text-indigo-600 font-semibold">Beranda</a>
-                    <a href="#" class="hover:text-indigo-600 transition">Absen Siswa</a>
-                    <a href="#" class="hover:text-indigo-600 transition">Dashboard Guru</a>
-                    <a href="#" class="hover:text-indigo-600 transition">Rekap</a>
+                    <a href="{{ route('identitas.siswa') }}" class="hover:text-indigo-600 transition">Absen Siswa</a>
+                    <a href="{{ route('identitas.guru') }}" class="hover:text-indigo-600 transition">Dashboard Guru</a>
+                    <a href="{{ route('rekap.laporan') }}" class="hover:text-indigo-600 transition">Rekap</a>
                 </div>
 
-                <!-- Tombol Login / User -->
+                <!-- Tombol User (DINAMIS - NAMA DARI EMAIL) -->
                 <div class="hidden md:block">
                     <div class="flex items-center gap-3">
-                        <span class="text-sm text-slate-600">
+                        <span class="text-sm text-slate-600 flex items-center gap-2">
                             <i class="fas fa-user-circle text-indigo-600 text-lg"></i>
-                            Najla Mutia
+                            <span id="userNavName">Najla Mutia</span>
                         </span>
                         <a href="{{ route('login') }}" class="text-sm text-red-500 hover:text-red-700 transition">
                             <i class="fas fa-sign-out-alt"></i> Logout
@@ -60,8 +50,9 @@
 
                 <!-- Mobile Menu -->
                 <div class="md:hidden flex items-center gap-3">
-                    <span class="text-sm font-medium text-slate-600">
-                        <i class="fas fa-user-circle text-indigo-600"></i> Najla
+                    <span class="text-sm font-medium text-slate-600 flex items-center gap-1">
+                        <i class="fas fa-user-circle text-indigo-600"></i>
+                        <span id="userNavNameMobile">Najla</span>
                     </span>
                     <button class="text-slate-500 hover:text-indigo-600 transition">
                         <i class="fas fa-bars text-xl"></i>
@@ -110,63 +101,53 @@
 
         <!-- Pilih Peran -->
         <div class="mb-8">
-            <h3 class="text-2xl font-bold text-slate-800 text-center mb-2">
-                Pilihlah Peranmu Disisni
-            </h3>
-            <p class="text-sm text-slate-500 text-center mb-8">
-                Tentukan cara masuk sesuai peranmu di sekolah!
-            </p>
+            <h3 class="text-2xl font-bold text-slate-800 text-center mb-2">Pilihlah Peranmu Disisni</h3>
+            <p class="text-sm text-slate-500 text-center mb-8">Tentukan cara masuk sesuai peranmu di sekolah!</p>
         </div>
 
         <!-- Cards Peran -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
 
             <!-- Card Siswa -->
-<div class="bg-white rounded-2xl shadow-md border border-slate-200/60 p-6 text-center card-hover transition-all duration-300">
-    <div class="w-20 h-20 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
-        <i class="fas fa-user-graduate text-3xl text-indigo-600"></i>
-    </div>
-    <h4 class="text-xl font-bold text-slate-800 mb-2">Siswa</h4>
-    <p class="text-sm text-slate-500 mb-4">
-        Absen mandiri lewat scan QRCode atau kode unik.
-    </p>
-    <a href="{{ route('absen.siswa.qr') }}" class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2.5 rounded-xl transition shadow-md shadow-indigo-200/60">
-        <i class="fas fa-arrow-right mr-1"></i> Klik
-    </a>
-</div>
+            <div class="bg-white rounded-2xl shadow-md border border-slate-200/60 p-6 text-center card-hover transition-all duration-300">
+                <div class="w-20 h-20 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-user-graduate text-3xl text-indigo-600"></i>
+                </div>
+                <h4 class="text-xl font-bold text-slate-800 mb-2">Siswa</h4>
+                <p class="text-sm text-slate-500 mb-4">Absen mandiri lewat scan QRCode atau kode unik.</p>
+                <a href="{{ route('identitas.siswa') }}" class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2.5 rounded-xl transition shadow-md shadow-indigo-200/60">
+                    <i class="fas fa-arrow-right mr-1"></i> Klik
+                </a>
+            </div>
 
             <!-- Card Guru / Wali Kelas -->
-<div class="bg-white rounded-2xl shadow-md border border-slate-200/60 p-6 text-center card-hover transition-all duration-300 md:scale-105 md:shadow-lg">
-    <div class="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
-        <i class="fas fa-chalkboard-teacher text-3xl text-emerald-600"></i>
-    </div>
-    <h4 class="text-xl font-bold text-slate-800 mb-2">Guru / Wali Kelas</h4>
-    <p class="text-sm text-slate-500 mb-4">
-        Memantau kehadiran Real-Time dan unduh rekap bulanan.
-    </p>
-    <a href="{{ route('dashboard.guru') }}" class="inline-block bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 py-2.5 rounded-xl transition shadow-md shadow-emerald-200/60">
-        <i class="fas fa-arrow-right mr-1"></i> Klik
-    </a>
-</div>
+            <div class="bg-white rounded-2xl shadow-md border border-slate-200/60 p-6 text-center card-hover transition-all duration-300 md:scale-105 md:shadow-lg">
+                <div class="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-chalkboard-teacher text-3xl text-emerald-600"></i>
+                </div>
+                <h4 class="text-xl font-bold text-slate-800 mb-2">Guru / Wali Kelas</h4>
+                <p class="text-sm text-slate-500 mb-4">Memantau kehadiran Real-Time dan unduh rekap bulanan.</p>
+                <a href="{{ route('identitas.guru') }}" class="inline-block bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 py-2.5 rounded-xl transition shadow-md shadow-emerald-200/60">
+                    <i class="fas fa-arrow-right mr-1"></i> Klik
+                </a>
+            </div>
 
             <!-- Card Admin / Kepsek -->
-<div class="bg-white rounded-2xl shadow-md border border-slate-200/60 p-6 text-center card-hover transition-all duration-300">
-    <div class="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-        <i class="fas fa-user-shield text-3xl text-purple-600"></i>
-    </div>
-    <h4 class="text-xl font-bold text-slate-800 mb-2">Admin / Kepsek</h4>
-    <p class="text-sm text-slate-500 mb-4">
-        Kelola data seluruh siswa dan lihat laporan menyeluruh.
-    </p>
-    <a href="{{ route('dashboard.admin') }}" class="inline-block bg-purple-600 hover:bg-purple-700 text-white font-medium px-6 py-2.5 rounded-xl transition shadow-md shadow-purple-200/60">
-        <i class="fas fa-arrow-right mr-1"></i> Klik
-    </a>
-</div>
+            <div class="bg-white rounded-2xl shadow-md border border-slate-200/60 p-6 text-center card-hover transition-all duration-300">
+                <div class="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-user-shield text-3xl text-purple-600"></i>
+                </div>
+                <h4 class="text-xl font-bold text-slate-800 mb-2">Admin / Kepsek</h4>
+                <p class="text-sm text-slate-500 mb-4">Kelola data seluruh siswa dan lihat laporan menyeluruh.</p>
+                <a href="{{ route('dashboard.admin') }}" class="inline-block bg-purple-600 hover:bg-purple-700 text-white font-medium px-6 py-2.5 rounded-xl transition shadow-md shadow-purple-200/60">
+                    <i class="fas fa-arrow-right mr-1"></i> Klik
+                </a>
+            </div>
         </div>
 
         <!-- Statistik Cepat -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200/60 p-4 text-center stat-card">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200/60 p-4 text-center">
                 <p class="text-2xl font-bold text-indigo-600">1,234</p>
                 <p class="text-xs text-slate-500">Siswa Terdaftar</p>
             </div>
@@ -196,6 +177,38 @@
             <span><i class="fas fa-image mr-1"></i> Beranda.png</span>
         </div>
     </footer>
+
+    <!-- ========== JAVASCRIPT: UPDATE NAMA DARI EMAIL ========== -->
+    <script>
+        // ============================================================
+        // UPDATE NAMA DI NAVBAR DARI EMAIL YANG DIDAFTARKAN
+        // ============================================================
+        document.addEventListener('DOMContentLoaded', function() {
+            const nama = localStorage.getItem('user_nama');
+            const email = localStorage.getItem('user_email');
+            
+            console.log('📧 Email dari storage:', email);
+            console.log('👤 Nama dari storage:', nama);
+            
+            if (nama) {
+                // Update nama di navbar desktop
+                const navName = document.getElementById('userNavName');
+                if (navName) {
+                    navName.textContent = nama;
+                    console.log('✅ Navbar desktop diupdate:', nama);
+                }
+                
+                // Update nama di navbar mobile (hanya nama depan)
+                const navNameMobile = document.getElementById('userNavNameMobile');
+                if (navNameMobile) {
+                    navNameMobile.textContent = nama.split(' ')[0];
+                    console.log('✅ Navbar mobile diupdate:', nama.split(' ')[0]);
+                }
+            } else {
+                console.warn('⚠️ Nama tidak ditemukan di localStorage. Silakan login dulu.');
+            }
+        });
+    </script>
 
 </body>
 </html>

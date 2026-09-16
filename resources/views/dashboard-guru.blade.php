@@ -1,548 +1,716 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hadirin.web · Dashboard Guru</title>
-    <!-- Tailwind via CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
-    <!-- Font tambahan -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet" />
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        .gradient-header {
-            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-        }
-        .stat-card {
-            transition: all 0.3s ease;
-        }
-        .stat-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 30px rgba(79, 70, 229, 0.15);
-        }
-        .table-row-hover:hover {
-            background-color: #f1f5f9;
-            transition: background-color 0.2s ease;
-        }
-        .badge-hadir {
-            background: #dcfce7;
-            color: #166534;
-        }
-        .badge-izin {
-            background: #fef9c3;
-            color: #854d0e;
-        }
-        .badge-sakit {
-            background: #fce4ec;
-            color: #b91c1c;
-        }
-        .badge-alpha {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-        .new-row {
-            animation: slideIn 0.5s ease-out;
-        }
-        @keyframes slideIn {
-            0% { opacity: 0; transform: translateX(-20px); }
-            100% { opacity: 1; transform: translateX(0); }
-        }
-        .pulse-dot {
-            animation: pulse 1.5s ease-in-out infinite;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.5; transform: scale(0.8); }
-        }
-    </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Hadirin.web · Dashboard Guru</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet" />
+<style>
+body { font-family: 'Inter', sans-serif; background: #f1f5f9; }
+.sidebar { width: 260px; min-height: 100vh; background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%); overflow-y: auto; }
+.sidebar-link { display: flex; align-items: center; gap: 12px; padding: 12px 20px; color: rgba(255,255,255,0.6); border-radius: 10px; font-size: 14px; cursor: pointer; margin: 0 8px; transition: 0.2s; }
+.sidebar-link:hover { background: rgba(255,255,255,0.08); color: white; }
+.sidebar-link.active { background: rgba(59,130,246,0.2); color: white; border-left: 3px solid #3b82f6; }
+.sidebar-section-title { color: rgba(255,255,255,0.3); font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; padding: 20px 20px 8px; font-weight: 600; }
+.topbar { background: white; border-bottom: 1px solid #e2e8f0; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 40; }
+.stat-card { border-radius: 12px; padding: 20px; color: white; }
+.stat-blue { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+.stat-green { background: linear-gradient(135deg, #10b981, #059669); }
+.stat-orange { background: linear-gradient(135deg, #f97316, #ea580c); }
+.stat-red { background: linear-gradient(135deg, #ef4444, #dc2626); }
+.section-content { display: none; }
+.section-content.active { display: block; }
+.chart-container { position: relative; height: 280px; }
+.badge-hadir { background: #dcfce7; color: #166534; padding: 4px 10px; border-radius: 999px; font-size: 11px; }
+.badge-izin { background: #fef9c3; color: #854d0e; padding: 4px 10px; border-radius: 999px; font-size: 11px; }
+.badge-sakit { background: #fce4ec; color: #b91c1c; padding: 4px 10px; border-radius: 999px; font-size: 11px; }
+.badge-alpha { background: #fee2e2; color: #991b1b; padding: 4px 10px; border-radius: 999px; font-size: 11px; }
+.progress-bar { height: 8px; border-radius: 4px; background: #e2e8f0; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 4px; }
+</style>
 </head>
-<body class="bg-slate-50 min-h-screen flex flex-col">
+<body>
 
-    <!-- ========== NAVBAR ========== -->
-    <header class="w-full bg-white/80 backdrop-blur-sm border-b border-slate-200/60 sticky top-0 z-10">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <nav class="flex items-center justify-between h-16 md:h-20">
-                <!-- Brand / Logo -->
-                <div class="flex items-center gap-2">
-                    <a href="{{ route('home') }}" class="text-2xl font-bold text-indigo-700 tracking-tight">
-                        Hadirin.<span class="text-slate-700">web</span>
-                    </a>
-                    <span class="hidden sm:inline-block text-[10px] font-medium bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full">beta</span>
-                </div>
+<div class="flex">
 
-                <!-- Menu Desktop -->
-                <div class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
-                    <a href="{{ route('beranda') }}" class="hover:text-indigo-600 transition">Beranda</a>
-                    <a href="{{ route('absen.siswa.qr') }}" class="hover:text-indigo-600 transition">Absen Siswa</a>
-                    <a href="{{ route('dashboard.guru') }}" class="hover:text-indigo-600 transition text-indigo-600 font-semibold">Dashboard Guru</a>
-                    <a href="#" class="hover:text-indigo-600 transition">Rekap</a>
-                </div>
-
-                <!-- Tombol User -->
-                <div class="hidden md:block">
-                    <div class="flex items-center gap-3">
-                        <span class="text-sm text-slate-600">
-                            <i class="fas fa-user-circle text-indigo-600 text-lg"></i>
-                            Guru
-                        </span>
-                        <button onclick="logout()" class="text-sm text-red-500 hover:text-red-700 transition">
-                            <i class="fas fa-sign-out-alt"></i> Logout
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Mobile Menu -->
-                <div class="md:hidden flex items-center gap-3">
-                    <span class="text-sm font-medium text-slate-600">
-                        <i class="fas fa-user-circle text-indigo-600"></i> Najla
-                    </span>
-                    <button class="text-slate-500 hover:text-indigo-600 transition">
-                        <i class="fas fa-bars text-xl"></i>
-                    </button>
-                </div>
-            </nav>
+<!-- SIDEBAR -->
+<aside class="sidebar flex-shrink-0">
+    <div class="p-5 border-b border-white/10">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center text-white font-bold text-xl">H</div>
+            <div>
+                <span class="text-white font-bold text-lg">Hadirin</span>
+                <span class="text-blue-300 text-xs block">Dashboard Guru</span>
+            </div>
         </div>
+    </div>
+
+    <div class="p-4 mx-3 mt-3 bg-white/5 rounded-xl border border-white/10">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-blue-500/30 rounded-full flex items-center justify-center text-white font-bold" id="sidebarInitial">G</div>
+            <div class="flex-1 min-w-0">
+                <p class="text-white text-sm font-semibold truncate" id="sidebarGuruNama">-</p>
+                <p class="text-blue-300 text-xs truncate" id="sidebarGuruKelas">-</p>
+            </div>
+        </div>
+    </div>
+
+    <nav class="p-4">
+        <div class="sidebar-section-title">Menu Utama</div>
+        <a class="sidebar-link active" onclick="showSection('dashboard', this)">
+            <i class="fas fa-home"></i> Dashboard
+        </a>
+        <a class="sidebar-link" onclick="showSection('progres', this)">
+            <i class="fas fa-chart-line"></i> Progres Absensi
+        </a>
+        <a class="sidebar-link" onclick="showSection('kelola', this)">
+            <i class="fas fa-users-cog"></i> Kelola Data Kelas
+        </a>
+        <a class="sidebar-link" onclick="showSection('laporan', this)">
+            <i class="fas fa-file-alt"></i> Laporan Bulanan
+        </a>
+        <a class="sidebar-link" onclick="showSection('realtime', this)">
+            <i class="fas fa-clock"></i> Real-Time Monitoring
+        </a>
+
+        <div class="sidebar-section-title">Akun</div>
+        <a href="{{ route('beranda') }}" class="sidebar-link">
+            <i class="fas fa-arrow-left"></i> Kembali ke Beranda
+        </a>
+        <a href="{{ route('identitas.guru') }}" class="sidebar-link">
+            <i class="fas fa-user-edit"></i> Ubah Identitas
+        </a>
+        <a onclick="logout()" class="sidebar-link">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
+    </nav>
+</aside>
+
+<!-- MAIN CONTENT -->
+<div class="flex-1 min-h-screen">
+    <header class="topbar">
+        <div>
+            <nav class="text-xs text-slate-400 mb-1">
+                Home <i class="fas fa-chevron-right text-[8px] mx-1"></i> 
+                <span class="text-blue-600 font-medium" id="breadcrumb">Dashboard</span>
+            </nav>
+            <h2 class="text-lg font-bold text-slate-800" id="pageTitle">Dashboard</h2>
+        </div>
+        <span class="text-sm text-slate-600" id="currentDate">-</span>
     </header>
 
-    <!-- ========== HEADER DASHBOARD ========== -->
-    <section class="gradient-header text-white py-8 md:py-12">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between">
-                <div>
-                    <div class="inline-block bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-medium mb-2">
-                        <i class="fas fa-chalkboard-teacher mr-1"></i> Guru
-                    </div>
-                    <h1 class="text-2xl md:text-3xl font-bold">DASHBOARD GURU</h1>
-                    <p class="text-indigo-100/90 text-sm mt-1">
-                        <i class="fas fa-clock mr-1"></i> Mentoring Kehadiran Real-Time
-                    </p>
-                </div>
-                <div class="mt-4 md:mt-0 text-sm text-indigo-100/90">
-                    <i class="fas fa-calendar-alt mr-1"></i>
-                    <span id="currentDate">Memuat tanggal...</span>
-                </div>
+    <!-- SECTION DASHBOARD -->
+    <div id="section-dashboard" class="section-content active p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="stat-card stat-blue">
+                <p class="text-2xl font-bold" id="statTotalSiswa">0</p>
+                <p class="text-xs opacity-90 mt-1">Total Siswa</p>
+            </div>
+            <div class="stat-card stat-green">
+                <p class="text-2xl font-bold" id="statHadir">0</p>
+                <p class="text-xs opacity-90 mt-1">Hadir Hari Ini</p>
+            </div>
+            <div class="stat-card stat-orange">
+                <p class="text-2xl font-bold" id="statIzin">0</p>
+                <p class="text-xs opacity-90 mt-1">Izin / Sakit</p>
+            </div>
+            <div class="stat-card stat-red">
+                <p class="text-2xl font-bold" id="statAlpha">0</p>
+                <p class="text-xs opacity-90 mt-1">Alpha</p>
             </div>
         </div>
-    </section>
 
-    <!-- ========== MAIN CONTENT ========== -->
-    <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
-
-        <!-- ====== QUICK ACCESS ====== -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <a href="#" class="bg-white rounded-xl shadow-sm border border-slate-200/60 p-4 flex items-center gap-4 hover:shadow-md transition group">
-                <div class="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600 group-hover:scale-110 transition">
-                    <i class="fas fa-chart-pie text-xl"></i>
-                </div>
-                <div>
-                    <p class="text-sm font-medium text-slate-800">Ringkasan</p>
-                    <p class="text-xs text-slate-500">Lihat statistik harian</p>
-                </div>
-                <i class="fas fa-arrow-right text-slate-400 ml-auto group-hover:translate-x-1 transition"></i>
-            </a>
-
-            <a href="#" class="bg-white rounded-xl shadow-sm border border-slate-200/60 p-4 flex items-center gap-4 hover:shadow-md transition group">
-                <div class="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600 group-hover:scale-110 transition">
-                    <i class="fas fa-file-alt text-xl"></i>
-                </div>
-                <div>
-                    <p class="text-sm font-medium text-slate-800">Rekap & Laporan</p>
-                    <p class="text-xs text-slate-500">Unduh data bulanan</p>
-                </div>
-                <i class="fas fa-arrow-right text-slate-400 ml-auto group-hover:translate-x-1 transition"></i>
-            </a>
-
-            <a href="{{ route('absen.siswa.qr') }}" class="bg-white rounded-xl shadow-sm border border-slate-200/60 p-4 flex items-center gap-4 hover:shadow-md transition group">
-                <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center text-purple-600 group-hover:scale-110 transition">
-                    <i class="fas fa-user-graduate text-xl"></i>
-                </div>
-                <div>
-                    <p class="text-sm font-medium text-slate-800">Halaman Absen Siswa</p>
-                    <p class="text-xs text-slate-500">Kelola absensi siswa</p>
-                </div>
-                <i class="fas fa-arrow-right text-slate-400 ml-auto group-hover:translate-x-1 transition"></i>
-            </a>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+            <div class="bg-white rounded-xl border p-5">
+                <h3 class="font-semibold text-sm mb-4">📊 Presensi Per Bulan</h3>
+                <div class="chart-container"><canvas id="barChart"></canvas></div>
+            </div>
+            <div class="bg-white rounded-xl border p-5">
+                <h3 class="font-semibold text-sm mb-4">🥧 Ringkasan Kehadiran</h3>
+                <div class="chart-container"><canvas id="pieChart"></canvas></div>
+            </div>
         </div>
+    </div>
 
-        <!-- ====== PRESENSI HARI INI ====== -->
-        <div class="bg-white rounded-2xl shadow-lg border border-slate-200/60 overflow-hidden">
-            <!-- Header Tabel -->
-            <div class="px-6 py-4 border-b border-slate-200/60 bg-slate-50/50 flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <i class="fas fa-clipboard-list text-indigo-500"></i>
-                    <h3 class="font-semibold text-slate-800">Presensi Hari Ini</h3>
-                    <span class="text-xs bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full">
-                        <span id="totalSiswa">0</span> Siswa
-                    </span>
-                    <span class="text-xs bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded-full">
-                        <i class="fas fa-arrow-up text-[8px] mr-1"></i> Real-Time
-                    </span>
+    <!-- SECTION PROGRES -->
+    <div id="section-progres" class="section-content p-6">
+        <div class="bg-white rounded-xl border p-6">
+            <h3 class="font-semibold mb-4">📈 Progres Absensi <span id="kelasProgres" class="text-blue-600">-</span></h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                <div class="bg-blue-50 rounded-xl p-4">
+                    <p class="text-xs text-slate-600">Rata-rata</p>
+                    <p class="text-2xl font-bold text-blue-600" id="progresAvg">0%</p>
                 </div>
-                <div class="flex items-center gap-2 text-xs text-slate-400">
-                    <i class="fas fa-calendar-alt"></i>
-                    <span id="currentDateSmall">Memuat...</span>
+                <div class="bg-emerald-50 rounded-xl p-4">
+                    <p class="text-xs text-slate-600">Tertinggi</p>
+                    <p class="text-2xl font-bold text-emerald-600" id="progresMax">0%</p>
+                </div>
+                <div class="bg-amber-50 rounded-xl p-4">
+                    <p class="text-xs text-slate-600">Terendah</p>
+                    <p class="text-2xl font-bold text-amber-600" id="progresMin">0%</p>
+                </div>
+                <div class="bg-purple-50 rounded-xl p-4">
+                    <p class="text-xs text-slate-600">Total</p>
+                    <p class="text-2xl font-bold text-purple-600" id="progresTotal">0</p>
                 </div>
             </div>
+            <div id="progresList" class="space-y-4"></div>
+        </div>
+    </div>
 
-            <!-- Tabel -->
+    <!-- SECTION KELOLA -->
+    <div id="section-kelola" class="section-content p-6">
+        <div class="bg-white rounded-xl border p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-semibold">👥 Kelola Data Kelas <span id="kelasKelola" class="text-blue-600">-</span></h3>
+                <button onclick="tambahSiswa()" class="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-lg transition">
+                    <i class="fas fa-plus mr-1"></i> Tambah Siswa
+                </button>
+            </div>
             <div class="overflow-x-auto">
-                <table class="w-full">
+                <table class="w-full text-sm">
                     <thead>
-                        <tr class="bg-slate-50/80 border-b border-slate-200/60">
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Siswa</th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Kelas</th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Waktu</th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Metode</th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+                        <tr class="bg-slate-50 border-b">
+                            <th class="px-4 py-3 text-left">No</th>
+                            <th class="px-4 py-3 text-left">Nama</th>
+                            <th class="px-4 py-3 text-left">NIS</th>
+                            <th class="px-4 py-3 text-center">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody id="presensiTableBody" class="divide-y divide-slate-200/60">
-                        <!-- Data akan diisi oleh JavaScript secara real-time -->
-                    </tbody>
+                    <tbody id="kelolaTableBody"></tbody>
                 </table>
             </div>
-
-            <!-- Footer Tabel -->
-            <div class="px-6 py-4 border-t border-slate-200/60 bg-slate-50/50 flex flex-wrap items-center justify-between gap-2">
-                <div class="flex flex-wrap items-center gap-4 text-xs text-slate-500">
-                    <span class="flex items-center gap-1">
-                        <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
-                        Hadir: <span class="font-semibold text-slate-700" id="totalHadir">0</span>
-                    </span>
-                    <span class="flex items-center gap-1">
-                        <span class="w-3 h-3 rounded-full bg-amber-400"></span>
-                        Izin: <span class="font-semibold text-slate-700" id="totalIzin">0</span>
-                    </span>
-                    <span class="flex items-center gap-1">
-                        <span class="w-3 h-3 rounded-full bg-red-400"></span>
-                        Sakit: <span class="font-semibold text-slate-700" id="totalSakit">0</span>
-                    </span>
-                    <span class="flex items-center gap-1">
-                        <span class="w-3 h-3 rounded-full bg-gray-400"></span>
-                        Alpha: <span class="font-semibold text-slate-700" id="totalAlpha">0</span>
-                    </span>
-                </div>
-                <button onclick="window.location.href='{{ route('rekap.laporan') }}'" class="inline-flex items-center gap-2 text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded-lg transition">
-    <i class="fas fa-file-alt"></i> Lihat Rekap Bulanan
-</button>
-            </div>
         </div>
+    </div>
 
-        <!-- ====== STATISTIK CEPAT ====== -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200/60 p-4 text-center stat-card">
-                <p class="text-2xl font-bold text-indigo-600" id="statTotal">0</p>
-                <p class="text-xs text-slate-500">Total Siswa</p>
+    <!-- SECTION LAPORAN -->
+    <div id="section-laporan" class="section-content p-6">
+        <div class="bg-white rounded-xl border p-6">
+            <h3 class="font-semibold mb-4">📄 Laporan Bulanan</h3>
+            <div class="mb-4 flex gap-2">
+                <select id="laporanBulan" class="border rounded-lg px-3 py-2 text-sm">
+                    <option>Agustus 2026</option>
+                    <option>September 2026</option>
+                    <option>Oktober 2026</option>
+                </select>
+                <button onclick="window.print()" class="bg-blue-600 text-white text-sm px-4 py-2 rounded-lg">
+                    <i class="fas fa-print mr-1"></i> Cetak
+                </button>
+                <button onclick="exportLaporanCSV()" class="bg-emerald-600 text-white text-sm px-4 py-2 rounded-lg">
+                    <i class="fas fa-file-excel mr-1"></i> Export
+                </button>
             </div>
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200/60 p-4 text-center stat-card">
-                <p class="text-2xl font-bold text-emerald-600" id="statHadir">0</p>
-                <p class="text-xs text-slate-500">Hadir</p>
-            </div>
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200/60 p-4 text-center stat-card">
-                <p class="text-2xl font-bold text-amber-600" id="statIzinSakit">0</p>
-                <p class="text-xs text-slate-500">Izin + Sakit</p>
-            </div>
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200/60 p-4 text-center stat-card">
-                <p class="text-2xl font-bold text-rose-600" id="statAlpha">0</p>
-                <p class="text-xs text-slate-500">Alpha</p>
-            </div>
-        </div>
-
-        <!-- Tombol Simulasi -->
-        <div class="mt-6 text-center">
-            <button onclick="simulateNewPresensi()" class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-3 rounded-xl transition shadow-md shadow-indigo-200/60">
-                <i class="fas fa-user-plus"></i> Simulasi Absensi Baru
-            </button>
-            <p class="text-xs text-slate-400 mt-2">
-                <i class="fas fa-info-circle"></i> Klik untuk mensimulasikan siswa baru melakukan absensi
-            </p>
-        </div>
-
-        <!-- Tombol Kembali -->
-        <div class="mt-8 text-center">
-            <a href="{{ route('beranda') }}" class="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-indigo-600 transition">
-                <i class="fas fa-arrow-left"></i> Kembali ke Beranda
-            </a>
-        </div>
-
-    </main>
-
-    <!-- ========== FOOTER ========== -->
-    <footer class="w-full border-t border-slate-200/60 py-4 text-center text-[10px] text-slate-400 bg-white/40 backdrop-blur-sm">
-        <div class="max-w-7xl mx-auto px-4 flex flex-wrap items-center justify-center gap-3">
-            <span>© 2026 Sistem Absensi</span>
-            <span class="w-px h-3 bg-slate-300"></span>
-            <span>Hadirin.web</span>
-            <span class="w-px h-3 bg-slate-300"></span>
-            <span><i class="fas fa-image mr-1"></i> Dashboard Guru2.png</span>
-        </div>
-    </footer>
-
-    <!-- ========== JAVASCRIPT REAL-TIME ========== -->
-    <script>
-        // ===== DATA PRESENSI =====
-        let presensiList = [];
-        let nextId = 1;
-
-        // Data awal
-        const initialData = [
-            { name: 'Najla', kelas: 'XII.PRL', metode: 'Scan', status: 'Hadir' },
-            { name: 'Yasmin', kelas: 'XII.PRL', metode: 'Ketik', status: 'Hadir' },
-            { name: 'Dina', kelas: 'XII.PRL', metode: 'Google Form', status: 'Izin' },
-            { name: 'Alex', kelas: 'XII.PRL', metode: 'Scan', status: 'Hadir' },
-            { name: 'Arjuna', kelas: 'XII.PRL', metode: 'Ketik', status: 'Sakit' }
-        ];
-
-        const metodeList = ['Scan', 'Ketik', 'Google Form', 'QR Code'];
-        const statusList = ['Hadir', 'Hadir', 'Hadir', 'Izin', 'Sakit'];
-        const namesList = ['Budi', 'Siti', 'Ahmad', 'Dewi', 'Rizky', 'Sarah', 'Doni', 'Maya', 'Faisal', 'Hana', 'Gilang', 'Putri'];
-
-        // ===== INISIALISASI =====
-        function initPresensi() {
-            presensiList = [];
-            const baseTime = new Date();
-            baseTime.setHours(8, 0, 0);
-
-            initialData.forEach((item, index) => {
-                const time = new Date(baseTime);
-                time.setMinutes(baseTime.getMinutes() + (index * 5) + Math.floor(Math.random() * 3));
-                
-                presensiList.push({
-                    id: nextId++,
-                    name: item.name,
-                    kelas: item.kelas,
-                    waktu: time,
-                    metode: item.metode,
-                    status: item.status,
-                    isNew: false
-                });
-            });
-
-            // Urutkan dari terbaru ke terlama
-            presensiList.sort((a, b) => b.waktu - a.waktu);
-            renderTable();
-            updateStats();
-        }
-
-        // ===== RENDER TABEL =====
-        function renderTable() {
-            const tbody = document.getElementById('presensiTableBody');
-            
-            let html = '';
-            presensiList.forEach((item, index) => {
-                const statusBadge = getStatusBadge(item.status);
-                const timeStr = formatTime(item.waktu);
-                const isNew = item.isNew ? 'new-row' : '';
-                const highlight = item.isNew ? 'bg-emerald-50/70' : '';
-                const newLabel = item.isNew ? `<span class="text-[8px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full font-medium ml-1"><i class="fas fa-star text-[6px]"></i> Baru</span>` : '';
-                
-                html += `
-                    <tr class="table-row-hover ${highlight} ${isNew}">
-                        <td class="px-6 py-4">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-${getColor(item.name)}-100 flex items-center justify-center text-${getColor(item.name)}-600 text-sm font-bold">
-                                    ${item.name.charAt(0)}
-                                </div>
-                                <span class="font-medium text-slate-800">${item.name}</span>
-                                ${newLabel}
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 text-sm text-slate-600">${item.kelas}</td>
-                        <td class="px-6 py-4 text-sm ${item.isNew ? 'font-medium text-emerald-600' : 'text-slate-500'}">
-                            ${timeStr}
-                            ${item.isNew ? '<span class="text-[10px] text-emerald-400 ml-1">(baru)</span>' : ''}
-                        </td>
-                        <td class="px-6 py-4 text-sm text-slate-600">
-                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-slate-100 text-slate-600">
-                                <i class="fas fa-${getMetodeIcon(item.metode)} text-[10px]"></i>
-                                ${item.metode}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4">${statusBadge}</td>
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="bg-slate-50 border-b">
+                        <th class="px-3 py-2 text-left">No</th>
+                        <th class="px-3 py-2 text-left">Nama</th>
+                        <th class="px-3 py-2 text-center">Hadir</th>
+                        <th class="px-3 py-2 text-center">Izin</th>
+                        <th class="px-3 py-2 text-center">Sakit</th>
+                        <th class="px-3 py-2 text-center">Alpha</th>
+                        <th class="px-3 py-2 text-center">%</th>
                     </tr>
-                `;
-            });
-            
-            tbody.innerHTML = html;
-            
-            // Reset new flag
-            presensiList.forEach(item => item.isNew = false);
-            
-            // Update total
-            document.getElementById('totalSiswa').textContent = presensiList.length;
-        }
+                </thead>
+                <tbody id="laporanTableBody"></tbody>
+            </table>
+        </div>
+    </div>
 
-        // ===== GET STATUS BADGE =====
-        function getStatusBadge(status) {
-            const badges = {
-                'Hadir': `<span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium badge-hadir"><i class="fas fa-check-circle text-emerald-500 text-[10px]"></i> Hadir</span>`,
-                'Izin': `<span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium badge-izin"><i class="fas fa-pen text-amber-500 text-[10px]"></i> Izin</span>`,
-                'Sakit': `<span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium badge-sakit"><i class="fas fa-thermometer-half text-red-500 text-[10px]"></i> Sakit</span>`,
-                'Alpha': `<span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium badge-alpha"><i class="fas fa-times-circle text-red-500 text-[10px]"></i> Alpha</span>`
-            };
-            return badges[status] || badges['Alpha'];
-        }
-
-        // ===== GET METODE ICON =====
-        function getMetodeIcon(metode) {
-            const icons = {
-                'Scan': 'camera',
-                'Ketik': 'keyboard',
-                'Google Form': 'google',
-                'QR Code': 'qrcode'
-            };
-            return icons[metode] || 'check';
-        }
-
-        // ===== GET COLOR =====
-        function getColor(name) {
-            const colors = ['indigo', 'emerald', 'amber', 'red', 'purple', 'blue', 'pink', 'orange', 'teal', 'cyan'];
-            return colors[name.length % colors.length];
-        }
-
-        // ===== FORMAT TIME =====
-        function formatTime(date) {
-            if (!date) return '-';
-            const hours = String(date.getHours()).padStart(2, '0');
-            const minutes = String(date.getMinutes()).padStart(2, '0');
-            return `${hours}.${minutes}`;
-        }
-
-        // ===== UPDATE STATISTICS =====
-        function updateStats() {
-            const hadir = presensiList.filter(s => s.status === 'Hadir').length;
-            const izin = presensiList.filter(s => s.status === 'Izin').length;
-            const sakit = presensiList.filter(s => s.status === 'Sakit').length;
-            const alpha = presensiList.filter(s => s.status === 'Alpha').length;
-            
-            document.getElementById('totalHadir').textContent = hadir;
-            document.getElementById('totalIzin').textContent = izin;
-            document.getElementById('totalSakit').textContent = sakit;
-            document.getElementById('totalAlpha').textContent = alpha;
-            
-            // Statistik card
-            document.getElementById('statTotal').textContent = presensiList.length;
-            document.getElementById('statHadir').textContent = hadir;
-            document.getElementById('statIzinSakit').textContent = izin + sakit;
-            document.getElementById('statAlpha').textContent = alpha;
-        }
-
-        // ===== SIMULASI ABSENSI BARU =====
-        function simulateNewPresensi() {
-            const availableNames = namesList.filter(n => !presensiList.some(p => p.name === n));
-            let name;
-            
-            if (availableNames.length === 0) {
-                name = `Siswa ${presensiList.length + 1}`;
-            } else {
-                name = availableNames[Math.floor(Math.random() * availableNames.length)];
-            }
-            
-            const status = statusList[Math.floor(Math.random() * statusList.length)];
-            const metode = metodeList[Math.floor(Math.random() * metodeList.length)];
-            
-            // Tambahkan ke list dengan waktu sekarang
-            presensiList.push({
-                id: nextId++,
-                name: name,
-                kelas: 'XII.PRL',
-                waktu: new Date(),
-                metode: metode,
-                status: status,
-                isNew: true
-            });
-            
-            // Urutkan dari terbaru ke terlama
-            presensiList.sort((a, b) => b.waktu - a.waktu);
-            
-            renderTable();
-            updateStats();
-            
-            // Highlight row baru
-            setTimeout(() => {
-                const rows = document.querySelectorAll('#presensiTableBody tr');
-                if (rows.length > 0) {
-                    rows[0].style.transition = 'all 0.3s ease';
-                    rows[0].style.backgroundColor = '#d1fae5';
-                    setTimeout(() => {
-                        rows[0].style.backgroundColor = '';
-                    }, 2000);
-                }
-            }, 100);
-            
-            showNotification(`✅ ${name} berhasil absen dengan status ${status}!`);
-        }
-
-        // ===== LIHAT REKAP =====
-        function lihatRekap() {
-            showNotification('📊 Membuka rekap bulanan...');
-            setTimeout(() => {
-                window.location.href = '#';
-            }, 1000);
-        }
-
-        // ===== LOGOUT =====
-        function logout() {
-            if (confirm('Apakah Anda yakin ingin logout?')) {
-                window.location.href = "{{ route('login') }}";
-            }
-        }
-
-        // ===== NOTIFICATION =====
-        function showNotification(message) {
-            const oldNotif = document.querySelector('.notification-toast');
-            if (oldNotif) oldNotif.remove();
-
-            const notification = document.createElement('div');
-            notification.className = 'notification-toast fixed top-24 left-1/2 transform -translate-x-1/2 bg-indigo-600 text-white px-6 py-3 rounded-xl shadow-lg z-50 transition-all duration-500';
-            notification.innerHTML = `
-                <div class="flex items-center gap-3">
-                    <i class="fas fa-info-circle text-xl"></i>
-                    <span class="text-sm font-medium">${message}</span>
+    <!-- SECTION REALTIME -->
+    <div id="section-realtime" class="section-content p-6">
+        <div class="bg-white rounded-xl border p-6">
+            <h3 class="font-semibold mb-4">⏰ Real-Time Monitoring
+                <span class="text-xs bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded-full ml-2">
+                    <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full inline-block animate-pulse"></span> Live
+                </span>
+            </h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                <div class="bg-emerald-50 rounded-xl p-4 text-center">
+                    <p class="text-2xl font-bold text-emerald-600" id="rtHadir">0</p>
+                    <p class="text-xs">Hadir</p>
                 </div>
-            `;
-            document.body.appendChild(notification);
+                <div class="bg-amber-50 rounded-xl p-4 text-center">
+                    <p class="text-2xl font-bold text-amber-600" id="rtIzin">0</p>
+                    <p class="text-xs">Izin</p>
+                </div>
+                <div class="bg-red-50 rounded-xl p-4 text-center">
+                    <p class="text-2xl font-bold text-red-600" id="rtSakit">0</p>
+                    <p class="text-xs">Sakit</p>
+                </div>
+                <div class="bg-gray-50 rounded-xl p-4 text-center">
+                    <p class="text-2xl font-bold text-gray-600" id="rtAlpha">0</p>
+                    <p class="text-xs">Alpha</p>
+                </div>
+            </div>
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="bg-slate-50 border-b">
+                        <th class="px-4 py-2 text-left">Waktu</th>
+                        <th class="px-4 py-2 text-left">Nama</th>
+                        <th class="px-4 py-2 text-left">Metode</th>
+                        <th class="px-4 py-2 text-left">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="realtimeBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</div>
 
-            setTimeout(() => {
-                notification.style.opacity = '0';
-                notification.style.transform = 'translate(-50%, -20px)';
-                setTimeout(() => notification.remove(), 500);
-            }, 4000);
+<script>
+// ============================================================
+// ✅ DATA TERPUSAT - SINKRON DENGAN ADMIN
+// ============================================================
+const GLOBAL_DATA_KEY = 'hadirin_global_data';
+
+// Data default (dipakai kalau belum ada di localStorage)
+const defaultSiswaPerKelas = {
+    'XII.RPL': [
+        { nama: 'Najla Mutia', nis: '12345' },
+        { nama: 'Yasmin Zahra', nis: '12346' },
+        { nama: 'Dina Karima', nis: '12347' },
+        { nama: 'Alex Pratama', nis: '12348' },
+        { nama: 'Arjuna Wijaya', nis: '12349' }
+    ],
+    'XI.RPL': [
+        { nama: 'Budi Santoso', nis: '22345' },
+        { nama: 'Siti Rahayu', nis: '22346' },
+        { nama: 'Ahmad Fauzi', nis: '22347' }
+    ],
+    'XII.TKJ': [
+        { nama: 'Rizky Ramadhan', nis: '32345' },
+        { nama: 'Maya Sari', nis: '32346' }
+    ],
+    'X.RPL': [
+        { nama: 'Hana Permata', nis: '42345' },
+        { nama: 'Gilang Pratama', nis: '42346' }
+    ]
+};
+
+// ============================================================
+// FUNGSI LOAD/SAVE DATA GLOBAL
+// ============================================================
+function loadGlobalData() {
+    const saved = localStorage.getItem(GLOBAL_DATA_KEY);
+    if (saved) {
+        try {
+            return JSON.parse(saved);
+        } catch(e) {
+            console.error('Error parsing global data:', e);
         }
+    }
+    // Kalau belum ada, simpan default
+    const defaultData = {
+        siswaPerKelas: defaultSiswaPerKelas,
+        lastUpdate: new Date().toISOString()
+    };
+    localStorage.setItem(GLOBAL_DATA_KEY, JSON.stringify(defaultData));
+    return defaultData;
+}
 
-        // ===== UPDATE CLOCK =====
-        function updateClock() {
-            const now = new Date();
-            const dateStr = now.toLocaleDateString('id-ID', { 
-                weekday: 'long', 
-                day: '2-digit', 
-                month: '2-digit', 
-                year: 'numeric' 
-            });
-            document.getElementById('currentDate').textContent = dateStr;
-            document.getElementById('currentDateSmall').textContent = dateStr;
-        }
+function saveGlobalData(data) {
+    data.lastUpdate = new Date().toISOString();
+    localStorage.setItem(GLOBAL_DATA_KEY, JSON.stringify(data));
+}
 
-        // ===== INIT =====
-        document.addEventListener('DOMContentLoaded', function() {
-            initPresensi();
+// ============================================================
+// STATE
+// ============================================================
+let identitasGuru = null;
+let presensiList = [];
+let nextId = 1;
+let globalData = loadGlobalData();
+
+// ============================================================
+// FUNGSI PINDAH SECTION
+// ============================================================
+function showSection(nama, element) {
+    console.log('🔄 Pindah ke:', nama);
+    
+    document.querySelectorAll('.section-content').forEach(el => {
+        el.classList.remove('active');
+        el.style.display = 'none';
+    });
+    
+    const target = document.getElementById('section-' + nama);
+    if (target) {
+        target.classList.add('active');
+        target.style.display = 'block';
+    }
+    
+    document.querySelectorAll('.sidebar-link').forEach(el => el.classList.remove('active'));
+    if (element) element.classList.add('active');
+    
+    const titles = {
+        'dashboard': 'Dashboard',
+        'progres': 'Progres Absensi',
+        'kelola': 'Kelola Data Kelas',
+        'laporan': 'Laporan Bulanan',
+        'realtime': 'Real-Time Monitoring'
+    };
+    document.getElementById('breadcrumb').textContent = titles[nama] || 'Dashboard';
+    document.getElementById('pageTitle').textContent = titles[nama] || 'Dashboard';
+}
+
+// ============================================================
+// LOAD DATA GURU
+// ============================================================
+function cekIdentitasGuru() {
+    const saved = localStorage.getItem('identitas_guru');
+    if (saved) {
+        try {
+            identitasGuru = JSON.parse(saved);
+            console.log('✅ Guru:', identitasGuru);
+
+            document.getElementById('sidebarInitial').textContent = identitasGuru.nama.charAt(0).toUpperCase();
+            document.getElementById('sidebarGuruNama').textContent = identitasGuru.nama;
+            document.getElementById('sidebarGuruKelas').textContent = identitasGuru.kelasLengkap;
+            document.getElementById('kelasProgres').textContent = identitasGuru.kelasLengkap;
+            document.getElementById('kelasKelola').textContent = identitasGuru.kelasLengkap;
+
+            loadDataKelas(identitasGuru.kelasLengkap);
             updateClock();
-            setInterval(updateClock, 60000);
-        });
 
-        // ===== KEYBOARD SHORTCUT =====
-        document.addEventListener('keydown', function(e) {
-            if ((e.key === 'a' || e.key === 'A') && !e.ctrlKey && !e.metaKey) {
-                simulateNewPresensi();
-            }
-        });
+        } catch(e) {
+            console.error('Error:', e);
+            window.location.href = "{{ route('identitas.guru') }}";
+        }
+    } else {
+        window.location.href = "{{ route('identitas.guru') }}";
+    }
+}
 
-        console.log('📋 Shortcut: Tekan "A" untuk simulasi absensi baru');
-    </script>
+// ============================================================
+// LOAD DATA KELAS (DARI GLOBAL DATA)
+// ============================================================
+function loadDataKelas(kelas) {
+    presensiList = [];
+    // ✅ Ambil dari global data
+    const students = globalData.siswaPerKelas[kelas] || globalData.siswaPerKelas['XII.RPL'] || [];
+    const statuses = ['Hadir', 'Hadir', 'Hadir', 'Izin', 'Sakit'];
+    const metodes = ['Scan QR', 'ID Unik', 'Izin/Sakit'];
+    const now = new Date();
+
+    for (let i = 0; i < students.length; i++) {
+        const time = new Date(now);
+        time.setMinutes(now.getMinutes() - (students.length - 1 - i) * 5);
+        
+        presensiList.push({
+            id: nextId++,
+            nama: students[i].nama,
+            nis: students[i].nis,
+            kelas: kelas,
+            waktu: time,
+            metode: metodes[i % metodes.length],
+            status: statuses[i % statuses.length]
+        });
+    }
+
+    renderDashboard();
+    renderProgres();
+    renderKelola(kelas);
+    renderLaporan();
+    renderRealtime();
+    initCharts();
+}
+
+// ============================================================
+// RENDER DASHBOARD
+// ============================================================
+function renderDashboard() {
+    let hadir = 0, izin = 0, sakit = 0, alpha = 0;
+    presensiList.forEach(s => {
+        if (s.status === 'Hadir') hadir++;
+        else if (s.status === 'Izin') izin++;
+        else if (s.status === 'Sakit') sakit++;
+        else alpha++;
+    });
+    const total = presensiList.length;
+
+    document.getElementById('statTotalSiswa').textContent = total;
+    document.getElementById('statHadir').textContent = hadir;
+    document.getElementById('statIzin').textContent = izin + sakit;
+    document.getElementById('statAlpha').textContent = alpha;
+}
+
+// ============================================================
+// RENDER PROGRES
+// ============================================================
+function renderProgres() {
+    const list = document.getElementById('progresList');
+    if (!list) return;
+    
+    if (presensiList.length === 0) {
+        list.innerHTML = '<p class="text-sm text-slate-400 text-center py-4">Tidak ada data</p>';
+        return;
+    }
+
+    const persens = presensiList.map(s => {
+        return s.status === 'Hadir' ? 85 + Math.floor(Math.random() * 15) : 50 + Math.floor(Math.random() * 30);
+    });
+    
+    document.getElementById('progresAvg').textContent = Math.round(persens.reduce((a,b) => a+b, 0) / persens.length) + '%';
+    document.getElementById('progresMax').textContent = Math.max(...persens) + '%';
+    document.getElementById('progresMin').textContent = Math.min(...persens) + '%';
+    document.getElementById('progresTotal').textContent = presensiList.length;
+
+    list.innerHTML = presensiList.map((s, i) => {
+        const persen = persens[i];
+        const color = persen >= 90 ? 'bg-emerald-500' : persen >= 70 ? 'bg-amber-500' : 'bg-red-500';
+        return `
+            <div>
+                <div class="flex justify-between text-sm mb-1">
+                    <span class="font-medium">${s.nama}</span>
+                    <span class="text-slate-500">${persen}%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill ${color}" style="width:${persen}%"></div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// ============================================================
+// RENDER KELOLA
+// ============================================================
+function renderKelola(kelas) {
+    const tbody = document.getElementById('kelolaTableBody');
+    if (!tbody) return;
+    
+    let html = '';
+    presensiList.forEach((s, i) => {
+        html += `
+            <tr class="border-b hover:bg-slate-50">
+                <td class="px-4 py-3">${i+1}</td>
+                <td class="px-4 py-3 font-medium">${s.nama}</td>
+                <td class="px-4 py-3">${s.nis}</td>
+                <td class="px-4 py-3 text-center">
+                    <button onclick="editSiswa(${i})" class="text-blue-600 mr-2 hover:text-blue-800">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button onclick="hapusSiswa(${i})" class="text-red-600 hover:text-red-800">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+    tbody.innerHTML = html;
+}
+
+// ============================================================
+// RENDER LAPORAN
+// ============================================================
+function renderLaporan() {
+    const tbody = document.getElementById('laporanTableBody');
+    if (!tbody) return;
+    
+    let html = '';
+    presensiList.forEach((s, i) => {
+        const hadir = s.status === 'Hadir' ? 25 : 20;
+        const izin = s.status === 'Izin' ? 3 : 0;
+        const sakit = s.status === 'Sakit' ? 2 : 0;
+        const alpha = s.status === 'Alpha' ? 3 : 0;
+        const total = hadir + izin + sakit + alpha;
+        const persen = Math.round((hadir / total) * 100);
+        html += `
+            <tr class="border-b">
+                <td class="px-3 py-2">${i+1}</td>
+                <td class="px-3 py-2 font-medium">${s.nama}</td>
+                <td class="px-3 py-2 text-center text-emerald-600">${hadir}</td>
+                <td class="px-3 py-2 text-center text-amber-600">${izin}</td>
+                <td class="px-3 py-2 text-center text-red-500">${sakit}</td>
+                <td class="px-3 py-2 text-center text-gray-500">${alpha}</td>
+                <td class="px-3 py-2 text-center font-semibold text-blue-600">${persen}%</td>
+            </tr>
+        `;
+    });
+    tbody.innerHTML = html;
+}
+
+// ============================================================
+// RENDER REALTIME
+// ============================================================
+function renderRealtime() {
+    let hadir = 0, izin = 0, sakit = 0, alpha = 0;
+    presensiList.forEach(s => {
+        if (s.status === 'Hadir') hadir++;
+        else if (s.status === 'Izin') izin++;
+        else if (s.status === 'Sakit') sakit++;
+        else alpha++;
+    });
+    document.getElementById('rtHadir').textContent = hadir;
+    document.getElementById('rtIzin').textContent = izin;
+    document.getElementById('rtSakit').textContent = sakit;
+    document.getElementById('rtAlpha').textContent = alpha;
+
+    const tbody = document.getElementById('realtimeBody');
+    let html = '';
+    presensiList.forEach(s => {
+        const h = String(s.waktu.getHours()).padStart(2, '0');
+        const m = String(s.waktu.getMinutes()).padStart(2, '0');
+        const badge = s.status === 'Hadir' ? 'badge-hadir' : s.status === 'Izin' ? 'badge-izin' : 'badge-sakit';
+        html += `
+            <tr class="border-b">
+                <td class="px-4 py-2">${h}.${m}</td>
+                <td class="px-4 py-2 font-medium">${s.nama}</td>
+                <td class="px-4 py-2">${s.metode}</td>
+                <td class="px-4 py-2"><span class="${badge}">${s.status}</span></td>
+            </tr>
+        `;
+    });
+    tbody.innerHTML = html;
+}
+
+// ============================================================
+// CHARTS
+// ============================================================
+function initCharts() {
+    const barEl = document.getElementById('barChart');
+    if (barEl) {
+        new Chart(barEl, {
+            type: 'bar',
+            data: {
+                labels: ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'],
+                datasets: [{
+                    label: 'Hadir',
+                    data: [220,215,225,230,220,195,210,225,230,220,215,220],
+                    backgroundColor: '#10b981'
+                }, {
+                    label: 'Izin',
+                    data: [15,20,12,18,22,15,20,18,15,20,18,15],
+                    backgroundColor: '#f59e0b'
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+    }
+
+    const pieEl = document.getElementById('pieChart');
+    if (pieEl) {
+        let hadir = 0, izin = 0, sakit = 0, alpha = 0;
+        presensiList.forEach(s => {
+            if (s.status === 'Hadir') hadir++;
+            else if (s.status === 'Izin') izin++;
+            else if (s.status === 'Sakit') sakit++;
+            else alpha++;
+        });
+        new Chart(pieEl, {
+            type: 'doughnut',
+            data: {
+                labels: ['Hadir','Izin','Sakit','Alpha'],
+                datasets: [{
+                    data: [hadir, izin, sakit, alpha],
+                    backgroundColor: ['#10b981','#f59e0b','#ef4444','#94a3b8']
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, cutout: '60%' }
+        });
+    }
+}
+
+// ============================================================
+// FUNGSI TAMBAHAN
+// ============================================================
+function tambahSiswa() {
+    if (!identitasGuru) return;
+    
+    const nama = prompt('Nama Siswa:');
+    if (!nama) return;
+    const nis = prompt('NIS:');
+    if (!nis) return;
+    
+    // ✅ Simpan ke global data
+    const kelas = identitasGuru.kelasLengkap;
+    if (!globalData.siswaPerKelas[kelas]) {
+        globalData.siswaPerKelas[kelas] = [];
+    }
+    globalData.siswaPerKelas[kelas].push({ nama, nis });
+    saveGlobalData(globalData);
+    
+    // Reload
+    loadDataKelas(kelas);
+    alert(`✅ Siswa "${nama}" berhasil ditambahkan!`);
+}
+
+function editSiswa(index) {
+    alert('Edit siswa index: ' + index + ' (fungsi bisa dikembangkan)');
+}
+
+function hapusSiswa(index) {
+    if (!identitasGuru) return;
+    if (!confirm('Yakin hapus siswa ini?')) return;
+    
+    const kelas = identitasGuru.kelasLengkap;
+    if (globalData.siswaPerKelas[kelas]) {
+        globalData.siswaPerKelas[kelas].splice(index, 1);
+        saveGlobalData(globalData);
+        loadDataKelas(kelas);
+        alert('✅ Siswa berhasil dihapus!');
+    }
+}
+
+function exportLaporanCSV() {
+    if (presensiList.length === 0) {
+        alert('⚠️ Tidak ada data!');
+        return;
+    }
+    
+    const headers = ['No', 'Nama', 'NIS', 'Hadir', 'Izin', 'Sakit', 'Alpha', 'Persentase'];
+    const rows = presensiList.map((s, i) => {
+        const hadir = s.status === 'Hadir' ? 25 : 20;
+        const izin = s.status === 'Izin' ? 3 : 0;
+        const sakit = s.status === 'Sakit' ? 2 : 0;
+        const alpha = s.status === 'Alpha' ? 3 : 0;
+        const total = hadir + izin + sakit + alpha;
+        const persen = Math.round((hadir / total) * 100) + '%';
+        return [i+1, s.nama, s.nis, hadir, izin, sakit, alpha, persen];
+    });
+    
+    const csv = [
+        headers.join(','),
+        ...rows.map(r => r.map(c => `"${c}"`).join(','))
+    ].join('\n');
+    
+    const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const dateStr = new Date().toISOString().split('T')[0];
+    link.setAttribute('href', url);
+    link.setAttribute('download', `Laporan_${identitasGuru.kelasLengkap}_${dateStr}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+function updateClock() {
+    const now = new Date();
+    document.getElementById('currentDate').textContent = now.toLocaleDateString('id-ID', {
+        weekday: 'long', day: '2-digit', month: 'long', year: 'numeric'
+    });
+}
+
+function logout() {
+    if (confirm('Yakin ingin logout?')) {
+        window.location.href = "{{ route('login') }}";
+    }
+}
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('📊 Dashboard Guru siap!');
+    cekIdentitasGuru();
+});
+</script>
 
 </body>
 </html>
