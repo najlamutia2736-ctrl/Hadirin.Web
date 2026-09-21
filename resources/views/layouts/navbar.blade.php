@@ -10,23 +10,29 @@
                 <span class="hidden sm:inline-block text-[10px] font-medium bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full">beta</span>
             </div>
 
-           <!-- Menu Desktop -->
-<div class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
-    <a href="{{ route('home') }}" class="hover:text-indigo-600 transition {{ request()->routeIs('home') ? 'text-indigo-600 font-semibold' : '' }}">Home</a>
-    <a href="{{ route('beranda') }}" class="hover:text-indigo-600 transition {{ request()->routeIs('beranda') ? 'text-indigo-600 font-semibold' : '' }}">Beranda</a>
-    <a href="#" class="hover:text-indigo-600 transition">Absen Siswa</a>
-    <a href="#" class="hover:text-indigo-600 transition">Dashboard Guru</a>
-    <a href="#" class="hover:text-indigo-600 transition">Rekap</a>
-</div>
+            <!-- Menu Desktop -->
+            <div class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
+                <a href="{{ route('beranda') }}" class="hover:text-indigo-600 transition {{ request()->routeIs('beranda') ? 'text-indigo-600 font-semibold' : '' }}">Beranda</a>
+                <a href="{{ route('identitas.siswa') }}" class="hover:text-indigo-600 transition {{ request()->routeIs('identitas.siswa') ? 'text-indigo-600 font-semibold' : '' }}">Absen Siswa</a>
+                <a href="{{ route('identitas.guru') }}" class="hover:text-indigo-600 transition {{ request()->routeIs('identitas.guru') ? 'text-indigo-600 font-semibold' : '' }}">Dashboard Guru</a>
+                <a href="{{ route('dashboard.admin') }}" class="hover:text-indigo-600 transition {{ request()->routeIs('dashboard.admin') ? 'text-indigo-600 font-semibold' : '' }}">Dashboard Admin</a>
+                <a href="{{ route('rekap.laporan') }}" class="hover:text-indigo-600 transition {{ request()->routeIs('rekap.laporan') ? 'text-indigo-600 font-semibold' : '' }}">Rekap</a>
+            </div>
 
             <!-- Tombol Login / User -->
             <div class="hidden md:block">
                 @auth
-                    <a href="#" class="inline-flex items-center gap-2 bg-indigo-600 text-white text-sm font-medium px-5 py-2.5 rounded-full shadow-md shadow-indigo-200 transition hover:bg-indigo-700">
-                        <i class="fas fa-user text-xs"></i> {{ Auth::user()->name }}
-                    </a>
+                    <div class="flex items-center gap-3">
+                        <span class="text-sm text-slate-600 flex items-center gap-2">
+                            <i class="fas fa-user-circle text-indigo-600 text-lg"></i>
+                            <span>{{ Auth::user()->name }}</span>
+                        </span>
+                        <a href="{{ route('login') }}" class="text-sm text-red-500 hover:text-red-700 transition">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a>
+                    </div>
                 @else
-                    <a href="{{ route('login') }}" class="inline-flex items-center gap-2 bg-indigo-600 text-white text-sm font-medium px-5 py-2.5 rounded-full shadow-md shadow-indigo-200 transition hover:bg-indigo-700 {{ request()->routeIs('login', 'login2') ? 'ring-2 ring-indigo-300' : '' }}">
+                    <a href="{{ route('login') }}" class="inline-flex items-center gap-2 bg-indigo-600 text-white text-sm font-medium px-5 py-2.5 rounded-full shadow-md shadow-indigo-200 transition hover:bg-indigo-700">
                         <i class="fas fa-arrow-right-to-bracket text-xs"></i> Log In
                     </a>
                 @endauth
@@ -39,10 +45,44 @@
                 @else
                     <a href="{{ route('login') }}" class="text-sm font-medium text-indigo-600 bg-indigo-50 px-4 py-2 rounded-full">Log In</a>
                 @endauth
-                <button class="text-slate-500 hover:text-indigo-600 transition" id="mobileMenuButton">
-                    <i class="fas fa-bars text-xl"></i>
+                <button class="text-slate-500 hover:text-indigo-600 transition" onclick="toggleMobileNav()">
+                    <i class="fas fa-bars text-xl" id="mobileNavIcon"></i>
                 </button>
             </div>
         </nav>
     </div>
+
+    <!-- Mobile Dropdown Menu -->
+    <div id="mobileNavDropdown" class="hidden md:hidden border-t border-slate-200/60 bg-white/95 backdrop-blur-sm">
+        <div class="px-4 py-3 space-y-1">
+            <a href="{{ route('beranda') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
+                <i class="fas fa-home w-5"></i> Beranda
+            </a>
+            <a href="{{ route('identitas.siswa') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
+                <i class="fas fa-user-graduate w-5"></i> Absen Siswa
+            </a>
+            <a href="{{ route('identitas.guru') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
+                <i class="fas fa-chalkboard-teacher w-5"></i> Dashboard Guru
+            </a>
+            <a href="{{ route('dashboard.admin') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
+                <i class="fas fa-user-shield w-5"></i> Dashboard Admin
+            </a>
+            <a href="{{ route('rekap.laporan') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
+                <i class="fas fa-file-alt w-5"></i> Rekap
+            </a>
+        </div>
+    </div>
 </header>
+
+<script>
+function toggleMobileNav() {
+    const menu = document.getElementById('mobileNavDropdown');
+    const icon = document.getElementById('mobileNavIcon');
+    if (!menu) return;
+    menu.classList.toggle('hidden');
+    if (icon) {
+        icon.classList.toggle('fa-bars');
+        icon.classList.toggle('fa-times');
+    }
+}
+</script>

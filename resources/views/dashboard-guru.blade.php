@@ -597,6 +597,68 @@ function startRealtimeAutoRefresh() {
         }
     }, 3000);
 }
+// ✅ Fungsi khusus tombol Refresh manual - dengan efek visual
+function refreshRealtimeManual(buttonEl) {
+    console.log('🔄 Refresh manual ditekan');
+    
+    // 1) Efek visual: putar ikon
+    let iconEl = null;
+    if (buttonEl) {
+        iconEl = buttonEl.querySelector('i.fa-sync-alt');
+        if (iconEl) {
+            // Putar ikon 360 derajat
+            iconEl.style.transition = 'transform 0.6s ease';
+            iconEl.style.transform = 'rotate(360deg)';
+            
+            // Reset setelah animasi selesai
+            setTimeout(() => {
+                iconEl.style.transition = 'none';
+                iconEl.style.transform = 'rotate(0deg)';
+                setTimeout(() => {
+                    iconEl.style.transition = 'transform 0.6s ease';
+                }, 50);
+            }, 650);
+        }
+        
+        // Efek tombol: ganti warna sebentar
+        buttonEl.classList.add('bg-blue-200');
+        setTimeout(() => {
+            buttonEl.classList.remove('bg-blue-200');
+        }, 400);
+    }
+    
+    // 2) Muat ulang data dari localStorage
+    try {
+        loadRealtimeFromStorage();
+        console.log('✅ Data real-time berhasil di-refresh');
+    } catch (e) {
+        console.error('❌ Gagal refresh:', e);
+    }
+    
+    // 3) Notifikasi kecil (toast)
+    showRealtimeToast('Data berhasil di-refresh');
+}
+
+// Toast notifikasi khusus realtime
+function showRealtimeToast(message) {
+    const oldToast = document.querySelector('.realtime-toast');
+    if (oldToast) oldToast.remove();
+    
+    const toast = document.createElement('div');
+    toast.className = 'realtime-toast fixed top-20 right-6 bg-blue-600 text-white px-4 py-2.5 rounded-lg shadow-lg z-50 flex items-center gap-2 text-sm';
+    toast.style.animation = 'slideInRight 0.3s ease-out';
+    toast.innerHTML = `
+        <i class="fas fa-check-circle"></i>
+        <span>${message}</span>
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s';
+        setTimeout(() => toast.remove(), 300);
+    }, 2000);
+}
 
 // ============================================================
 // RENDER DASHBOARD
@@ -856,12 +918,12 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('📊 Dashboard Guru siap!');
     cekIdentitasGuru();
 
-    // ✅ Muat data real-time & mulai auto-refresh
+    // ✅ Muat data real-time
     setTimeout(() => {
         loadRealtimeFromStorage();
-        startRealtimeAutoRefresh();
     }, 300);
 });
+
 </script>
 
 </body>

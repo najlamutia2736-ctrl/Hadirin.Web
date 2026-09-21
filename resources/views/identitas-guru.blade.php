@@ -56,23 +56,50 @@
                     </a>
                     <span class="hidden sm:inline-block text-[10px] font-medium bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full">beta</span>
                 </div>
-                <div class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
-                    <a href="{{ route('beranda') }}" class="hover:text-indigo-600 transition">Beranda</a>
-                    <a href="{{ route('identitas.siswa') }}" class="hover:text-indigo-600 transition">Absen Siswa</a>
-                    <a href="{{ route('identitas.guru') }}" class="hover:text-indigo-600 transition text-blue-600 font-semibold">Dashboard Guru</a>
-                    <a href="{{ route('rekap.laporan') }}" class="hover:text-indigo-600 transition">Rekap</a>
-                </div>
+<div class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
+    <a href="{{ route('beranda') }}" class="hover:text-indigo-600 transition">Beranda</a>
+    <a href="{{ route('identitas.siswa') }}" class="hover:text-indigo-600 transition">Absen Siswa</a>
+    <a href="{{ route('identitas.guru') }}" class="hover:text-indigo-600 transition text-blue-600 font-semibold">Dashboard Guru</a>
+    <a href="{{ route('dashboard.admin') }}" class="hover:text-indigo-600 transition">Dashboard Admin</a>
+    <a href="{{ route('rekap.laporan') }}" class="hover:text-indigo-600 transition">Rekap</a>
+</div>
                 <div class="hidden md:block">
                     <div class="flex items-center gap-3">
                         <span class="text-sm text-slate-600"><i class="fas fa-user-circle text-blue-600 text-lg"></i> Guru</span>
                         <a href="{{ route('login') }}" class="text-sm text-red-500 hover:text-red-700 transition"><i class="fas fa-sign-out-alt"></i> Logout</a>
                     </div>
                 </div>
-                <div class="md:hidden flex items-center gap-3">
-                    <span class="text-sm font-medium text-slate-600"><i class="fas fa-user-circle text-blue-600"></i> Guru</span>
-                    <button class="text-slate-500 hover:text-indigo-600 transition"><i class="fas fa-bars text-xl"></i></button>
-                </div>
+<div class="md:hidden flex items-center gap-3">
+    <span class="text-sm font-medium text-slate-600"><i class="fas fa-user-circle text-blue-600"></i> Guru</span>
+    <button onclick="toggleMobileMenu()" class="text-slate-500 hover:text-indigo-600 transition">
+        <i class="fas fa-bars text-xl" id="mobileMenuIcon"></i>
+    </button>
+</div>
             </nav>
+            <!-- Mobile Dropdown Menu -->
+<div id="mobileMenu" class="hidden md:hidden border-t border-slate-200/60 bg-white/95 backdrop-blur-sm">
+    <div class="px-4 py-3 space-y-1">
+        <a href="{{ route('beranda') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
+            <i class="fas fa-home w-5"></i> Beranda
+        </a>
+        <a href="{{ route('identitas.siswa') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
+            <i class="fas fa-user-graduate w-5"></i> Absen Siswa
+        </a>
+        <a href="{{ route('identitas.guru') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-blue-600 bg-blue-50">
+            <i class="fas fa-chalkboard-teacher w-5"></i> Dashboard Guru
+        </a>
+        <a href="{{ route('dashboard.admin') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
+            <i class="fas fa-user-shield w-5"></i> Dashboard Admin
+        </a>
+        <a href="{{ route('rekap.laporan') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
+            <i class="fas fa-file-alt w-5"></i> Rekap
+        </a>
+        <div class="border-t border-slate-200/60 my-2"></div>
+        <a href="{{ route('login') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50">
+            <i class="fas fa-sign-out-alt w-5"></i> Logout
+        </a>
+    </div>
+</div>
         </div>
     </header>
 
@@ -286,6 +313,26 @@
                 notification.style.transform = 'translate(-50%, -20px)';
                 setTimeout(() => notification.remove(), 500);
             }, 4000);
+        }
+
+        // ============================================================
+        // MOBILE MENU TOGGLE
+        // ============================================================
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobileMenu');
+            const icon = document.getElementById('mobileMenuIcon');
+            if (!menu) return;
+            
+            menu.classList.toggle('hidden');
+            if (icon) {
+                if (menu.classList.contains('hidden')) {
+                    icon.classList.remove('fa-times');
+                    icon.classList.add('fa-bars');
+                } else {
+                    icon.classList.remove('fa-bars');
+                    icon.classList.add('fa-times');
+                }
+            }
         }
 
         document.addEventListener('DOMContentLoaded', function() {

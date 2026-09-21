@@ -27,13 +27,14 @@
                     <span class="hidden sm:inline-block text-[10px] font-medium bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full">beta</span>
                 </div>
 
-                <!-- Menu Desktop -->
-                <div class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
-                    <a href="{{ route('beranda') }}" class="hover:text-indigo-600 transition text-indigo-600 font-semibold">Beranda</a>
-                    <a href="{{ route('identitas.siswa') }}" class="hover:text-indigo-600 transition">Absen Siswa</a>
-                    <a href="{{ route('identitas.guru') }}" class="hover:text-indigo-600 transition">Dashboard Guru</a>
-                    <a href="{{ route('rekap.laporan') }}" class="hover:text-indigo-600 transition">Rekap</a>
-                </div>
+<!-- Menu Desktop -->
+<div class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
+    <a href="{{ route('beranda') }}" class="hover:text-indigo-600 transition text-indigo-600 font-semibold">Beranda</a>
+    <a href="{{ route('identitas.siswa') }}" class="hover:text-indigo-600 transition">Absen Siswa</a>
+    <a href="{{ route('identitas.guru') }}" class="hover:text-indigo-600 transition">Dashboard Guru</a>
+    <a href="{{ route('dashboard.admin') }}" class="hover:text-indigo-600 transition">Dashboard Admin</a>
+    <a href="{{ route('rekap.laporan') }}" class="hover:text-indigo-600 transition">Rekap</a>
+</div>
 
                 <!-- Tombol User (DINAMIS - NAMA DARI EMAIL) -->
                 <div class="hidden md:block">
@@ -48,17 +49,41 @@
                     </div>
                 </div>
 
-                <!-- Mobile Menu -->
-                <div class="md:hidden flex items-center gap-3">
-                    <span class="text-sm font-medium text-slate-600 flex items-center gap-1">
-                        <i class="fas fa-user-circle text-indigo-600"></i>
-                        <span id="userNavNameMobile">Najla</span>
-                    </span>
-                    <button class="text-slate-500 hover:text-indigo-600 transition">
-                        <i class="fas fa-bars text-xl"></i>
-                    </button>
-                </div>
+<!-- Mobile Menu -->
+<div class="md:hidden flex items-center gap-3">
+    <span class="text-sm font-medium text-slate-600 flex items-center gap-1">
+        <i class="fas fa-user-circle text-indigo-600"></i>
+        <span id="userNavNameMobile">Najla</span>
+    </span>
+    <button onclick="toggleMobileMenu()" class="text-slate-500 hover:text-indigo-600 transition">
+        <i class="fas fa-bars text-xl" id="mobileMenuIcon"></i>
+    </button>
+</div>
             </nav>
+            <!-- Mobile Dropdown Menu -->
+<div id="mobileMenu" class="hidden md:hidden border-t border-slate-200/60 bg-white/95 backdrop-blur-sm">
+    <div class="px-4 py-3 space-y-1">
+        <a href="{{ route('beranda') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-indigo-600 bg-indigo-50">
+            <i class="fas fa-home w-5"></i> Beranda
+        </a>
+        <a href="{{ route('identitas.siswa') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
+            <i class="fas fa-user-graduate w-5"></i> Absen Siswa
+        </a>
+        <a href="{{ route('identitas.guru') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
+            <i class="fas fa-chalkboard-teacher w-5"></i> Dashboard Guru
+        </a>
+        <a href="{{ route('dashboard.admin') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
+            <i class="fas fa-user-shield w-5"></i> Dashboard Admin
+        </a>
+        <a href="{{ route('rekap.laporan') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
+            <i class="fas fa-file-alt w-5"></i> Rekap
+        </a>
+        <div class="border-t border-slate-200/60 my-2"></div>
+        <a href="{{ route('login') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50">
+            <i class="fas fa-sign-out-alt w-5"></i> Logout
+        </a>
+    </div>
+</div>
         </div>
     </header>
 
@@ -180,34 +205,54 @@
 
     <!-- ========== JAVASCRIPT: UPDATE NAMA DARI EMAIL ========== -->
     <script>
-        // ============================================================
-        // UPDATE NAMA DI NAVBAR DARI EMAIL YANG DIDAFTARKAN
-        // ============================================================
-        document.addEventListener('DOMContentLoaded', function() {
-            const nama = localStorage.getItem('user_nama');
-            const email = localStorage.getItem('user_email');
-            
-            console.log('📧 Email dari storage:', email);
-            console.log('👤 Nama dari storage:', nama);
-            
-            if (nama) {
-                // Update nama di navbar desktop
-                const navName = document.getElementById('userNavName');
-                if (navName) {
-                    navName.textContent = nama;
-                    console.log('✅ Navbar desktop diupdate:', nama);
-                }
-                
-                // Update nama di navbar mobile (hanya nama depan)
-                const navNameMobile = document.getElementById('userNavNameMobile');
-                if (navNameMobile) {
-                    navNameMobile.textContent = nama.split(' ')[0];
-                    console.log('✅ Navbar mobile diupdate:', nama.split(' ')[0]);
-                }
-            } else {
-                console.warn('⚠️ Nama tidak ditemukan di localStorage. Silakan login dulu.');
-            }
-        });
+ // ============================================================
+// MOBILE MENU TOGGLE
+// ============================================================
+function toggleMobileMenu() {
+    const menu = document.getElementById('mobileMenu');
+    const icon = document.getElementById('mobileMenuIcon');
+    if (!menu) return;
+    
+    menu.classList.toggle('hidden');
+    if (icon) {
+        if (menu.classList.contains('hidden')) {
+            icon.classList.remove('fa-times');
+            icon.classList.add('fa-bars');
+        } else {
+            icon.classList.remove('fa-bars');
+            icon.classList.add('fa-times');
+        }
+    }
+}
+
+// ============================================================
+// INIT - Update nama dari localStorage
+// ============================================================
+document.addEventListener('DOMContentLoaded', function() {
+    const nama = localStorage.getItem('user_nama');
+    const email = localStorage.getItem('user_email');
+    
+    console.log('📧 Email dari storage:', email);
+    console.log('👤 Nama dari storage:', nama);
+    
+    if (nama) {
+        // Update nama di navbar desktop
+        const navName = document.getElementById('userNavName');
+        if (navName) {
+            navName.textContent = nama;
+            console.log('✅ Navbar desktop diupdate:', nama);
+        }
+        
+        // Update nama di navbar mobile (hanya nama depan)
+        const navNameMobile = document.getElementById('userNavNameMobile');
+        if (navNameMobile) {
+            navNameMobile.textContent = nama.split(' ')[0];
+            console.log('✅ Navbar mobile diupdate:', nama.split(' ')[0]);
+        }
+    } else {
+        console.warn('⚠️ Nama tidak ditemukan di localStorage. Silakan login dulu.');
+    }
+});
     </script>
 
 </body>
