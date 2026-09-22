@@ -69,3 +69,27 @@ Route::get('/rekap/laporan', function () {
 Route::get('/identitas-guru', function () {
     return view('identitas-guru');
 })->name('identitas.guru');
+
+Route::get('/dashboard', function () {
+    return view('cms.dashboard');
+})->name('cms.dashboard');
+
+Route::get('/students', function() {
+    return view ('cms.student');
+})->name('cms.students');
+
+Route::get('/teachers', function () {
+    return view('cms.teachers');
+})->name('cms.teachers');
+
+Route::get('/classes', function () {
+    return view('cms.classes');
+})->name('cms.classes');
+
+Route::get('/users', function () {
+    return view('cms.users');
+})->name('cms.users');
+
+Route::get('/rekap', function () {
+    return view('cms.rekap');
+})->name('cms.rekap');

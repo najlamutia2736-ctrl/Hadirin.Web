@@ -1,25 +1,46 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Sistem Absensi')</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <title>Dashboard Sekolah · Tailwind</title>
+    <!-- Tailwind via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome untuk ikon (opsional, biar lebih hidup) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* small custom transition */
+        .sidebar-link {
+            transition: background 0.2s ease, color 0.2s ease;
+        }
+    </style>
 </head>
-<body class="bg-gray-100">
-    <!-- Navbar -->
-    <x-navbar />
 
-    <!-- Konten Halaman -->
-    <main class="container mx-auto px-4 py-8 bg-white-900">
-        @yield('content')
-    </main>
+<body class="bg-gray-50 font-sans antialiased">
 
-    <!-- Footer -->
-    <footer class="bg-white shadow-lg mt-8">
-        <div class="container mx-auto px-4 py-4 text-center text-gray-600">
-            &copy; 2026 Sistem Absensi
+    <div class="flex h-screen overflow-hidden">
+
+        <!-- ========== SIDEBAR ========== -->
+        @include('components.sidebar')
+
+        <!-- ========== KONTEN UTAMA ========== -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+
+            <!-- topbar -->
+            @include('components.header')
+
+            <main class="flex-1 overflow-y-auto p-6 bg-gray-50">
+
+                <!-- content -->
+                @yield('konten')
+
+                <!-- footer kecil (opsional) -->
+                @include('components.footer')
+            </main>
+
         </div>
-    </footer>
+    </div>
 </body>
+
 </html>
