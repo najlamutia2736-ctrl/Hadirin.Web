@@ -1,72 +1,115 @@
- <aside class="w-64 bg-white border-r border-gray-200 flex flex-col shadow-sm">
-     <!-- brand / logo -->
-     <div class="h-16 flex items-center px-6 border-b border-gray-200">
-         <i class="fas fa-school text-indigo-600 text-2xl mr-3"></i>
-         <span class="text-xl font-semibold text-gray-800 tracking-tight">EduPanel</span>
-     </div>
+@php
+    $menuGroups = [
+        [
+            'label' => 'Menu Utama',
+            'items' => [
+                ['label' => 'Dashboard', 'route' => 'cms.dashboard', 'icon' => 'fas fa-tachometer-alt'],
+            ],
+        ],
+        [
+            'label' => 'Manajemen',
+            'items' => [
+                ['label' => 'Students', 'route' => 'cms.students', 'icon' => 'fas fa-user-graduate'],
+                ['label' => 'Teachers', 'route' => 'cms.teachers', 'icon' => 'fas fa-chalkboard-teacher'],
+                ['label' => 'Classes', 'route' => 'cms.classes', 'icon' => 'fas fa-book-open'],
+            ],
+        ],
+        [
+            'label' => 'Sistem',
+            'items' => [
+                ['label' => 'Users', 'route' => 'cms.users', 'icon' => 'fas fa-users-cog'],
+                ['label' => 'Rekap', 'route' => 'cms.rekap', 'icon' => 'fas fa-clipboard-list'],
+            ],
+        ],
+    ];
+@endphp
 
-     <!-- menu navigasi -->
-     <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-         <!-- Dashboard (aktif) -->
-         <a href="/dashboard"
-             class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('cms.dashboard') ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700' }}">
-             <i
-                 class="fas fa-tachometer-alt w-5 {{ request()->routeIs('cms.dashboard') ? 'text-indigo-600' : 'text-gray-500' }}"></i>
-             <span class="ml-3">Dashboard</span>
-         </a>
+<aside class="sidebar-nav w-64 shrink-0 flex flex-col border-r border-gray-200 bg-gradient-to-b from-white via-white to-gray-50 shadow-sm">
+    <!-- brand / logo -->
+    <div class="relative h-16 shrink-0 flex items-center gap-3 overflow-hidden border-b border-gray-200 px-6">
+        <span class="pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full bg-indigo-100/60 blur-2xl"></span>
+        <div
+            class="relative grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/30">
+            <i class="fas fa-book text-lg"></i>
+        </div>
+        <div class="relative leading-tight">
+            <p class="text-base font-semibold tracking-tight text-gray-800">Hadirin.Web</p>
+            <p class="text-[11px] font-medium text-indigo-500">School Management</p>
+        </div>
+    </div>
 
-         <!-- Students -->
-         <a href="/students"
-             class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('cms.students') ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700' }}">
-             <i
-                 class="fas fa-user-graduate w-5 {{ request()->routeIs('cms.students') ? 'text-indigo-600' : 'text-gray-500' }}"></i>
-             <span class="ml-3">Students</span>
-         </a>
+    <!-- menu navigasi -->
+    <nav class="sidebar-nav-scroll flex-1 overflow-y-auto px-3 py-2">
+        @foreach ($menuGroups as $group)
+            <p class="px-3 pt-5 pb-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+                {{ $group['label'] }}
+            </p>
 
-         <!-- Teachers -->
-         <a href="/teachers"
-             class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('cms.teachers') ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700' }}">
-             <i
-                 class="fas fa-chalkboard-teacher w-5 {{ request()->routeIs('cms.teachers') ? 'text-indigo-600' : 'text-gray-500' }}"></i>
-             <span class="ml-3">Teachers</span>
-         </a>
+            <div class="space-y-1">
+                @foreach ($group['items'] as $item)
+                    @php $isActive = request()->routeIs($item['route']); @endphp
 
-         <!-- Classes -->
-         <a href="/classes"
-             class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('cms.classes') ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700' }}">
-             <i
-                 class="fas fa-book-open w-5 {{ request()->routeIs('cms.classes') ? 'text-indigo-600' : 'text-gray-500' }}"></i>
-             <span class="ml-3">Classes</span>
-         </a>
+                    <a href="{{ route($item['route']) }}"
+                        @class([
+                            'sidebar-link group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200',
+                            'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-md shadow-indigo-500/30' => $isActive,
+                            'text-gray-600 hover:bg-gray-100 hover:text-gray-900' => ! $isActive,
+                        ])>
+                        @if ($isActive)
+                            <span class="absolute -left-3 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-indigo-600"></span>
+                        @endif
 
-         <!-- Users -->
-         <a href="/users"
-             class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('cms.users') ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700' }}">
-             <i
-                 class="fas fa-users-cog w-5 {{ request()->routeIs('cms.users') ? 'text-indigo-600' : 'text-gray-500' }}"></i>
-             <span class="ml-3">Users</span>
-         </a>
+                        <span
+                            @class([
+                                'grid h-8 w-8 shrink-0 place-items-center rounded-lg transition-colors duration-200',
+                                'bg-white/20 text-white' => $isActive,
+                                'bg-gray-100 text-gray-500 group-hover:bg-indigo-100 group-hover:text-indigo-600' => ! $isActive,
+                            ])>
+                            <i class="{{ $item['icon'] }} text-sm"></i>
+                        </span>
 
-         <!-- Rekap Absen -->
-         <a href="/rekap"
-             class="sidebar-link flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('cms.rekap') ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700' }}">
-             <i
-                 class="fas fa-users-cog w-5 {{ request()->routeIs('cms.rekap') ? 'text-indigo-600' : 'text-gray-500' }}"></i>
-             <span class="ml-3">Rekap</span>
-         </a>
-     </nav>
+                        <span class="truncate">{{ $item['label'] }}</span>
+                    </a>
+                @endforeach
+            </div>
+        @endforeach
+    </nav>
 
-     <!-- footer sidebar (user info) -->
-     <div class="p-4 border-t border-gray-200">
-         <div class="flex items-center">
-             <div
-                 class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-semibold text-sm">
-                 AD
-             </div>
-             <div class="ml-3">
-                 <p class="text-sm font-medium text-gray-700">Admin</p>
-                 <p class="text-xs text-gray-500">admin@sekolah.id</p>
-             </div>
-         </div>
-     </div>
- </aside>
+    <!-- footer sidebar (user info) -->
+    <div class="shrink-0 border-t border-gray-200 bg-white/70 p-4">
+        <div class="flex items-center gap-3 rounded-xl bg-gray-50 p-3 ring-1 ring-gray-100">
+            <div class="relative shrink-0">
+                <div
+                    class="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-sm font-semibold text-white">
+                    AD
+                </div>
+                <span class="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-gray-50"></span>
+            </div>
+            <div class="min-w-0 flex-1">
+                <p class="truncate text-sm font-semibold text-gray-800">Admin</p>
+                <p class="truncate text-xs text-gray-500">admin@sekolah.id</p>
+            </div>
+            <i class="fas fa-ellipsis-v shrink-0 text-xs text-gray-400"></i>
+        </div>
+    </div>
+</aside>
+
+<style>
+    .sidebar-nav-scroll {
+        scrollbar-width: thin;
+        scrollbar-color: #c7d2fe transparent;
+    }
+
+    .sidebar-nav-scroll::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .sidebar-nav-scroll::-webkit-scrollbar-thumb {
+        background-color: #c7d2fe;
+        border-radius: 9999px;
+    }
+
+    .sidebar-nav-scroll::-webkit-scrollbar-track {
+        background: transparent;
+    }
+</style>
