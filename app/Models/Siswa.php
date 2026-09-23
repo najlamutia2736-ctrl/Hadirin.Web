@@ -2,17 +2,21 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;  // ← Pakai BelongsTo
 use Illuminate\Database\Eloquent\Relations\HasMany;   // ← Pakai HasMany
 
 class Siswa extends Model
 {
-    protected $fillable = ['user_id', 'nisn', 'kelas', 'jurusan'];
+    /** @use HasFactory<SiswaFactory> */
+    use HasFactory;
+
+    protected $fillable = ['user_id', 'nisn', 'kelas', 'jurusan', 'jenis_kelamin', 'wali', 'telepon_wali', 'status'];
 
     // ===== RELASI =====
-    
-    // Siswa milik 1 User (BelongsTo) 
+
+    // Siswa milik 1 User (BelongsTo)
     // Karena siswa punya foreign key 'user_id'
     public function user(): BelongsTo
     {

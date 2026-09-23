@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\StudentController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -75,9 +76,8 @@ Route::get('/dashboard', function () {
     return view('cms.dashboard');
 })->name('cms.dashboard');
 
-Route::get('/students', function () {
-    return view('cms.student');
-})->name('cms.students');
+Route::get('/students', [StudentController::class, 'index'])->name('cms.students');
+Route::post('/students', [StudentController::class, 'store'])->name('cms.students.store');
 
 Route::get('/teachers', function () {
     return view('cms.teachers');
