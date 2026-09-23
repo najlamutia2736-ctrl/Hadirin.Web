@@ -1,7 +1,314 @@
 @extends('layouts.app')
 
 @section('konten')
-    <div>
-        ini halaman student
+    {{-- data contoh, nanti diganti dari controller: return view('cms.student', ['students' => $students]) --}}
+    @php
+        $students = $students ?? [
+            ['name' => 'Rina Wijaya', 'nis' => '20240101', 'class' => 'X-A', 'gender' => 'P', 'status' => 'Aktif', 'parent' => 'Bpk. Suryanto', 'phone' => '0812-1111-2222'],
+            ['name' => 'Rizky Ramadhan', 'nis' => '20240102', 'class' => 'X-A', 'gender' => 'L', 'status' => 'Aktif', 'parent' => 'Bpk. Hendra', 'phone' => '0813-3333-4444'],
+            ['name' => 'Dewi Lestari', 'nis' => '20230215', 'class' => 'XI-B', 'gender' => 'P', 'status' => 'Nonaktif', 'parent' => 'Ibu Ratna', 'phone' => '0857-5555-6666'],
+            ['name' => 'Andi Pratama', 'nis' => '20230108', 'class' => 'XI-A', 'gender' => 'L', 'status' => 'Aktif', 'parent' => 'Bpk. Agus', 'phone' => '0821-7777-8888'],
+            ['name' => 'Maya Sari', 'nis' => '20220311', 'class' => 'XII-A', 'gender' => 'P', 'status' => 'Aktif', 'parent' => 'Bpk. Bambang', 'phone' => '0819-9999-0000'],
+            ['name' => 'Fajar Nugroho', 'nis' => '20220312', 'class' => 'XII-A', 'gender' => 'L', 'status' => 'Aktif', 'parent' => 'Ibu Sri', 'phone' => '0856-2233-4455'],
+            ['name' => 'Putri Ramadhani', 'nis' => '20240220', 'class' => 'X-B', 'gender' => 'P', 'status' => 'Pindah', 'parent' => 'Bpk. Yusuf', 'phone' => '0812-6677-8899'],
+            ['name' => 'Bagus Saputra', 'nis' => '20230222', 'class' => 'XI-B', 'gender' => 'L', 'status' => 'Aktif', 'parent' => 'Bpk. Tono', 'phone' => '0813-4455-6677'],
+        ];
+    @endphp
+
+    {{-- header halaman --}}
+    <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <h2 class="text-2xl font-bold text-gray-800">Manajemen Siswa</h2>
+            <p class="mt-1 text-gray-600">Kelola data siswa, kelas, dan status keaktifan.</p>
+        </div>
+        <button type="button" data-modal-open="modal-tambah"
+            class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700">
+            <i class="fas fa-user-plus"></i>
+            Tambah Siswa
+        </button>
     </div>
+
+    {{-- kartu statistik --}}
+    <div class="mb-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="flex items-center rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 text-xl text-blue-600">
+                <i class="fas fa-user-graduate"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-500">Total Siswa</p>
+                <p class="text-2xl font-bold text-gray-800">1,248</p>
+            </div>
+        </div>
+        <div class="flex items-center rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-50 text-xl text-indigo-600">
+                <i class="fas fa-mars"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-500">Laki-laki</p>
+                <p class="text-2xl font-bold text-gray-800">642</p>
+            </div>
+        </div>
+        <div class="flex items-center rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-pink-50 text-xl text-pink-600">
+                <i class="fas fa-venus"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-500">Perempuan</p>
+                <p class="text-2xl font-bold text-gray-800">606</p>
+            </div>
+        </div>
+        <div class="flex items-center rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-purple-50 text-xl text-purple-600">
+                <i class="fas fa-book-open"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-500">Jumlah Kelas</p>
+                <p class="text-2xl font-bold text-gray-800">32</p>
+            </div>
+        </div>
+    </div>
+
+    {{-- tabel siswa --}}
+    <div class="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
+        {{-- toolbar: pencarian & filter --}}
+        <div class="flex flex-col gap-3 border-b border-gray-200 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div class="relative w-full sm:max-w-xs">
+                <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-400">
+                    <i class="fas fa-search text-sm"></i>
+                </span>
+                <input type="search" placeholder="Cari nama atau NIS..."
+                    class="w-full rounded-lg border border-gray-200 py-2 pl-9 pr-3 text-sm text-gray-700 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+            </div>
+            <div class="flex flex-col gap-3 sm:flex-row">
+                <select
+                    class="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                    <option value="">Semua Kelas</option>
+                    <option>X-A</option>
+                    <option>X-B</option>
+                    <option>XI-A</option>
+                    <option>XI-B</option>
+                    <option>XII-A</option>
+                </select>
+                <select
+                    class="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                    <option value="">Semua Status</option>
+                    <option>Aktif</option>
+                    <option>Nonaktif</option>
+                    <option>Pindah</option>
+                </select>
+            </div>
+        </div>
+
+        {{-- tabel --}}
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    <tr>
+                        <th class="px-6 py-3">Siswa</th>
+                        <th class="px-6 py-3">NIS</th>
+                        <th class="px-6 py-3">Kelas</th>
+                        <th class="px-6 py-3">Jenis Kelamin</th>
+                        <th class="px-6 py-3">Wali / Orang Tua</th>
+                        <th class="px-6 py-3">Status</th>
+                        <th class="px-6 py-3 text-right">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @forelse ($students as $student)
+                        <tr class="transition-colors hover:bg-gray-50">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center">
+                                    <div
+                                        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-green-100 text-sm font-semibold text-green-600">
+                                        {{ strtoupper(substr($student['name'], 0, 1)) }}
+                                    </div>
+                                    <div class="ml-3">
+                                        <p class="font-medium text-gray-800">{{ $student['name'] }}</p>
+                                        <p class="text-xs text-gray-500">{{ $student['phone'] }}</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-gray-500">{{ $student['nis'] }}</td>
+                            <td class="px-6 py-4">
+                                <span class="inline-block rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-600">
+                                    {{ $student['class'] }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-gray-500">{{ $student['gender'] === 'L' ? 'Laki-laki' : 'Perempuan' }}</td>
+                            <td class="px-6 py-4 text-gray-500">{{ $student['parent'] }}</td>
+                            <td class="px-6 py-4">
+                                @if ($student['status'] === 'Aktif')
+                                    <span class="inline-flex items-center gap-1.5 text-xs font-medium text-green-600">
+                                        <span class="h-2 w-2 rounded-full bg-green-500"></span> Aktif
+                                    </span>
+                                @elseif ($student['status'] === 'Pindah')
+                                    <span class="inline-flex items-center gap-1.5 text-xs font-medium text-amber-600">
+                                        <span class="h-2 w-2 rounded-full bg-amber-500"></span> Pindah
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center gap-1.5 text-xs font-medium text-gray-400">
+                                        <span class="h-2 w-2 rounded-full bg-gray-300"></span> Nonaktif
+                                    </span>
+                                @endif
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center justify-end gap-2">
+                                    <button type="button" title="Ubah"
+                                        class="flex h-8 w-8 items-center justify-center rounded-lg text-blue-600 transition-colors hover:bg-blue-50">
+                                        <i class="fas fa-pen text-xs"></i>
+                                    </button>
+                                    <button type="button" title="Lihat Detail"
+                                        class="flex h-8 w-8 items-center justify-center rounded-lg text-purple-600 transition-colors hover:bg-purple-50">
+                                        <i class="fas fa-eye text-xs"></i>
+                                    </button>
+                                    <button type="button" title="Hapus"
+                                        data-modal-open="modal-hapus"
+                                        class="flex h-8 w-8 items-center justify-center rounded-lg text-red-600 transition-colors hover:bg-red-50">
+                                        <i class="fas fa-trash text-xs"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7" class="px-6 py-10 text-center text-gray-500">
+                                Belum ada data siswa.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        {{-- footer tabel (pagination) --}}
+        <div class="flex flex-col gap-3 border-t border-gray-200 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <p class="text-xs text-gray-500">
+                Menampilkan {{ count($students) }} dari <span class="font-medium text-gray-700">1,248</span> siswa
+            </p>
+            <div class="flex items-center gap-1">
+                <button type="button"
+                    class="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:bg-gray-50">
+                    <i class="fas fa-chevron-left text-xs"></i>
+                </button>
+                <button type="button"
+                    class="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-xs font-semibold text-white">1</button>
+                <button type="button"
+                    class="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-xs text-gray-600 hover:bg-gray-50">2</button>
+                <button type="button"
+                    class="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-xs text-gray-600 hover:bg-gray-50">3</button>
+                <button type="button"
+                    class="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">
+                    <i class="fas fa-chevron-right text-xs"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    {{-- modal: tambah siswa --}}
+    <div id="modal-tambah" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4">
+        <div class="w-full max-w-md rounded-xl bg-white shadow-xl">
+            <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+                <h3 class="font-semibold text-gray-800">Tambah Siswa</h3>
+                <button type="button" data-modal-close class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form class="px-6 py-4" method="POST" action="#">
+                @csrf
+                <div class="mb-4">
+                    <label class="mb-1.5 block text-sm font-medium text-gray-700" for="name">Nama Lengkap</label>
+                    <input id="name" name="name" type="text" required placeholder="Nama siswa"
+                        class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="mb-4">
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700" for="nis">NIS</label>
+                        <input id="nis" name="nis" type="text" required placeholder="8 digit NIS"
+                            class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                    </div>
+                    <div class="mb-4">
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700" for="class">Kelas</label>
+                        <select id="class" name="class"
+                            class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                            <option>X-A</option>
+                            <option>X-B</option>
+                            <option>XI-A</option>
+                            <option>XI-B</option>
+                            <option>XII-A</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="mb-1.5 block text-sm font-medium text-gray-700" for="gender">Jenis Kelamin</label>
+                    <select id="gender" name="gender"
+                        class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                        <option value="L">Laki-laki</option>
+                        <option value="P">Perempuan</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="mb-1.5 block text-sm font-medium text-gray-700" for="parent">Wali / Orang Tua</label>
+                    <input id="parent" name="parent" type="text" placeholder="Nama wali atau orang tua"
+                        class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                </div>
+                <div class="mb-6">
+                    <label class="mb-1.5 block text-sm font-medium text-gray-700" for="phone">No. Telepon Wali</label>
+                    <input id="phone" name="phone" type="text" placeholder="08xx-xxxx-xxxx"
+                        class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                </div>
+                <div class="flex justify-end gap-3">
+                    <button type="button" data-modal-close
+                        class="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50">Batal</button>
+                    <button type="submit"
+                        class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- modal: konfirmasi hapus --}}
+    <div id="modal-hapus" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4">
+        <div class="w-full max-w-sm rounded-xl bg-white shadow-xl">
+            <div class="px-6 py-5 text-center">
+                <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600">
+                    <i class="fas fa-trash"></i>
+                </div>
+                <h3 class="font-semibold text-gray-800">Hapus Siswa?</h3>
+                <p class="mt-1 text-sm text-gray-500">Data siswa yang dihapus tidak dapat dikembalikan.</p>
+            </div>
+            <div class="flex gap-3 border-t border-gray-200 px-6 py-4">
+                <button type="button" data-modal-close
+                    class="flex-1 rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50">Batal</button>
+                <button type="button" data-modal-close
+                    class="flex-1 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700">Hapus</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.querySelectorAll('[data-modal-open]').forEach(function(trigger) {
+            trigger.addEventListener('click', function() {
+                var modal = document.getElementById(trigger.dataset.modalOpen);
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            });
+        });
+
+        document.querySelectorAll('[data-modal-close]').forEach(function(button) {
+            button.addEventListener('click', function() {
+                var modal = button.closest('.fixed');
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            });
+        });
+
+        document.querySelectorAll('.fixed').forEach(function(modal) {
+            modal.addEventListener('click', function(event) {
+                if (event.target === modal) {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                }
+            });
+        });
+    </script>
 @endsection
