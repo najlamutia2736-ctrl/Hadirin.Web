@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class StudentController extends Controller
@@ -38,7 +39,7 @@ class StudentController extends Controller
             ->selectRaw('count(distinct kelas) as kelas')
             ->first();
 
-        return view('cms.student', [
+        return view('cms.student.index', [
             'students' => $students,
             'stats' => $stats,
         ]);
@@ -82,7 +83,72 @@ class StudentController extends Controller
         });
 
         return redirect()
-            ->route('cms.students')
+            ->route('cms.student')
             ->with('success', 'Siswa berhasil ditambahkan.');
+    }
+
+    public function tambahsiswa(Request $request): View
+    {
+        return view('cms.student.create');
+    }
+
+    public function edit(Siswa $siswa): View
+    {
+        $siswa->load('user:id,name,email,status');
+
+        return view('cms.student.edit', [
+            'siswa' => $siswa,
+        ]);
+    }
+
+    public function update(Request $request, Siswa $siswa): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'nis' => [
+                'required',
+                'digits:8',
+                Rule::unique('siswas', 'nisn')->ignore($siswa->id),
+            ],
+            'class' => ['required', Rule::in(['X-A', 'X-B', 'XI-A', 'XI-B', 'XII-A'])],
+            'gender' => ['required', Rule::in(['L', 'P'])],
+            'parent' => ['nullable', 'string', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:20'],
+            'status' => ['required', Rule::in(['Aktif', 'Nonaktif', 'Pindah'])],
+        ]);
+
+        DB::transaction(function () use ($validated, $siswa) {
+            $siswa->update([
+                'nisn' => $validated['nis'],
+                'kelas' => $validated['class'],
+                'jenis_kelamin' => $validated['gender'],
+                'wali' => $validated['parent'] ?? null,
+                'telepon_wali' => $validated['phone'] ?? null,
+                'status' => $validated['status'],
+            ]);
+
+            $siswa->user?->update([
+                'name' => $validated['name'],
+                'email' => $validated['nis'].'@siswa.sekolah.sch.id',
+                'status' => $validated['status'] === 'Aktif' ? 'Aktif' : 'Nonaktif',
+            ]);
+        });
+
+        return redirect()
+            ->route('cms.student')
+            ->with('success', 'Siswa berhasil diperbarui.');
+    }
+
+    public function destroy(Siswa $siswa): RedirectResponse
+    {
+        DB::transaction(function () use ($siswa) {
+            $user = $siswa->user;
+            $siswa->delete();
+            $user?->delete();
+        });
+
+        return redirect()
+            ->route('cms.student')
+            ->with('success', 'Siswa berhasil dihapus.');
     }
 }

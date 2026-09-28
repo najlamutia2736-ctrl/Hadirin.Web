@@ -1,17 +1,25 @@
 <?php
 
+use App\Models\Siswa;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
 test('halaman manajemen pengguna menampilkan data dari database', function () {
-    User::factory()->create(['name' => 'Ahmad Fauzi']);
+    $user = User::factory()->create(['name' => 'Ahmad Fauzi']);
+
+    Siswa::factory()->create([
+        'user_id' => $user->id,
+        'jenis_kelamin' => 'P',
+    ]);
 
     $this->get(route('cms.users'))
         ->assertOk()
         ->assertSee('Manajemen Pengguna')
-        ->assertSee('Ahmad Fauzi');
+        ->assertSee('Ahmad Fauzi')
+        ->assertSee('Jenis Kelamin')
+        ->assertSee('Perempuan');
 });
 
 test('pengguna baru dapat ditambahkan melalui modal tambah', function () {
