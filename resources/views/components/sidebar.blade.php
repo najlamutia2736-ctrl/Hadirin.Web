@@ -1,25 +1,7 @@
 @php
-    $menuGroups = [
-        [
-            'label' => 'Menu Utama',
-            'items' => [['label' => 'Dashboard', 'route' => 'cms.dashboard', 'icon' => 'fas fa-tachometer-alt']],
-        ],
-        [
-            'label' => 'Manajemen',
-            'items' => [
-                ['label' => 'Students', 'route' => 'cms.student', 'icon' => 'fas fa-user-graduate'],
-                ['label' => 'Teachers', 'route' => 'cms.teachers', 'icon' => 'fas fa-chalkboard-teacher'],
-                ['label' => 'Classes', 'route' => 'cms.classes', 'icon' => 'fas fa-book-open'],
-            ],
-        ],
-        [
-            'label' => 'Sistem',
-            'items' => [
-                ['label' => 'Users', 'route' => 'cms.users', 'icon' => 'fas fa-users-cog'],
-                ['label' => 'Rekap', 'route' => 'cms.rekap', 'icon' => 'fas fa-clipboard-list'],
-            ],
-        ],
-    ];
+    // $menuGroups & $menuUser dikirim oleh View Composer di AppServiceProvider,
+    // dipilih dari prefix nama route (cms.* / guru.*). Lihat config/menu.php.
+    $brandSubtitle = $menuBrandSubtitle ?? 'School Management';
 @endphp
 
 <aside
@@ -34,7 +16,7 @@
         </div>
         <div class="relative leading-tight">
             <p class="text-base font-semibold tracking-tight text-gray-800">Hadirin.Web</p>
-            <p class="text-[11px] font-medium text-indigo-500">School Management</p>
+            <p class="text-[11px] font-medium text-indigo-500">{{ $brandSubtitle }}</p>
         </div>
     </div>
 
@@ -79,15 +61,18 @@
         <div class="flex items-center gap-3 rounded-xl bg-gray-50 p-3 ring-1 ring-gray-100">
             <div class="relative shrink-0">
                 <div
-                    class="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-sm font-semibold text-white">
-                    AD
-                </div>
+                    class="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-sm font-semibold text-white"
+                    id="sidebarInitial">{{ $menuUser['initial'] }}</div>
                 <span
                     class="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-gray-50"></span>
             </div>
             <div class="min-w-0 flex-1">
-                <p class="truncate text-sm font-semibold text-gray-800">Admin</p>
-                <p class="truncate text-xs text-gray-500">admin@sekolah.id</p>
+                <p class="truncate text-sm font-semibold text-gray-800" id="sidebarUserName">
+                    {{ $menuUser['name'] }}
+                </p>
+                <p class="truncate text-xs text-gray-500" id="sidebarUserMeta">
+                    {{ $menuUser['email'] }}
+                </p>
             </div>
             <i class="fas fa-ellipsis-v shrink-0 text-xs text-gray-400"></i>
         </div>

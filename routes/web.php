@@ -2,20 +2,15 @@
 
 use App\Http\Controllers\GuruController;
 use App\Http\Controllers\KelasController;
+use App\Http\Controllers\RekapController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
-// ============================================
-// HALAMAN UTAMA
-// ============================================
 Route::get('/', function () {
     return view('halaman-awal');
 })->name('home');
 
-// ============================================
-// AUTENTIKASI
-// ============================================
 Route::get('/login', function () {
     return view('login');
 })->name('login');
@@ -24,23 +19,14 @@ Route::get('/login/konfirmasi', function () {
     return view('login2');
 })->name('login2');
 
-// ============================================
-// BERANDA (DASHBOARD)
-// ============================================
 Route::get('/beranda', function () {
     return view('beranda');
 })->name('beranda');
 
-// ============================================
-// 🔥 HALAMAN IDENTITAS SISWA (BARU)
-// ============================================
 Route::get('/identitas-siswa', function () {
     return view('identitas-siswa');
 })->name('identitas.siswa');
 
-// ============================================
-// ABSENSI SISWA
-// ============================================
 Route::get('/absen/siswa/qr', function () {
     return view('absen-siswa-qr');
 })->name('absen.siswa.qr');
@@ -49,63 +35,123 @@ Route::get('/absen/verifikasi', function () {
     return view('absen-siswa-verifikasi');
 })->name('absen.verifikasi');
 
-// ============================================
-// DASHBOARD GURU & ADMIN
-// ============================================
-Route::get('/dashboard/guru', function () {
-    return view('dashboard-guru');
-})->name('dashboard.guru');
 
-Route::get('/dashboard/admin', function () {
-    return view('dashboard-admin');
-})->name('dashboard.admin');
+// Bagian Baru
+Route::prefix('dashboard/guru')
+    ->name('guru.')
+    ->group(function () {
+        Route::get('/', function () {
+            return view('guru.dashboard');
+        })->name('dashboard');
 
-// ============================================
-// REKAP & LAPORAN
-// ============================================
-Route::get('/rekap/laporan', function () {
-    return view('rekap-laporan');
-})->name('rekap.laporan');
+        Route::get('/progres', function () {
+            return view('guru.progres');
+        })->name('progres');
 
-// ============================================
-// IDENTITAS GURU (BARU)
-// ============================================
-Route::get('/identitas-guru', function () {
-    return view('identitas-guru');
-})->name('identitas.guru');
+        Route::get('/kelola', function () {
+            return view('guru.kelola');
+        })->name('kelola');
+
+        Route::get('/laporan', function () {
+            return view('guru.laporan');
+        })->name('laporan');
+
+        Route::get('/realtime', function () {
+            return view('guru.realtime');
+        })->name('realtime');
+    });
 
 Route::get('/dashboard', function () {
     return view('cms.dashboard');
 })->name('cms.dashboard');
 
-Route::get('/students', [StudentController::class, 'index'])->name('cms.student');
-Route::post('/students', [StudentController::class, 'store'])->name('cms.student.store');
-Route::get('/tambahsiswa', [StudentController::class, 'tambahsiswa'])->name('cms.student.create');
-Route::get('/students/{siswa}/edit', [StudentController::class, 'edit'])->name('cms.student.edit');
-Route::put('/students/{siswa}', [StudentController::class, 'update'])->name('cms.student.update');
-Route::delete('/students/{siswa}', [StudentController::class, 'destroy'])->name('cms.student.destroy');
+Route::controller(StudentController::class)->group(function () {
+    Route::get('/students', 'index')
+        ->name('cms.student');
 
-Route::get('/teachers', [GuruController::class, 'index'])->name('cms.teachers');
-Route::post('/teachers', [GuruController::class, 'store'])->name('cms.teachers.store');
-Route::get('/tambahguru', [GuruController::class, 'tambahguru'])->name('cms.teachers.create');
-Route::get('/teachers/{guru}/edit', [GuruController::class, 'edit'])->name('cms.teachers.edit');
-Route::put('/teachers/{guru}', [GuruController::class, 'update'])->name('cms.teachers.update');
-Route::delete('/teachers/{guru}', [GuruController::class, 'destroy'])->name('cms.teachers.destroy');
+    Route::post('/students', 'store')
+        ->name('cms.student.store');
 
-Route::get('/classes', [KelasController::class, 'index'])->name('cms.classes');
-Route::post('/classes', [KelasController::class, 'store'])->name('cms.classes.store');
-Route::get('/tambahkelas', [KelasController::class, 'tambahkelas'])->name('cms.classes.create');
-Route::get('/classes/{kelas}/edit', [KelasController::class, 'edit'])->name('cms.classes.edit');
-Route::put('/classes/{kelas}', [KelasController::class, 'update'])->name('cms.classes.update');
-Route::delete('/classes/{kelas}', [KelasController::class, 'destroy'])->name('cms.classes.destroy');
+    Route::get('/tambahsiswa', 'tambahsiswa')
+        ->name('cms.student.create');
 
-Route::get('/users', [UserController::class, 'index'])->name('cms.users');
-Route::post('/users', [UserController::class, 'store'])->name('cms.users.store');
-Route::get('/tambahuser', [UserController::class, 'tambahuser'])->name('cms.users.tambah');
-Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('cms.users.edit');
-Route::put('/users/{user}', [UserController::class, 'update'])->name('cms.users.update');
-Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('cms.users.destroy');
+    Route::get('/students/{siswa}/edit', 'edit')
+        ->name('cms.student.edit');
 
-Route::get('/rekap', function () {
-    return view('cms.rekap');
-})->name('cms.rekap');
+    Route::put('/students/{siswa}', 'update')
+        ->name('cms.student.update');
+
+    Route::delete('/students/{siswa}', 'destroy')
+        ->name('cms.student.destroy');
+});
+
+Route::controller(GuruController::class)->group(function () {
+    Route::get('/teachers', 'index')
+        ->name('cms.teachers');
+
+    Route::post('/teachers', 'store')
+        ->name('cms.teachers.store');
+
+    Route::get('/tambahguru', 'tambahguru')
+        ->name('cms.teachers.create');
+
+    Route::get('/teachers/{guru}/edit', 'edit')
+        ->name('cms.teachers.edit');
+
+    Route::put('/teachers/{guru}', 'update')
+        ->name('cms.teachers.update');
+
+    Route::delete('/teachers/{guru}', 'destroy')
+        ->name('cms.teachers.destroy');
+});
+
+Route::controller(KelasController::class)->group(function () {
+    Route::get('/classes', 'index')
+        ->name('cms.classes');
+
+    Route::post('/classes', 'store')
+        ->name('cms.classes.store');
+
+    Route::get('/tambahkelas', 'tambahkelas')
+        ->name('cms.classes.create');
+
+    Route::get('/classes/{kelas}/edit', 'edit')
+        ->name('cms.classes.edit');
+
+    Route::put('/classes/{kelas}', 'update')
+        ->name('cms.classes.update');
+
+    Route::delete('/classes/{kelas}', 'destroy')
+        ->name('cms.classes.destroy');
+});
+
+Route::controller(UserController::class)->group(function () {
+    Route::get('/users', 'index')
+        ->name('cms.users');
+
+    Route::post('/users', 'store')
+        ->name('cms.users.store');
+
+    Route::get('/tambahuser', 'tambahuser')
+        ->name('cms.users.tambah');
+
+    Route::get('/users/{user}/edit', 'edit')
+        ->name('cms.users.edit');
+
+    Route::put('/users/{user}', 'update')
+        ->name('cms.users.update');
+
+    Route::delete('/users/{user}', 'destroy')
+        ->name('cms.users.destroy');
+});
+
+Route::controller(RekapController::class)->group(function () {
+    Route::get('/rekap', 'index')
+        ->name('cms.rekap');
+
+    Route::get('/rekap/export/excel', 'exportExcel')
+        ->name('cms.rekap.export.excel');
+
+    Route::get('/rekap/export/pdf', 'exportPdf')
+        ->name('cms.rekap.export.pdf');
+});

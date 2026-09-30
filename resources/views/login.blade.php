@@ -14,7 +14,7 @@
 <body class="bg-slate-50 min-h-screen flex flex-col">
 
     <!-- ========== NAVBAR ========== -->
-    @include('layouts.navbar')
+    @include('navbar')
 
     <!-- ========== MAIN: FORM LOGIN ========== -->
     <main class="flex-1 flex items-center justify-center px-4 py-8 sm:py-12">

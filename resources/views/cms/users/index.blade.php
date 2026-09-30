@@ -1,67 +1,35 @@
 @extends('layouts.app')
 
 @section('konten')
-    {{-- data contoh, nanti diganti dari controller: return view('cms.users', ['users' => $users]) --}}
-    @php
-        $users = $users ?? [
-            [
-                'name' => 'Ahmad Fauzi',
-                'email' => 'ahmad.fauzi@sekolah.sch.id',
-                'role' => 'Admin',
-                'status' => 'Aktif',
-                'last_login' => '22 Sep 2026, 07:45',
-            ],
-            [
-                'name' => 'Siti Nurhaliza',
-                'email' => 'siti.nurhaliza@sekolah.sch.id',
-                'role' => 'Guru',
-                'status' => 'Aktif',
-                'last_login' => '22 Sep 2026, 07:12',
-            ],
-            [
-                'name' => 'Budi Santoso',
-                'email' => 'budi.santoso@sekolah.sch.id',
-                'role' => 'Guru',
-                'status' => 'Aktif',
-                'last_login' => '21 Sep 2026, 15:30',
-            ],
-            [
-                'name' => 'Rina Wijaya',
-                'email' => 'rina.wijaya@sekolah.sch.id',
-                'role' => 'Siswa',
-                'status' => 'Aktif',
-                'last_login' => '22 Sep 2026, 06:58',
-            ],
-            [
-                'name' => 'Dewi Lestari',
-                'email' => 'dewi.lestari@sekolah.sch.id',
-                'role' => 'Siswa',
-                'status' => 'Nonaktif',
-                'last_login' => '10 Sep 2026, 09:20',
-            ],
-            [
-                'name' => 'Andi Pratama',
-                'email' => 'andi.pratama@sekolah.sch.id',
-                'role' => 'Operator',
-                'status' => 'Aktif',
-                'last_login' => '21 Sep 2026, 16:05',
-            ],
-            [
-                'name' => 'Maya Sari',
-                'email' => 'maya.sari@sekolah.sch.id',
-                'role' => 'Guru',
-                'status' => 'Nonaktif',
-                'last_login' => '02 Sep 2026, 10:44',
-            ],
-            [
-                'name' => 'Rizky Ramadhan',
-                'email' => 'rizky.ramadhan@sekolah.sch.id',
-                'role' => 'Siswa',
-                'status' => 'Aktif',
-                'last_login' => '22 Sep 2026, 07:01',
-            ],
-        ];
+    {{-- $users, $filterPeran, $filterStatus, $daftarPeran, $daftarStatus dikirim oleh UserController --}}
 
+    {{-- pesan sukses --}}
+    @if (session('success'))
+        <div role="status"
+            class="mb-6 flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
+            <i class="fas fa-check-circle"></i>
+            {{ session('success') }}
+        </div>
+    @endif
+
+    @if ($errors->any())
+        <div role="alert"
+            class="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            <div class="flex gap-3">
+                <i class="fas fa-exclamation-circle mt-0.5"></i>
+                <div>
+                    <p class="font-semibold">Periksa kembali data pengguna.</p>
+                    <ul class="mt-2 list-inside list-disc space-y-1">
+                        @foreach ($errors->all() as $message)
+                            <li>{{ $message }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    @php
         $roleClasses = [
             'Admin' => 'bg-amber-50 text-amber-600',
             'Guru' => 'bg-blue-50 text-blue-600',
@@ -76,41 +44,52 @@
             <h2 class="text-2xl font-bold text-gray-800">Manajemen Pengguna</h2>
             <p class="mt-1 text-gray-600">Kelola akun, peran, dan status pengguna sekolah.</p>
         </div>
-        <a href="/tambahuser" data-modal-open="modal-tambah"
+        <button type="button" data-modal-open="modal-tambah"
             class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700">
             <i class="fas fa-user-plus"></i>
             Tambah Pengguna
-        </a>
+        </button>
     </div>
 
     {{-- tabel pengguna --}}
     <div class="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
         {{-- toolbar: pencarian & filter --}}
-        <div class="flex flex-col gap-3 border-b border-gray-200 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <form method="GET" action="{{ route('cms.users') }}"
+            class="flex flex-col gap-3 border-b border-gray-200 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
             <div class="relative w-full sm:max-w-xs">
                 <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-400">
                     <i class="fas fa-search text-sm"></i>
                 </span>
-                <input type="search" placeholder="Cari nama atau email..."
+                <input type="search" name="q" value="{{ request('q') }}" placeholder="Cari nama atau email..."
                     class="w-full rounded-lg border border-gray-200 py-2 pl-9 pr-3 text-sm text-gray-700 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
             </div>
-            <div class="flex flex-col gap-3 sm:flex-row">
-                <select
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <select name="role" aria-label="Filter peran"
                     class="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
                     <option value="">Semua Peran</option>
-                    <option>Admin</option>
-                    <option>Guru</option>
-                    <option>Siswa</option>
-                    <option>Operator</option>
+                    @foreach ($daftarPeran as $peran)
+                        <option value="{{ $peran }}" @selected($filterPeran === $peran)>{{ $peran }}</option>
+                    @endforeach
                 </select>
-                <select
+                <select name="status" aria-label="Filter status"
                     class="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
                     <option value="">Semua Status</option>
-                    <option>Aktif</option>
-                    <option>Nonaktif</option>
+                    @foreach ($daftarStatus as $status)
+                        <option value="{{ $status }}" @selected($filterStatus === $status)>{{ $status }}</option>
+                    @endforeach
                 </select>
+                <button type="submit"
+                    class="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50">
+                    Terapkan
+                </button>
+                @if ($filterPeran !== null || $filterStatus !== null)
+                    <a href="{{ route('cms.users', array_filter(['q' => request('q')])) }}"
+                        class="rounded-lg px-2 py-2 text-sm font-medium text-gray-500 transition-colors hover:text-gray-700">
+                        Reset
+                    </a>
+                @endif
             </div>
-        </div>
+        </form>
 
         {{-- tabel --}}
         <div class="overflow-x-auto">
@@ -118,6 +97,7 @@
                 <thead class="bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500">
                     <tr>
                         <th class="px-6 py-3">Pengguna</th>
+                        <th class="px-6 py-3">Jenis Kelamin</th>
                         <th class="px-6 py-3">Peran</th>
                         <th class="px-6 py-3">Status</th>
                         <th class="px-6 py-3 text-center">Aksi</th>
@@ -130,22 +110,25 @@
                                 <div class="flex items-center">
                                     <div
                                         class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-sm font-semibold text-indigo-600">
-                                        {{ strtoupper(substr($user['name'], 0, 1)) }}
+                                        {{ strtoupper(substr($user->name, 0, 1)) }}
                                     </div>
                                     <div class="ml-3">
-                                        <p class="font-medium text-gray-800">{{ $user['name'] }}</p>
-                                        <p class="text-xs text-gray-500">{{ $user['email'] }}</p>
+                                        <p class="font-medium text-gray-800">{{ $user->name }}</p>
+                                        <p class="text-xs text-gray-500">{{ $user->email }}</p>
                                     </div>
                                 </div>
                             </td>
+                            <td class="px-6 py-4 text-gray-500">
+                                {{ $user->siswa?->jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan' }}
+                            </td>
                             <td class="px-6 py-4">
                                 <span
-                                    class="inline-block rounded-full px-2.5 py-1 text-xs font-medium {{ $roleClasses[$user['role']] ?? 'bg-gray-100 text-gray-600' }}">
-                                    {{ $user['role'] }}
+                                    class="inline-block rounded-full px-2.5 py-1 text-xs font-medium {{ $roleClasses[$user->role] ?? 'bg-gray-100 text-gray-600' }}">
+                                    {{ $user->role }}
                                 </span>
                             </td>
                             <td class="px-6 py-4">
-                                @if ($user['status'] === 'Aktif')
+                                @if ($user->status === 'Aktif')
                                     <span class="inline-flex items-center gap-1.5 text-xs font-medium text-green-600">
                                         <span class="h-2 w-2 rounded-full bg-green-500"></span> Aktif
                                     </span>
@@ -155,41 +138,33 @@
                                     </span>
                                 @endif
                             </td>
-                            {{-- <td class="px-6 py-4 text-gray-500">{{ $user['last_login'] }}</td> --}}
                             <td class="px-6 py-4">
                                 <div class="flex items-center justify-center gap-2">
-                                    @if (data_get($user, 'id'))
-                                        <a href="{{ route('cms.users.edit', ['user' => data_get($user, 'id')]) }}"
-                                            title="Ubah" aria-label="Edit pengguna {{ data_get($user, 'name') }}"
-                                            class="flex h-8 w-8 items-center justify-center rounded-lg text-blue-600 transition-colors hover:bg-blue-50">
-                                            <i class="fas fa-pen text-xs"></i>
-                                        </a>
-                                    @else
-                                        <button type="button" title="Ubah" disabled
-                                            class="flex h-8 w-8 cursor-not-allowed items-center justify-center rounded-lg text-blue-600 opacity-50">
-                                            <i class="fas fa-pen text-xs"></i>
-                                        </button>
-                                    @endif
-                                    @if (data_get($user, 'id'))
-                                        <button type="button" title="Hapus" data-delete-user
-                                            data-delete-url="{{ route('cms.users.destroy', ['user' => data_get($user, 'id')]) }}"
-                                            data-user-name="{{ data_get($user, 'name') }}" data-modal-open="modal-hapus"
-                                            class="flex h-8 w-8 items-center justify-center rounded-lg text-red-600 transition-colors hover:bg-red-50">
-                                            <i class="fas fa-trash text-xs"></i>
-                                        </button>
-                                    @else
-                                        <button type="button" title="Hapus" disabled
-                                            class="flex h-8 w-8 cursor-not-allowed items-center justify-center rounded-lg text-red-600 opacity-50">
-                                            <i class="fas fa-trash text-xs"></i>
-                                        </button>
-                                    @endif
+                                    <a href="{{ route('cms.users.edit', ['user' => $user->id]) }}" title="Ubah"
+                                        aria-label="Edit pengguna {{ $user->name }}"
+                                        class="flex h-8 w-8 items-center justify-center rounded-lg text-blue-600 transition-colors hover:bg-blue-50">
+                                        <i class="fas fa-pen text-xs"></i>
+                                    </a>
+                                    <button type="button" title="Hapus" data-delete-user
+                                        data-delete-url="{{ route('cms.users.destroy', ['user' => $user->id]) }}"
+                                        data-user-name="{{ $user->name }}" data-modal-open="modal-hapus"
+                                        aria-label="Hapus pengguna {{ $user->name }}"
+                                        class="flex h-8 w-8 items-center justify-center rounded-lg text-red-600 transition-colors hover:bg-red-50">
+                                        <i class="fas fa-trash text-xs"></i>
+                                    </button>
                                 </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
                             <td colspan="5" class="px-6 py-10 text-center text-gray-500">
-                                Belum ada data pengguna.
+                                @if ($filterPeran !== null || $filterStatus !== null || request('q'))
+                                    Tidak ada pengguna yang cocok dengan filter.
+                                    <a href="{{ route('cms.users') }}"
+                                        class="font-medium text-indigo-600 hover:underline">Reset filter</a>
+                                @else
+                                    Belum ada data pengguna.
+                                @endif
                             </td>
                         </tr>
                     @endforelse
@@ -199,63 +174,84 @@
 
         {{-- footer tabel (pagination) --}}
         <div class="flex flex-col gap-3 border-t border-gray-200 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <p class="text-xs text-gray-500">
-                Menampilkan {{ count($users) }} dari <span class="font-medium text-gray-700">154</span> pengguna
-            </p>
-            <div class="flex items-center gap-1">
-                <button type="button"
-                    class="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:bg-gray-50">
-                    <i class="fas fa-chevron-left text-xs"></i>
-                </button>
-                <button type="button"
-                    class="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-xs font-semibold text-white">1</button>
-                <button type="button"
-                    class="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-xs text-gray-600 hover:bg-gray-50">2</button>
-                <button type="button"
-                    class="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-xs text-gray-600 hover:bg-gray-50">3</button>
-                <button type="button"
-                    class="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">
-                    <i class="fas fa-chevron-right text-xs"></i>
-                </button>
+            <div>
+                <p class="text-xs text-gray-500">
+                    Menampilkan {{ $users->count() }} dari <span
+                        class="font-medium text-gray-700">{{ $users->total() }}</span> pengguna
+                </p>
+                @if ($filterPeran !== null || $filterStatus !== null)
+                    <p class="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-gray-500">
+                        <span>Filter aktif:</span>
+                        @if ($filterPeran !== null)
+                            <span
+                                class="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 font-medium text-indigo-700">
+                                Peran {{ $filterPeran }}
+                            </span>
+                        @endif
+                        @if ($filterStatus !== null)
+                            <span
+                                class="inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 font-medium text-green-700">
+                                Status {{ $filterStatus }}
+                            </span>
+                        @endif
+                    </p>
+                @endif
             </div>
+            {{ $users->links() }}
         </div>
     </div>
 
     {{-- modal: tambah pengguna --}
-    <div id="modal-tambah" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4">
+    <div id="modal-tambah" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4"
+        role="dialog" aria-modal="true" aria-labelledby="tambah-user-title">
         <div class="w-full max-w-md rounded-xl bg-white shadow-xl">
             <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-                <h3 class="font-semibold text-gray-800">Tambah Pengguna</h3>
-                <button type="button" data-modal-close class="text-gray-400 hover:text-gray-600">
+                <h3 id="tambah-user-title" class="font-semibold text-gray-800">Tambah Pengguna</h3>
+                <button type="button" data-modal-close aria-label="Tutup modal tambah"
+                    class="text-gray-400 hover:text-gray-600">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <form class="px-6 py-4" method="POST" action="#">
+            <form class="px-6 py-4" method="POST" action="{{ route('cms.users.store') }}">
                 @csrf
                 <div class="mb-4">
                     <label class="mb-1.5 block text-sm font-medium text-gray-700" for="name">Nama Lengkap</label>
                     <input id="name" name="name" type="text" required placeholder="Nama pengguna"
+                        value="{{ old('name') }}"
                         class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                    @error('name')
+                        <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                    @enderror
                 </div>
                 <div class="mb-4">
                     <label class="mb-1.5 block text-sm font-medium text-gray-700" for="email">Email</label>
                     <input id="email" name="email" type="email" required placeholder="nama@sekolah.sch.id"
+                        value="{{ old('email') }}"
                         class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                    @error('email')
+                        <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                    @enderror
                 </div>
                 <div class="mb-4">
                     <label class="mb-1.5 block text-sm font-medium text-gray-700" for="role">Peran</label>
                     <select id="role" name="role"
                         class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                        <option>Admin</option>
-                        <option>Guru</option>
-                        <option>Siswa</option>
-                        <option>Operator</option>
+                        @foreach ($daftarPeran as $peran)
+                            <option value="{{ $peran }}" @selected(old('role') === $peran)>{{ $peran }}</option>
+                        @endforeach
                     </select>
+                    @error('role')
+                        <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                    @enderror
                 </div>
                 <div class="mb-6">
                     <label class="mb-1.5 block text-sm font-medium text-gray-700" for="password">Password</label>
                     <input id="password" name="password" type="password" required placeholder="Minimal 8 karakter"
+                        value="{{ old('password') }}"
                         class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                    @error('password')
+                        <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                    @enderror
                 </div>
                 <div class="flex justify-end gap-3">
                     <button type="button" data-modal-close

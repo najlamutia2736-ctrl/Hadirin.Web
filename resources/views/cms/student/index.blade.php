@@ -36,26 +36,30 @@
                     class="w-full rounded-lg border border-gray-200 py-2 pl-9 pr-3 text-sm text-gray-700 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
             </div>
             <div class="flex flex-col gap-3 sm:flex-row">
-                <select name="kelas"
+                <select name="kelas" data-filter-kelas aria-label="Filter kelas"
                     class="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
                     <option value="">Semua Kelas</option>
-                    <option value="X-A" @selected(request('kelas') === 'X-A')>X-A</option>
-                    <option value="X-B" @selected(request('kelas') === 'X-B')>X-B</option>
-                    <option value="XI-A" @selected(request('kelas') === 'XI-A')>XI-A</option>
-                    <option value="XI-B" @selected(request('kelas') === 'XI-B')>XI-B</option>
-                    <option value="XII-A" @selected(request('kelas') === 'XII-A')>XII-A</option>
+                    @foreach ($daftarKelas as $kelas)
+                        <option value="{{ $kelas }}" @selected($filterKelas === $kelas)>{{ $kelas }}</option>
+                    @endforeach
                 </select>
-                <select name="status"
+                <select name="status" data-filter-status aria-label="Filter status"
                     class="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
                     <option value="">Semua Status</option>
-                    <option value="Aktif" @selected(request('status') === 'Aktif')>Aktif</option>
-                    <option value="Nonaktif" @selected(request('status') === 'Nonaktif')>Nonaktif</option>
-                    <option value="Pindah" @selected(request('status') === 'Pindah')>Pindah</option>
+                    @foreach ($daftarStatus as $status)
+                        <option value="{{ $status }}" @selected($filterStatus === $status)>{{ $status }}</option>
+                    @endforeach
                 </select>
-                <button type="submit"
-                    class="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50">
+                <button type="submit" data-terapkan
+                    class="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60">
                     Terapkan
                 </button>
+                @if ($filterKelas !== null || $filterStatus !== null)
+                    <a href="{{ route('cms.student', array_filter(['q' => request('q')])) }}"
+                        class="rounded-lg px-2 py-2 text-sm font-medium text-gray-500 transition-colors hover:text-gray-700">
+                        Reset
+                    </a>
+                @endif
             </div>
         </form>
 
@@ -147,7 +151,13 @@
                     @empty
                         <tr>
                             <td colspan="7" class="px-6 py-10 text-center text-gray-500">
-                                Belum ada data siswa.
+                                @if ($filterKelas !== null || $filterStatus !== null || request('q'))
+                                    Tidak ada siswa yang cocok dengan filter.
+                                    <a href="{{ route('cms.student') }}"
+                                        class="font-medium text-indigo-600 hover:underline">Reset filter</a>
+                                @else
+                                    Belum ada data siswa.
+                                @endif
                             </td>
                         </tr>
                     @endforelse
@@ -157,10 +167,29 @@
 
         {{-- footer tabel (pagination) --}}
         <div class="flex flex-col gap-3 border-t border-gray-200 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <p class="text-xs text-gray-500">
-                Menampilkan {{ $students->count() }} dari <span
-                    class="font-medium text-gray-700">{{ $students->total() }}</span> siswa
-            </p>
+            <div>
+                <p class="text-xs text-gray-500">
+                    Menampilkan {{ $students->count() }} dari <span
+                        class="font-medium text-gray-700">{{ $students->total() }}</span> siswa
+                </p>
+                @if ($filterKelas !== null || $filterStatus !== null)
+                    <p class="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-gray-500">
+                        <span>Filter aktif:</span>
+                        @if ($filterKelas !== null)
+                            <span
+                                class="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 font-medium text-blue-700">
+                                Kelas {{ $filterKelas }}
+                            </span>
+                        @endif
+                        @if ($filterStatus !== null)
+                            <span
+                                class="inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 font-medium text-green-700">
+                                Status {{ $filterStatus }}
+                            </span>
+                        @endif
+                    </p>
+                @endif
+            </div>
             {{ $students->links() }}
         </div>
     </div>
@@ -333,6 +362,14 @@
     </div>
 
     <script>
+        // Filter kelas & status langsung tersubmit begitu berubah, tombol
+        // "Terapkan" tetap ada untuk submit lewat keyboard atau pencarian.
+        document.querySelectorAll('[data-filter-kelas], [data-filter-status]').forEach(function(select) {
+            select.addEventListener('change', function() {
+                select.form.submit();
+            });
+        });
+
         var deleteStudentForm = document.getElementById('delete-student-form');
         var deleteStudentName = document.getElementById('delete-student-name');
         var detailStudentInitial = document.getElementById('detail-student-initial');

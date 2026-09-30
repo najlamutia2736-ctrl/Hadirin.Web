@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Kelas;
 use App\Models\Siswa;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -24,7 +25,7 @@ class SiswaFactory extends Factory
             'jenis_kelamin' => fake()->randomElement(['L', 'P']),
             'wali' => fake()->name(),
             'telepon_wali' => fake()->numerify('08##########'),
-            'kelas' => fake()->randomElement(['X-A', 'X-B', 'XI-A', 'XI-B', 'XII-A']),
+            'kelas' => fake()->randomElement(Kelas::ROMBEL_TERSEDIA),
             'jurusan' => null,
             'status' => 'Aktif',
         ];

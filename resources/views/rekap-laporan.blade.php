@@ -46,9 +46,9 @@
                 <div class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
                     <a href="{{ route('beranda') }}" class="hover:text-indigo-600 transition">Beranda</a>
                     <a href="{{ route('absen.siswa.qr') }}" class="hover:text-indigo-600 transition">Absen Siswa</a>
-                    <a href="{{ route('dashboard.guru') }}" class="hover:text-indigo-600 transition">Dashboard Guru</a>
-                    <a href="{{ route('dashboard.admin') }}" class="hover:text-indigo-600 transition">Dashboard Admin</a>
-                    <a href="{{ route('rekap.laporan') }}" class="hover:text-indigo-600 transition text-indigo-600 font-semibold">Rekap</a>
+                    <a href="{{ route('guru.dashboard') }}" class="hover:text-indigo-600 transition">Dashboard Guru</a>
+                    <a href="{{ route('cms.dashboard') }}" class="hover:text-indigo-600 transition">Dashboard Admin</a>
+                    <a href="{{ route('cms.rekap') }}" class="hover:text-indigo-600 transition text-indigo-600 font-semibold">Rekap</a>
                 </div>
 
                 <!-- Tombol User -->
@@ -85,13 +85,13 @@
                     <a href="{{ route('absen.siswa.qr') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
                         <i class="fas fa-user-graduate w-5"></i> Absen Siswa
                     </a>
-                    <a href="{{ route('dashboard.guru') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
+                    <a href="{{ route('guru.dashboard') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
                         <i class="fas fa-chalkboard-teacher w-5"></i> Dashboard Guru
                     </a>
-                    <a href="{{ route('dashboard.admin') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
+                    <a href="{{ route('cms.dashboard') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
                         <i class="fas fa-user-shield w-5"></i> Dashboard Admin
                     </a>
-                    <a href="{{ route('rekap.laporan') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-indigo-600 bg-indigo-50">
+                    <a href="{{ route('cms.rekap') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-indigo-600 bg-indigo-50">
                         <i class="fas fa-file-alt w-5"></i> Rekap
                     </a>
                     <div class="border-t border-slate-200/60 my-2"></div>
@@ -878,9 +878,9 @@
         }
 
         // Navigasi cepat
-        function goToPresensi() { window.location.href = "{{ route('dashboard.admin') }}"; }
-        function goToSiswa() { window.location.href = "{{ route('dashboard.admin') }}"; }
-        function goToKelas() { window.location.href = "{{ route('dashboard.admin') }}"; }
+        function goToPresensi() { window.location.href = "{{ route('cms.dashboard') }}"; }
+        function goToSiswa() { window.location.href = "{{ route('cms.dashboard') }}"; }
+        function goToKelas() { window.location.href = "{{ route('cms.dashboard') }}"; }
 
         // Logout
         function logout() {

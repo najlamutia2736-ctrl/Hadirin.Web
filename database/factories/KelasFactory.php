@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Jurusan;
 use App\Models\Kelas;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -17,9 +18,12 @@ class KelasFactory extends Factory
      */
     public function definition(): array
     {
+        $namaKelas = fake()->unique()->randomElement(Kelas::ROMBEL_TERSEDIA);
+
         return [
-            'nama_kelas' => fake()->unique()->bothify('??-??'),
-            'tingkat' => fake()->randomElement(['X', 'XI', 'XII']),
+            'nama_kelas' => $namaKelas,
+            'tingkat' => explode('-', $namaKelas)[0],
+            'jurusan_id' => Jurusan::factory(),
             'wali_kelas_id' => null,
             'ruang' => 'R. '.fake()->numberBetween(101, 999),
             'tahun_ajaran' => now()->year,

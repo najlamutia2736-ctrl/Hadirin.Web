@@ -64,8 +64,8 @@
                 <div class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
                     <a href="{{ route('beranda') }}" class="hover:text-indigo-600 transition">Beranda</a>
                     <a href="{{ route('identitas.siswa') }}" class="hover:text-indigo-600 transition text-indigo-600 font-semibold">Absen Siswa</a>
-                    <a href="{{ route('identitas.guru') }}" class="hover:text-indigo-600 transition">Dashboard Guru</a>
-                    <a href="{{ route('rekap.laporan') }}" class="hover:text-indigo-600 transition">Rekap</a>
+                    <a href="{{ route('guru.dashboard') }}" class="hover:text-indigo-600 transition">Dashboard Guru</a>
+                    <a href="{{ route('cms.rekap') }}" class="hover:text-indigo-600 transition">Rekap</a>
                 </div>
                 <!-- ✅ TOMBOL USER DINAMIS -->
                 <div class="hidden md:block">

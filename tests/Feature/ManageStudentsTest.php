@@ -78,6 +78,126 @@ test('form tambah siswa menolak NIS yang sudah terdaftar', function () {
     expect($siswa->nisn)->toBe('20240101');
 });
 
+test('filter kelas pada halaman siswa', function () {
+    $a = Siswa::factory()->create(['kelas' => 'X-A', 'status' => 'Aktif']);
+    $b = Siswa::factory()->create(['kelas' => 'XII-A', 'status' => 'Aktif']);
+    $c = Siswa::factory()->create(['kelas' => 'XII-A', 'status' => 'Pindah']);
+
+    $this->get(route('cms.student', ['kelas' => 'XII-A']))
+        ->assertOk()
+        ->assertSee($b->user->name)
+        ->assertSee($c->user->name)
+        ->assertDontSee($a->user->name);
+
+    $this->get(route('cms.student', ['kelas' => 'X-A']))
+        ->assertOk()
+        ->assertSee($a->user->name)
+        ->assertDontSee($b->user->name);
+
+    $this->get(route('cms.student', ['kelas' => '']))
+        ->assertOk()
+        ->assertSee($a->user->name)
+        ->assertSee($b->user->name)
+        ->assertSee($c->user->name);
+});
+
+test('filter status pada halaman siswa', function () {
+    $aktif = Siswa::factory()->create(['status' => 'Aktif']);
+    $pindah = Siswa::factory()->create(['status' => 'Pindah']);
+
+    $this->get(route('cms.student', ['status' => 'Pindah']))
+        ->assertOk()
+        ->assertSee($pindah->user->name)
+        ->assertDontSee($aktif->user->name);
+
+    $this->get(route('cms.student', ['status' => 'Nonaktif']))
+        ->assertOk()
+        ->assertSee('Tidak ada siswa yang cocok dengan filter.');
+});
+
+test('filter kelas dan status bisa digabung', function () {
+    $cocok = Siswa::factory()->create(['kelas' => 'XII-A', 'status' => 'Aktif']);
+    $kelasBeda = Siswa::factory()->create(['kelas' => 'X-A', 'status' => 'Aktif']);
+    $statusBeda = Siswa::factory()->create(['kelas' => 'XII-A', 'status' => 'Pindah']);
+
+    $this->get(route('cms.student', ['kelas' => 'XII-A', 'status' => 'Aktif']))
+        ->assertOk()
+        ->assertSee($cocok->user->name)
+        ->assertDontSee($kelasBeda->user->name)
+        ->assertDontSee($statusBeda->user->name);
+});
+
+test('dropdown kelas dan status dibangun dari data siswa', function () {
+    // Kelas di luar daftar baku tetap bisa difilter.
+    Siswa::factory()->create(['kelas' => 'XII-B', 'status' => 'Alpa']);
+
+    $this->get(route('cms.student'))
+        ->assertOk()
+        ->assertSee('<option value="XII-B"', false)
+        ->assertSee('<option value="Alpa"', false);
+});
+
+test('filter yang tidak dikenal diabaikan, bukan menghasilkan halaman kosong', function () {
+    $siswa = Siswa::factory()->create(['kelas' => 'X-A']);
+
+    $this->get(route('cms.student', ['kelas' => 'KELAS-HILANG', 'status' => 'STATUS-HILANG']))
+        ->assertOk()
+        ->assertSee($siswa->user->name);
+});
+
+test('halaman siswa menampilkan badge filter aktif dan tautan reset', function () {
+    $siswa = Siswa::factory()->create(['kelas' => 'X-A', 'status' => 'Aktif']);
+
+    $this->get(route('cms.student', ['kelas' => 'X-A', 'status' => 'Aktif']))
+        ->assertOk()
+        ->assertSee('Filter aktif:')
+        ->assertSee('Kelas X-A')
+        ->assertSee('Status Aktif')
+        ->assertSee(route('cms.student'), false);
+});
+
+test('pencarian tetap bekerja saat digabung dengan filter kelas dan status', function () {
+    Siswa::factory()->create([
+        'user_id' => User::factory()->create(['name' => 'Rina Wijaya'])->id,
+        'kelas' => 'X-A',
+        'status' => 'Aktif',
+    ]);
+    Siswa::factory()->create([
+        'user_id' => User::factory()->create(['name' => 'Budi Santoso'])->id,
+        'kelas' => 'X-B',
+        'status' => 'Aktif',
+    ]);
+
+    // Pencarian + kelas yang cocok memunculkan siswanya.
+    $this->get(route('cms.student', ['q' => 'Rina', 'kelas' => 'X-A', 'status' => 'Aktif']))
+        ->assertOk()
+        ->assertSee('Rina Wijaya')
+        ->assertDontSee('Budi Santoso');
+
+    // Kelas yang tidak cocok membuat hasil pencarian kosong.
+    $this->get(route('cms.student', ['q' => 'Rina', 'kelas' => 'X-B', 'status' => 'Aktif']))
+        ->assertOk()
+        ->assertSee('Tidak ada siswa yang cocok dengan filter.')
+        ->assertDontSee('Rina Wijaya');
+
+    // Hanya filter kelas tanpa pencarian tetap menampilkan semua yang cocok.
+    $this->get(route('cms.student', ['kelas' => 'X-B', 'status' => 'Aktif']))
+        ->assertOk()
+        ->assertSee('Budi Santoso')
+        ->assertDontSee('Rina Wijaya');
+});
+
+test('halaman siswa tetap menampilkan semua siswa tanpa filter', function () {
+    $first = Siswa::factory()->create();
+    $second = Siswa::factory()->create();
+
+    $this->get(route('cms.student'))
+        ->assertOk()
+        ->assertSee($first->user->name)
+        ->assertSee($second->user->name)
+        ->assertDontSee('Filter aktif:');
+});
+
 test('form tambah siswa memvalidasi input wajib dan pilihan yang diizinkan', function () {
     $this->from(route('cms.student'))
         ->post(route('cms.student.store'), [
