@@ -73,12 +73,14 @@
 
     /*
     | Ringkasan kehadiran pada donut. Nilai & persentasenya diisi JS.
+    | `Belum` mewakili siswa yang belum punya catatan absensi hari ini.
     */
     $rekapItems = [
         ['key' => 'hadir', 'label' => 'Hadir', 'dot' => 'bg-emerald-500', 'hex' => '#22c55e'],
         ['key' => 'izin', 'label' => 'Izin', 'dot' => 'bg-blue-500', 'hex' => '#3b82f6'],
         ['key' => 'sakit', 'label' => 'Sakit', 'dot' => 'bg-amber-500', 'hex' => '#f59e0b'],
         ['key' => 'alpha', 'label' => 'Alpha', 'dot' => 'bg-red-500', 'hex' => '#ef4444'],
+        ['key' => 'belum', 'label' => 'Belum Absen', 'dot' => 'bg-slate-300', 'hex' => '#cbd5e1'],
     ];
 
     /*
@@ -161,6 +163,23 @@
         <div id="kelasChips" class="-mx-1 flex flex-wrap gap-2 px-1"></div>
     </div>
 
+    {{-- muncul kalau guru ini belum punya kelas yang diampu --}}
+    <div id="kosongKelas"
+        class="mb-6 hidden rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
+        <div class="flex items-start gap-3">
+            <i class="fas fa-circle-info mt-0.5 shrink-0"></i>
+            <div>
+                <p class="font-semibold">Belum ada kelas yang diampu.</p>
+                <p class="mt-0.5">
+                    Hubungkan kelas dengan akun guru ini di dashboard admin, menu
+                    <a href="{{ route('cms.classes') }}" class="font-semibold underline">Classes</a>,
+                    kolom <span class="font-semibold">Guru Pengampu</span>. Siswa
+                    kelas yang terhubung akan otomatis muncul di halaman ini.
+                </p>
+            </div>
+        </div>
+    </div>
+
     {{-- kartu statistik --}}
     <div class="mb-6 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
         @foreach ($statCards as $card)
@@ -224,26 +243,8 @@
                 </div>
 
                 <div class="px-6 py-5">
-                    <div class="flex h-56 items-stretch gap-2">
-                        @foreach ($monthlyTrend as $bar)
-                            <div class="group/bar flex h-full flex-1 flex-col items-center gap-2">
-                                <span class="text-[11px] font-semibold text-gray-700 opacity-0 transition-opacity group-hover/bar:opacity-100"
-                                    title="{{ $bar['month'] }}: {{ $bar['hadir'] }}% hadir">
-                                    {{ $bar['hadir'] }}%
-                                </span>
-                                <div class="flex w-full flex-1 items-end">
-                                    <div
-                                        class="flex w-full flex-col-reverse gap-0.5 overflow-hidden rounded-t-md transition-all duration-300 group-hover/bar:brightness-105"
-                                        style="height: 100%">
-                                        <div class="w-full rounded-t-md bg-gradient-to-t from-amber-500 to-amber-400"
-                                            style="height: {{ $bar['izin'] }}%"></div>
-                                        <div class="w-full bg-gradient-to-t from-emerald-500 to-emerald-400"
-                                            style="height: {{ $bar['hadir'] }}%"></div>
-                                    </div>
-                                </div>
-                                <span class="text-[11px] text-gray-500">{{ $bar['month'] }}</span>
-                            </div>
-                        @endforeach
+                    <div class="chart-container">
+                        <canvas id="trenChart"></canvas>
                     </div>
                 </div>
             </div>
@@ -408,17 +409,27 @@
 @endpush
 
 @push('scripts')
+    {{-- Data kelas & siswa dari database, dibaca data-guru.blade.php --}}
+    <script>
+        window.HADIRIN_GURU = @json($guruData ?? null);
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     @include('guru.partials.data-guru')
 
     <script>
         // ============================================================
         // DASHBOARD GURU
         // ============================================================
-        // Semua angka di halaman ini diturunkan dari `presensiList` yang
-        // dipakai bersama oleh seluruh halaman guru (lihat data-guru.blade.php).
+        // Semua angka di halaman ini diturunkan dari `presensiList`, yang
+        // datanya berasal dari database yang sama dengan dashboard admin.
 
         let kelasAktif = null;
         let daftarKelas = [];
+        let trenChart = null;
+
+        const DATA_TREN_BULANAN = @json($monthlyTrend);
 
         const BADGE_STATUS = {
             'Hadir': 'badge-hadir',
@@ -437,21 +448,31 @@
             hadir: '#22c55e',
             izin: '#3b82f6',
             sakit: '#f59e0b',
-            alpha: '#ef4444'
+            alpha: '#ef4444',
+            belum: '#cbd5e1'
         };
 
         // ============================================================
         // SELECTOR KELAS
         // ============================================================
         function daftarKelasDiajarkan() {
+            const dariServer = daftarKelasServer();
+
+            if (dariServer.length > 0) return dariServer;
+
             return Object.keys(globalData.siswaPerKelas || {});
         }
 
         function renderPemilihKelas() {
             const container = document.getElementById('kelasChips');
+            const kosong = document.getElementById('kosongKelas');
+
+            if (kosong) kosong.classList.toggle('hidden', daftarKelas.length > 0);
             if (!container) return;
 
             container.innerHTML = '';
+
+            if (daftarKelas.length === 0) return;
 
             daftarKelas.forEach(function (nama) {
                 const siswa = (globalData.siswaPerKelas || {})[nama] || [];
@@ -631,10 +652,12 @@
                         '</div>' +
                     '</td>' +
                     '<td class="px-4 py-3 text-sm text-gray-600">' + formatWaktu(row.waktu) + '</td>' +
-                    '<td class="px-4 py-3"><span class="' + (BADGE_METODE[row.metode] || 'badge-id') + '">' +
-                        (row.metode || '-') + '</span></td>' +
-                    '<td class="px-4 py-3 text-right"><span class="' + (BADGE_STATUS[row.status] || 'badge-alpha') + '">' +
-                        (row.status || '-') + '</span></td>';
+                    '<td class="px-4 py-3"><span class="' +
+                        (row.metode ? (BADGE_METODE[row.metode] || 'badge-id') : 'badge-belum') + '">' +
+                        (row.metode || 'Belum absen') + '</span></td>' +
+                    '<td class="px-4 py-3 text-right"><span class="' +
+                        (row.status ? (BADGE_STATUS[row.status] || 'badge-alpha') : 'badge-belum') + '">' +
+                        (row.status || 'Belum Absen') + '</span></td>';
 
                 tbody.appendChild(tr);
             });
@@ -720,6 +743,60 @@
         }
 
         // ============================================================
+        // TREN KEHADIRAN BULANAN
+        // ============================================================
+        function initTrenChart() {
+            const canvas = document.getElementById('trenChart');
+            if (!canvas || typeof Chart === 'undefined') return;
+
+            trenChart = new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: DATA_TREN_BULANAN.map(function (bar) { return bar.month; }),
+                    datasets: [
+                        {
+                            label: 'Hadir',
+                            data: DATA_TREN_BULANAN.map(function (bar) { return bar.hadir; }),
+                            backgroundColor: '#10b981',
+                            borderRadius: { topLeft: 0, topRight: 0, bottomLeft: 6, bottomRight: 6 },
+                            borderSkipped: false
+                        },
+                        {
+                            label: 'Izin / Sakit',
+                            data: DATA_TREN_BULANAN.map(function (bar) { return bar.izin; }),
+                            backgroundColor: '#f59e0b',
+                            borderRadius: { topLeft: 6, topRight: 6, bottomLeft: 0, bottomRight: 0 },
+                            borderSkipped: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function (ctx) {
+                                    return ctx.dataset.label + ': ' + ctx.parsed.y + '%';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { stacked: true, grid: { display: false }, ticks: { font: { size: 11 } } },
+                        y: {
+                            stacked: true,
+                            max: 100,
+                            grid: { color: '#f1f5f9' },
+                            ticks: { font: { size: 11 }, callback: function (v) { return v + '%'; } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // ============================================================
         // RENDER SEBUAH HALAMAN
         // ============================================================
         function persen(jumlah, total) {
@@ -755,16 +832,21 @@
             // Kalau kelas pada identitas tidak ada di daftar, pakai yang pertama.
             kelasAktif = daftarKelas.indexOf(identitasGuru.kelasLengkap) !== -1
                 ? identitasGuru.kelasLengkap
-                : (daftarKelas[0] || identitasGuru.kelasLengkap);
+                : (daftarKelas[0] || null);
 
             if (kelasAktif) loadDataKelas(kelasAktif);
 
+            initTrenChart();
             renderSeluruhHalaman();
 
             const tombol = document.getElementById('tombolMulaiSesi');
             if (tombol) {
+                // Sesi absensi belum butuh server, jadi tombol disembunyikan
+                // selama belum ada kelas yang diampu.
+                tombol.classList.toggle('hidden', kelasAktif === null);
+
                 tombol.addEventListener('click', function () {
-                    alert('Pembukaan sesi absensi untuk ' + (kelasAktif || '-') + ' belum diimplementasikan.');
+                    alert('Pembukaan sesi absensi untuk ' + kelasAktif + ' belum diimplementasikan.');
                 });
             }
         });

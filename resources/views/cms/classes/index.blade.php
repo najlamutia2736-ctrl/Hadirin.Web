@@ -75,6 +75,7 @@
                         <th class="px-6 py-3">Kelas</th>
                         <th class="px-6 py-3">Tingkat</th>
                         <th class="px-6 py-3">Wali Kelas</th>
+                        <th class="px-6 py-3">Guru Pengampu</th>
                         <th class="px-6 py-3">Jumlah Siswa</th>
                         <th class="px-6 py-3">Ruang</th>
                         <th class="px-6 py-3">Status</th>
@@ -104,6 +105,16 @@
                             </td>
                             <td class="px-6 py-4 text-gray-500">
                                 {{ $class->waliKelas?->user?->name ?? 'Belum ditentukan' }}
+                            </td>
+                            <td class="px-6 py-4">
+                                @forelse ($class->guru as $pengampu)
+                                    <span
+                                        class="mb-1 mr-1 inline-block rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-600">
+                                        {{ $pengampu->user?->name ?? 'Guru tanpa akun' }}
+                                    </span>
+                                @empty
+                                    <span class="text-xs text-gray-400">Belum ada pengampu</span>
+                                @endforelse
                             </td>
                             <td class="px-6 py-4">
                                 <div class="flex items-center gap-2">
@@ -141,7 +152,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-6 py-10 text-center text-gray-500">
+                            <td colspan="8" class="px-6 py-10 text-center text-gray-500">
                                 Belum ada data kelas.
                             </td>
                         </tr>
@@ -159,8 +170,7 @@
         </div>
     </div>
 
-    <div id="modal-hapus-kelas"
-        class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4">
+    <div id="modal-hapus-kelas" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4">
         <div class="w-full max-w-sm rounded-xl bg-white shadow-xl">
             <div class="px-6 py-5 text-center">
                 <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600">
@@ -171,7 +181,8 @@
                     Kelas <span id="delete-class-name" class="font-medium text-gray-700"></span> akan dihapus permanen.
                 </p>
             </div>
-            <form id="delete-class-form" method="POST" action="#" class="flex gap-3 border-t border-gray-200 px-6 py-4">
+            <form id="delete-class-form" method="POST" action="#"
+                class="flex gap-3 border-t border-gray-200 px-6 py-4">
                 @csrf
                 @method('DELETE')
                 <button type="button" data-modal-close

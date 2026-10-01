@@ -12,11 +12,18 @@ class Absensi extends Model
         'sesi_absensi_id',
         'waktu_absen',
         'status',
-        'keterangan'
+        'keterangan',
     ];
 
+    protected function casts(): array
+    {
+        return [
+            'waktu_absen' => 'datetime',
+        ];
+    }
+
     // ===== RELASI =====
-    
+
     // Absensi milik 1 Siswa (BelongsTo)
     // Karena absensi punya foreign key 'siswa_id'
     public function siswa(): BelongsTo

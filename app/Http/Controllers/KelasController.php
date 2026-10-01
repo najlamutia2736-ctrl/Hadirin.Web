@@ -11,10 +11,28 @@ use Illuminate\View\View;
 
 class KelasController extends Controller
 {
+    /**
+     * Validasi guru pengampu kelas.
+     *
+     * Dipakai bersama oleh form tambah dan ubah kelas. Daftar ini mengisi
+     * tabel penghubung `guru_kelas`, yang dibaca `Guru::kelasDiampu()` untuk
+     * membatasi kelas mana saja yang tampil di dashboard guru.
+     *
+     * @return array<string, array<int, string>>
+     */
+    private function aturanGuruPengampu(): array
+    {
+        return [
+            'teachers' => ['nullable', 'array'],
+            'teachers.*' => ['integer', 'exists:gurus,id'],
+        ];
+    }
+
     public function index(Request $request): View
     {
         $classes = Kelas::query()
             ->with('waliKelas.user')
+            ->with('guru.user:id,name')
             ->withCount('siswa')
             ->when($request->filled('q'), function ($query) use ($request) {
                 $keyword = '%'.$request->string('q').'%';
@@ -49,9 +67,10 @@ class KelasController extends Controller
             'homeroom' => ['nullable', 'integer', 'exists:gurus,id'],
             'room' => ['nullable', 'string', 'max:50'],
             'tahun_ajaran' => ['nullable', 'integer', 'min:2000', 'max:'.(now()->year + 1)],
+            ...$this->aturanGuruPengampu(),
         ]);
 
-        Kelas::create([
+        $kelas = Kelas::create([
             'nama_kelas' => $validated['name'],
             'tingkat' => $validated['level'],
             'wali_kelas_id' => $validated['homeroom'] ?? null,
@@ -59,6 +78,8 @@ class KelasController extends Controller
             'tahun_ajaran' => $validated['tahun_ajaran'] ?? now()->year,
             'status' => 'Aktif',
         ]);
+
+        $kelas->guru()->sync($validated['teachers'] ?? []);
 
         return redirect()
             ->route('cms.classes')
@@ -79,6 +100,8 @@ class KelasController extends Controller
 
     public function edit(Kelas $kelas): View
     {
+        $kelas->load('guru');
+
         $gurus = Guru::query()
             ->with('user:id,name')
             ->orderBy('id')
@@ -97,13 +120,16 @@ class KelasController extends Controller
                 'required',
                 'string',
                 'max:50',
-                Rule::unique('kelas', 'nama_kelas')->ignore($kelas->id),
+                // `ignore` tanpa kolom kedua akan memakai kolom yang sedang
+                // divalidasi (`nama_kelas`), bukan primary key.
+                Rule::unique('kelas', 'nama_kelas')->ignore($kelas->id, 'id'),
             ],
             'level' => ['required', Rule::in(['X', 'XI', 'XII'])],
             'homeroom' => ['nullable', 'integer', 'exists:gurus,id'],
             'room' => ['nullable', 'string', 'max:50'],
             'tahun_ajaran' => ['nullable', 'integer', 'min:2000', 'max:'.(now()->year + 1)],
             'status' => ['sometimes', Rule::in(['Aktif', 'Arsip'])],
+            ...$this->aturanGuruPengampu(),
         ]);
 
         $kelas->update([
@@ -114,6 +140,8 @@ class KelasController extends Controller
             'tahun_ajaran' => $validated['tahun_ajaran'] ?? $kelas->tahun_ajaran,
             'status' => $validated['status'] ?? $kelas->status,
         ]);
+
+        $kelas->guru()->sync($validated['teachers'] ?? []);
 
         return redirect()
             ->route('cms.classes')

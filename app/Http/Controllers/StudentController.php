@@ -202,7 +202,7 @@ class StudentController extends Controller
             'nis' => [
                 'required',
                 'digits:8',
-                Rule::unique('siswas', 'nisn')->ignore($siswa->id),
+                Rule::unique('siswas', 'nisn')->ignore($siswa->id, 'id'),
             ],
             'class' => ['required', Rule::in(self::KELAS_TERSEDIA)],
             'gender' => ['required', Rule::in(['L', 'P'])],

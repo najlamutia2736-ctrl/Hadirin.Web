@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\AbsensiSiswaController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DashboardGuruController;
 use App\Http\Controllers\GuruController;
 use App\Http\Controllers\KelasController;
 use App\Http\Controllers\RekapController;
@@ -15,52 +18,84 @@ Route::get('/login', function () {
     return view('login');
 })->name('login');
 
-Route::get('/login/konfirmasi', function () {
-    return view('login2');
-})->name('login2');
+Route::post('/login', [AuthController::class, 'store'])
+    ->middleware('guest')
+    ->name('login.store');
+
+Route::post('/logout', [AuthController::class, 'destroy'])
+    ->name('logout');
 
 Route::get('/beranda', function () {
     return view('beranda');
 })->name('beranda');
 
-Route::get('/identitas-siswa', function () {
-    return view('identitas-siswa');
-})->name('identitas.siswa');
-
-Route::get('/absen/siswa/qr', function () {
-    return view('absen-siswa-qr');
-})->name('absen.siswa.qr');
-
-Route::get('/absen/verifikasi', function () {
-    return view('absen-siswa-verifikasi');
-})->name('absen.verifikasi');
-
-
-// Bagian Baru
-Route::prefix('dashboard/guru')
-    ->name('guru.')
+// Halaman Absensi Siswa.
+Route::prefix('/absensi')
+    ->name('absensi.')
+    ->middleware('auth')
     ->group(function () {
-        Route::get('/', function () {
-            return view('guru.dashboard');
-        })->name('dashboard');
+        Route::get('/', [AbsensiSiswaController::class, 'index'])
+            ->name('index');
 
-        Route::get('/progres', function () {
-            return view('guru.progres');
-        })->name('progres');
+        Route::get('/identitas', function () {
+            return view('absensi.identitas');
+        })->name('identitas');
 
-        Route::get('/kelola', function () {
-            return view('guru.kelola');
-        })->name('kelola');
+        Route::get('/metode', function () {
+            return view('absensi.metode');
+        })->name('metode');
 
-        Route::get('/laporan', function () {
-            return view('guru.laporan');
-        })->name('laporan');
+        Route::get('/scan-qr', function () {
+            return view('absensi.scan-qr');
+        })->name('scan-qr');
 
-        Route::get('/realtime', function () {
-            return view('guru.realtime');
-        })->name('realtime');
+        Route::get('/id-unik', function () {
+            return view('absensi.id-unik');
+        })->name('id-unik');
+
+        Route::get('/izin-sakit', function () {
+            return view('absensi.izin-sakit');
+        })->name('izin-sakit');
+
+        Route::get('/notifikasi', function () {
+            return view('absensi.notifikasi');
+        })->name('notifikasi');
     });
 
+// Dashboard Guru.
+Route::prefix('dashboard/guru')
+    ->name('guru.')
+    ->controller(DashboardGuruController::class)
+    ->group(function () {
+        Route::get('/', 'dashboard')
+            ->name('dashboard');
+
+        Route::get('/progres', 'progres')
+            ->name('progres');
+
+        Route::get('/kelola', 'kelola')
+            ->name('kelola');
+
+        Route::post('/kelola/siswa', 'storeSiswa')
+            ->name('kelola.siswa.store');
+
+        Route::put('/kelola/siswa/{siswa}', 'updateSiswa')
+            ->name('kelola.siswa.update');
+
+        Route::delete('/kelola/siswa/{siswa}', 'destroySiswa')
+            ->name('kelola.siswa.destroy');
+
+        Route::get('/laporan', 'laporan')
+            ->name('laporan');
+
+        Route::get('/laporan/export', 'exportLaporan')
+            ->name('laporan.export');
+
+        Route::get('/realtime', 'realtime')
+            ->name('realtime');
+    });
+
+// Dashboard CMS.
 Route::get('/dashboard', function () {
     return view('cms.dashboard');
 })->name('cms.dashboard');

@@ -145,6 +145,8 @@
                         <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
+
+                @include('cms.classes.partials.guru-pengampu', ['kelas' => null])
             </div>
 
             <div class="flex flex-col-reverse gap-3 border-t border-gray-200 bg-gray-50 px-6 py-4 sm:flex-row sm:justify-end">

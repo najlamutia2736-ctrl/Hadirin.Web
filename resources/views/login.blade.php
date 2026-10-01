@@ -36,7 +36,7 @@
                 </div>
 
                 <!-- Form Login -->
-<form action="{{ route('login2') }}" method="GET" onsubmit="simpanEmail(event)">
+<form action="{{ route('login.store') }}" method="POST" onsubmit="simpanEmail(event)">
     @csrf
     <!-- Email -->
     <div>
@@ -44,10 +44,13 @@
             <i class="fas fa-envelope text-indigo-400 mr-1.5"></i> Email
         </label>
         <div class="relative">
-            <input type="email" id="email" name="email" placeholder="Type here" required
+            <input type="email" id="email" name="email" value="{{ old('email') }}" placeholder="Type here" required
                    class="w-full pl-4 pr-10 py-3 bg-slate-50/80 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300" />
             <span class="absolute right-3 top-3.5 text-slate-300 text-sm"><i class="fas fa-envelope"></i></span>
         </div>
+        @error('email')
+            <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
+        @enderror
     </div>
 
     <!-- Password -->
@@ -61,6 +64,10 @@
             <span class="absolute right-3 top-3.5 text-slate-300 text-sm"><i class="fas fa-lock"></i></span>
         </div>
     </div>
+
+    @error('password')
+        <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
+    @enderror
 
     <!-- Tombol Log in -->
     <button type="submit"

@@ -154,7 +154,7 @@ class UserController extends Controller
                 'string',
                 'email',
                 'max:255',
-                Rule::unique('users', 'email')->ignore($user->id),
+                Rule::unique('users', 'email')->ignore($user->id, 'id'),
             ],
             'role' => ['required', Rule::in(self::PERAN_TERSEDIA)],
             'status' => ['sometimes', 'string', Rule::in(self::STATUS_TERSEDIA)],

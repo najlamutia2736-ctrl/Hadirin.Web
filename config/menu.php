@@ -43,6 +43,12 @@ return [
                 ['label' => 'Rekap', 'route' => 'cms.rekap', 'icon' => 'fas fa-clipboard-list'],
             ],
         ],
+        [
+            'label' => 'Akun',
+            'items' => [
+                ['label' => 'Kembali ke Beranda', 'route' => 'beranda', 'icon' => 'fas fa-arrow-left'],
+            ],
+        ],
     ],
 
     'guru' => [
@@ -71,7 +77,10 @@ return [
 
     /*
     | Identitas pengguna yang tampil di footer sidebar.
-    | 'guru' diambil dari localStorage `identitas_guru` oleh JS.
+    |
+    | Nilai di bawah hanya dipakai kalau belum ada user yang login. Kalau
+    | sudah login, nama & email diambil dari `Auth::user()` oleh View Composer
+    | di AppServiceProvider.
     */
     'user' => [
         'cms' => [
@@ -84,6 +93,14 @@ return [
             'name' => 'Guru',
             'email' => '-',
         ],
+    ],
+
+    /*
+    | Subtitle brand di header sidebar, mengikuti area route yang dibuka.
+    */
+    'brand' => [
+        'cms' => 'School Management',
+        'guru' => 'Portal Guru',
     ],
 
     /*

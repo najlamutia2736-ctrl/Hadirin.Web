@@ -1,0 +1,63 @@
+<?php
+
+use App\Models\Siswa;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+uses(RefreshDatabase::class);
+
+/**
+ * Halaman yang memuat link "Absen Siswa" di navigasi publik.
+ */
+function halamanDenganMenuAbsen(): array
+{
+    return ['/', '/login', '/beranda'];
+}
+
+test('link absen siswa disembunyikan saat belum login', function () {
+    foreach (halamanDenganMenuAbsen() as $url) {
+        $this->get($url)
+            ->assertOk()
+            ->assertDontSee(route('absensi.index'), false);
+    }
+});
+
+test('link absen siswa disembunyikan untuk akun admin dan guru', function () {
+    foreach (halamanDenganMenuAbsen() as $url) {
+        foreach (['Admin', 'Guru'] as $role) {
+            $this->actingAs(User::factory()->create(['role' => $role]))
+                ->get($url)
+                ->assertOk()
+                ->assertDontSee(route('absensi.index'), false);
+        }
+    }
+});
+
+test('link absen siswa muncul untuk akun siswa yang punya profil', function () {
+    $user = User::factory()->create(['role' => 'Siswa']);
+
+    Siswa::factory()->create(['user_id' => $user->id]);
+
+    foreach (halamanDenganMenuAbsen() as $url) {
+        $this->actingAs($user->fresh())
+            ->get($url)
+            ->assertOk()
+            ->assertSee(route('absensi.index'), false)
+            ->assertSee('Absen Siswa');
+    }
+});
+
+test('link absen siswa tetap disembunyikan untuk akun siswa tanpa profil', function () {
+    // Role-nya Siswa, tapi tidak punya baris di tabel `siswas`, jadi halaman
+    // /absensi akan menolak dengan 403. Menunya pun tidak boleh tampil.
+    $user = User::factory()->create(['role' => 'Siswa']);
+
+    expect($user->siswa)->toBeNull();
+
+    foreach (halamanDenganMenuAbsen() as $url) {
+        $this->actingAs($user)
+            ->get($url)
+            ->assertOk()
+            ->assertDontSee(route('absensi.index'), false);
+    }
+});

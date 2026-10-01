@@ -41,6 +41,25 @@ test('sidebar cms tetap memakai menu cms dan tidak menampilkan menu guru', funct
         ->assertDontSee(route('guru.progres'), false);
 });
 
+test('semua halaman cms punya link kembali ke beranda', function () {
+    $halaman = [
+        'cms.dashboard' => 'Dashboard',
+        'cms.student' => 'Students',
+        'cms.teachers' => 'Teachers',
+        'cms.classes' => 'Classes',
+        'cms.users' => 'Users',
+        'cms.rekap' => 'Rekap',
+    ];
+
+    foreach ($halaman as $route => $judul) {
+        $this->get(route($route))
+            ->assertOk()
+            ->assertSee($judul)
+            ->assertSee('Kembali ke Beranda')
+            ->assertSee(route('beranda'), false);
+    }
+});
+
 test('halaman guru memuat data layer dan script yang dibutuhkan', function () {
     $this->get(route('guru.dashboard'))
         ->assertOk()

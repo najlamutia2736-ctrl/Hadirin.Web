@@ -74,7 +74,21 @@
                     {{ $menuUser['email'] }}
                 </p>
             </div>
-            <i class="fas fa-ellipsis-v shrink-0 text-xs text-gray-400"></i>
+
+            @auth
+                <form method="POST" action="{{ route('logout') }}" class="shrink-0">
+                    @csrf
+                    <button type="submit" title="Keluar"
+                        class="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600">
+                        <i class="fas fa-right-from-bracket text-xs"></i>
+                    </button>
+                </form>
+            @else
+                <a href="{{ route('login') }}" title="Login"
+                    class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-indigo-50 hover:text-indigo-600">
+                    <i class="fas fa-right-to-bracket text-xs"></i>
+                </a>
+            @endauth
         </div>
     </div>
 </aside>

@@ -9,8 +9,16 @@ class SesiAbsensi extends Model
 {
     protected $fillable = ['kode_sesi', 'waktu_mulai', 'waktu_selesai', 'status'];
 
+    protected function casts(): array
+    {
+        return [
+            'waktu_mulai' => 'datetime',
+            'waktu_selesai' => 'datetime',
+        ];
+    }
+
     // ===== RELASI =====
-    
+
     // SesiAbsensi punya banyak Absensi (HasMany)
     // Karena absensi punya foreign key 'sesi_absensi_id'
     public function absensis(): HasMany

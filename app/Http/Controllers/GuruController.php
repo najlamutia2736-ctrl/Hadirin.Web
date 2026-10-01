@@ -91,7 +91,7 @@ class GuruController extends Controller
                 'required',
                 'string',
                 'max:30',
-                Rule::unique('gurus', 'nip')->ignore($guru->id),
+                Rule::unique('gurus', 'nip')->ignore($guru->id, 'id'),
             ],
             'subject' => ['required', 'string', 'max:100'],
             'phone' => ['nullable', 'string', 'max:20'],

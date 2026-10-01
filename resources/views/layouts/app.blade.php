@@ -4,6 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {{-- Dipakai request fetch() dari halaman, mis. pada halaman Kelola Data Kelas --}}
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Hadirin.Web')</title>
     <!-- Tailwind via CDN -->
     <script src="https://cdn.tailwindcss.com"></script>

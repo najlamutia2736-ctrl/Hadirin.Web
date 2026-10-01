@@ -62,6 +62,15 @@
         font-size: 11px;
     }
 
+    /* badge siswa yang belum punya catatan absensi hari ini */
+    .badge-belum {
+        background: #f1f5f9;
+        color: #64748b;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+    }
+
     /* badge metode */
     .badge-scan {
         background: #e0e7ff;

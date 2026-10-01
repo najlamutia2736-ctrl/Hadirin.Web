@@ -38,6 +38,5 @@
 
         <div
             class="grid h-8 w-8 place-items-center rounded-full bg-indigo-100 font-semibold text-sm text-indigo-700"
-            id="headerInitial">{{ $menuUser['initial'] ?? 'AD' }}</div>
-    </div>
+            id="headerInitial">{{ $menuUser['initial'] ?? 'AD' }}</div>    </div>
 </header>

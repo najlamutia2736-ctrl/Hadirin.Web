@@ -1,4 +1,10 @@
 <!-- resources/views/navbar.blade.php -->
+@php
+    // Menu "Absen Siswa" hanya untuk akun yang punya profil di tabel `siswas`.
+    // Pemeriksaannya sama dengan yang dipakai AbsensiSiswaController, supaya
+    // menu ini tidak pernah mengarah ke halaman yang akan menolak user.
+    $bisaAbsen = auth()->user()?->siswa !== null;
+@endphp
 <header class="w-full bg-white/80 backdrop-blur-sm border-b border-slate-200/60 sticky top-0 z-10">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <nav class="flex items-center justify-between h-16 md:h-20">
@@ -13,7 +19,9 @@
             <!-- Menu Desktop -->
             <div class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
                 <a href="{{ route('beranda') }}" class="hover:text-indigo-600 transition {{ request()->routeIs('beranda') ? 'text-indigo-600 font-semibold' : '' }}">Beranda</a>
-                <a href="{{ route('identitas.siswa') }}" class="hover:text-indigo-600 transition {{ request()->routeIs('identitas.siswa') ? 'text-indigo-600 font-semibold' : '' }}">Absen Siswa</a>
+                @if ($bisaAbsen)
+                    <a href="{{ route('absensi.index') }}" class="hover:text-indigo-600 transition {{ request()->routeIs('absensi.*') ? 'text-indigo-600 font-semibold' : '' }}">Absen Siswa</a>
+                @endif
                 <a href="{{ route('guru.dashboard') }}" class="hover:text-indigo-600 transition {{ request()->routeIs('guru.dashboard') ? 'text-indigo-600 font-semibold' : '' }}">Dashboard Guru</a>
                 <a href="{{ route('cms.dashboard') }}" class="hover:text-indigo-600 transition {{ request()->routeIs('cms.dashboard') ? 'text-indigo-600 font-semibold' : '' }}">Dashboard Admin</a>
                 <a href="{{ route('cms.rekap') }}" class="hover:text-indigo-600 transition {{ request()->routeIs('cms.rekap') ? 'text-indigo-600 font-semibold' : '' }}">Rekap</a>
@@ -58,9 +66,11 @@
             <a href="{{ route('beranda') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
                 <i class="fas fa-home w-5"></i> Beranda
             </a>
-            <a href="{{ route('identitas.siswa') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
-                <i class="fas fa-user-graduate w-5"></i> Absen Siswa
-            </a>
+            @if ($bisaAbsen)
+                <a href="{{ route('absensi.index') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
+                    <i class="fas fa-user-graduate w-5"></i> Absen Siswa
+                </a>
+            @endif
             <a href="{{ route('guru.dashboard') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
                 <i class="fas fa-chalkboard-teacher w-5"></i> Dashboard Guru
             </a>
