@@ -213,8 +213,3 @@ Route::controller(RekapController::class)->group(function () {
     Route::get('/rekap/export/pdf', 'exportPdf')
         ->name('cms.rekap.export.pdf');
 });
-
-Route::controller(JadwalController::class)->group(function () {
-    Route::get('/jadwal', 'index')
-        ->name('cms.jadwal');
-});

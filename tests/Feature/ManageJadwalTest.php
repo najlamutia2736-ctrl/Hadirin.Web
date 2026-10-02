@@ -1,10 +1,12 @@
 <?php
 
+use App\Http\Controllers\JadwalController;
 use App\Models\Guru;
 use App\Models\Jadwal;
 use App\Models\Kelas;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Route;
 
 uses(RefreshDatabase::class);
 
@@ -81,6 +83,34 @@ test('rentang jam pada jadwal ditampilkan tanpa detik', function () {
     $this->get(route('cms.jadwal'))
         ->assertOk()
         ->assertSee('07:30 - 09:00');
+});
+
+test('route jadwal ditangani controller, bukan closure yang mengosongkan data', function () {
+    // Route closure untuk URI yang sama akan MENIMPA route controller, karena
+    // Laravel menimpa entri dengan method+URI yang sama. Kalau pernah terjadi,
+    // viewnya tetap tampil tapi tanpa `$kelasList` dan semuanya jadi error 500.
+    $aksi = Route::getRoutes()->getByName('cms.jadwal');
+
+    expect($aksi)->not->toBeNull()
+        ->and($aksi->getActionMethod())->toBe('index')
+        ->and($aksi->getControllerClass())->toBe(JadwalController::class);
+
+    // Halaman harus benar-benar dirender, bukan mengembalikan 500.
+    $this->get(route('cms.jadwal'))->assertOk();
+});
+
+test('nama route jadwal tidak terdaftar dua kali', function () {
+    // Duplikasi route tidak selalu langsung terlihat, tapi membuat
+    // `route('cms.jadwal')` dan request sebenarnya mengarah ke route berbeda.
+    $terdaftar = [];
+
+    foreach (Route::getRoutes() as $route) {
+        $terdaftar[$route->getName()][] = $route->uri();
+    }
+
+    $ganda = array_filter($terdaftar, fn ($rows) => count($rows) > 1);
+
+    expect($ganda)->toBe([]);
 });
 
 test('halaman tambah jadwal menampilkan form dengan pilihan kelas dan guru', function () {
