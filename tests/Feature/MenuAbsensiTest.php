@@ -61,3 +61,58 @@ test('link absen siswa tetap disembunyikan untuk akun siswa tanpa profil', funct
             ->assertDontSee(route('absensi.index'), false);
     }
 });
+
+/*
+| Kartu peran "Siswa" di beranda. Berbeda dengan menu "Absen Siswa", kartu
+| ini tidak pernah disembunyikan: tugasnya justru menawarkan pilihan peran,
+| jadi orang yang belum login adalah target utamanya. Yang dijaga hanya
+| tujuan kliknya supaya URL halaman absensi tidak bocor ke akun lain.
+*/
+
+test('kartu peran siswa selalu tampil di beranda untuk semua pengunjung', function () {
+    // Tamu, siswa tanpa profil, guru, dan admin semuanya tetap melihat
+    // ketiga kartu peran supaya bisa memilih masuk sebagai siswa.
+    $this->get('/beranda')
+        ->assertOk()
+        ->assertSee('Siswa')
+        ->assertSee('Guru / Wali Kelas')
+        ->assertSee('Admin / Kepsek')
+        ->assertSee('Masuk sebagai Siswa');
+
+    foreach (['Admin', 'Guru'] as $role) {
+        $this->actingAs(User::factory()->create(['role' => $role]))
+            ->get('/beranda')
+            ->assertOk()
+            ->assertSee('Siswa')
+            ->assertSee('Bukan Akun Siswa');
+    }
+
+    $tanpaProfil = User::factory()->create(['role' => 'Siswa']);
+
+    $this->actingAs($tanpaProfil)
+        ->get('/beranda')
+        ->assertOk()
+        ->assertSee('Siswa')
+        ->assertSee('Bukan Akun Siswa');
+});
+
+test('kartu peran siswa untuk tamu mengarah ke login, bukan ke halaman absensi', function () {
+    // Middleware auth yang menjaga /absensi, jadi kartu cukup mengarahkan ke
+    // login dan tidak boleh memuat URL absensi sama sekali.
+    $this->get('/beranda')
+        ->assertOk()
+        ->assertSee(route('login'), false)
+        ->assertDontSee(route('absensi.index'), false);
+});
+
+test('kartu peran siswa untuk siswa yang punya profil langsung ke halaman absensi', function () {
+    $user = User::factory()->create(['role' => 'Siswa']);
+
+    Siswa::factory()->create(['user_id' => $user->id]);
+
+    $this->actingAs($user->fresh())
+        ->get('/beranda')
+        ->assertOk()
+        ->assertSee(route('absensi.index'), false)
+        ->assertSee('Absen Sekarang');
+});

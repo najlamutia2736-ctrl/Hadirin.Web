@@ -791,3 +791,375 @@ test('halaman kelola menampilkan kelas dan siswa dari database', function () {
         ->and($payload['kelas'][0]['siswa'][0]['nama'])->toBe('Siswa Tampil')
         ->and($payload['kelas'][0]['siswa'][0]['gender'])->toBeIn(['L', 'P']);
 });
+
+/*
+| Progres Absensi. Sumber angka tetap tabel `absensis`, dengan dua hal yang
+| membedakannya dari laporan bulanan: periodenya bisa beberapa periode
+| sekaligus, dan ada pembanding dengan periode sebelumnya sepanjang yang
+| sama supaya guru tahu arah kehadiran, bukan cuma angkanya.
+*/
+
+test('progres absensi menghitung kehadiran dari tabel absensi', function () {
+    $guru = guruDenganAkun();
+    $kelas = Kelas::factory()->create(['nama_kelas' => 'X-A', 'status' => 'Aktif']);
+    $kelas->guru()->sync([$guru->id]);
+
+    $hadir = siswaDiKelas($kelas, 'Siswa Rajin');
+    $alpa = siswaDiKelas($kelas, 'Siswa Bolos');
+
+    $sesi = SesiAbsensi::create([
+        'kode_sesi' => 'SESI-PROGRES',
+        'waktu_mulai' => now()->startOfDay(),
+        'waktu_selesai' => now()->endOfDay(),
+        'status' => 'aktif',
+    ]);
+
+    foreach ([[$hadir, 'hadir'], [$alpa, 'alpha']] as [$siswa, $status]) {
+        Absensi::create([
+            'siswa_id' => $siswa->id,
+            'sesi_absensi_id' => $sesi->id,
+            'waktu_absen' => now(),
+            'status' => $status,
+        ]);
+    }
+
+    $payload = $this->actingAs($guru->user)
+        ->getJson(route('guru.progres'))
+        ->assertOk()
+        ->json();
+
+    expect($payload['total']['hadir'])->toBe(1)
+        ->and($payload['total']['alpa'])->toBe(1)
+        ->and($payload['total']['persentase'])->toBe(50)
+        ->and($payload['perKelas'])->toHaveCount(1)
+        ->and($payload['perKelas'][0]['kelas'])->toBe('X-A')
+        ->and($payload['perSiswa'])->toHaveCount(2);
+});
+
+test('progres absensi memakai json saat diminta', function () {
+    $guru = guruDenganAkun();
+    $kelas = Kelas::factory()->create(['nama_kelas' => 'X-A', 'status' => 'Aktif']);
+    $kelas->guru()->sync([$guru->id]);
+
+    $siswa = siswaDiKelas($kelas, 'Siswa Json');
+
+    $sesi = SesiAbsensi::create([
+        'kode_sesi' => 'SESI-PROGRES-JSON',
+        'waktu_mulai' => now()->startOfDay(),
+        'waktu_selesai' => now()->endOfDay(),
+        'status' => 'aktif',
+    ]);
+
+    Absensi::create([
+        'siswa_id' => $siswa->id,
+        'sesi_absensi_id' => $sesi->id,
+        'waktu_absen' => now(),
+        'status' => 'hadir',
+    ]);
+
+    $payload = $this->actingAs($guru->user)
+        ->getJson(route('guru.progres'))
+        ->assertOk()
+        ->json();
+
+    expect($payload['periode'])->toBe('30')
+        ->and($payload['jumlahHari'])->toBe(30)
+        ->and($payload['hariEfektif'])->toBe(1)
+        ->and($payload['perSiswa'][0]['nama'])->toBe('Siswa Json')
+        ->and($payload['perluPerhatian'])->toBe([]);
+});
+
+test('progres absensi hanya menghitung kelas yang diampu guru', function () {
+    $guru = guruDenganAkun();
+    $kelasMilik = Kelas::factory()->create(['nama_kelas' => 'X-A', 'status' => 'Aktif']);
+    $kelasLain = Kelas::factory()->create(['nama_kelas' => 'X-B', 'status' => 'Aktif']);
+    $kelasMilik->guru()->sync([$guru->id]);
+
+    siswaDiKelas($kelasMilik, 'Siswa Milik Saya');
+    siswaDiKelas($kelasLain, 'Siswa Milik Orang Lain');
+
+    $this->actingAs($guru->user)
+        ->get(route('guru.progres'))
+        ->assertOk()
+        ->assertSee('Siswa Milik Saya')
+        ->assertDontSee('Siswa Milik Orang Lain')
+        ->assertDontSee('X-B');
+});
+
+test('filter kelas yang bukan miliknya diabaikan, bukan membuka progres orang lain', function () {
+    $guru = guruDenganAkun();
+    $kelasLain = Kelas::factory()->create(['nama_kelas' => 'X-B', 'status' => 'Aktif']);
+    siswaDiKelas($kelasLain, 'Siswa Milik Orang Lain');
+
+    $payload = $this->actingAs($guru->user)
+        ->getJson(route('guru.progres', ['kelas' => 'X-B']))
+        ->assertOk()
+        ->json();
+
+    expect($payload['filterKelas'])->toBeNull()
+        ->and($payload['perSiswa'])->toBe([]);
+});
+
+test('filter periode yang tidak valid diabaikan dan kembali ke 30 hari', function () {
+    $guru = guruDenganAkun();
+
+    $payload = $this->actingAs($guru->user)
+        ->getJson(route('guru.progres', ['periode' => 'bukan-periode']))
+        ->assertOk()
+        ->json();
+
+    expect($payload['periode'])->toBe('30')
+        ->and($payload['jumlahHari'])->toBe(30);
+});
+
+test('periode progres hanya menghitung absensi di dalam rentangnya', function () {
+    $guru = guruDenganAkun();
+    $kelas = Kelas::factory()->create(['nama_kelas' => 'X-A', 'status' => 'Aktif']);
+    $kelas->guru()->sync([$guru->id]);
+
+    $siswa = siswaDiKelas($kelas, 'Siswa Absen Bulan Lalu');
+
+    $sesi = SesiAbsensi::create([
+        'kode_sesi' => 'SESI-PROGRES-LALU',
+        'waktu_mulai' => now()->subMonths(2),
+        'waktu_selesai' => now()->subMonths(2),
+        'status' => 'selesai',
+    ]);
+
+    Absensi::create([
+        'siswa_id' => $siswa->id,
+        'sesi_absensi_id' => $sesi->id,
+        'waktu_absen' => now()->subMonths(2),
+        'status' => 'hadir',
+    ]);
+
+    $payload = $this->actingAs($guru->user)
+        ->getJson(route('guru.progres', ['periode' => '30']))
+        ->assertOk()
+        ->json();
+
+    expect($payload['total']['hadir'])->toBe(0)
+        ->and($payload['adaCatatan'])->toBeFalse()
+        // Siswa tetap muncul supaya tidak hilang dari halaman.
+        ->and($payload['perSiswa'])->toHaveCount(1)
+        ->and($payload['perSiswa'][0]['total'])->toBe(0);
+});
+
+test('tren harian progres memuat seluruh hari pada periode, termasuk hari kosong', function () {
+    $guru = guruDenganAkun();
+    $kelas = Kelas::factory()->create(['nama_kelas' => 'X-A', 'status' => 'Aktif']);
+    $kelas->guru()->sync([$guru->id]);
+
+    $payload = $this->actingAs($guru->user)
+        ->getJson(route('guru.progres', ['periode' => '7']))
+        ->assertOk()
+        ->json();
+
+    expect($payload['trenHarian'])->toHaveCount(7)
+        ->and($payload['trenHarian'][0]['tanggal'])->toBe(today()->subDays(6)->toDateString())
+        ->and($payload['trenHarian'][6]['tanggal'])->toBe(today()->toDateString())
+        ->and($payload['trenHarian'][6]['catatan'])->toBe(0);
+});
+
+test('selisih progres membandingkan periode terpilih dengan periode sebelumnya', function () {
+    $guru = guruDenganAkun();
+    $kelas = Kelas::factory()->create(['nama_kelas' => 'X-A', 'status' => 'Aktif']);
+    $kelas->guru()->sync([$guru->id]);
+
+    $rajin = siswaDiKelas($kelas, 'Siswa Rajin');
+    $bolos = siswaDiKelas($kelas, 'Siswa Bolos');
+
+    $sesiLalu = SesiAbsensi::create([
+        'kode_sesi' => 'SESI-PROGRES-SEBELUM',
+        'waktu_mulai' => now()->subDays(40),
+        'waktu_selesai' => now()->subDays(40),
+        'status' => 'selesai',
+    ]);
+
+    $sesiIni = SesiAbsensi::create([
+        'kode_sesi' => 'SESI-PROGRES-SEKARANG',
+        'waktu_mulai' => now()->startOfDay(),
+        'waktu_selesai' => now()->endOfDay(),
+        'status' => 'aktif',
+    ]);
+
+    // Periode sebelumnya: 50% hadir. Periode ini: 100% hadir.
+    foreach ([[$rajin, 'hadir'], [$bolos, 'alpha']] as [$siswa, $status]) {
+        Absensi::create([
+            'siswa_id' => $siswa->id,
+            'sesi_absensi_id' => $sesiLalu->id,
+            'waktu_absen' => now()->subDays(40),
+            'status' => $status,
+        ]);
+    }
+
+    foreach ([$rajin, $bolos] as $siswa) {
+        Absensi::create([
+            'siswa_id' => $siswa->id,
+            'sesi_absensi_id' => $sesiIni->id,
+            'waktu_absen' => now(),
+            'status' => 'hadir',
+        ]);
+    }
+
+    $payload = $this->actingAs($guru->user)
+        ->getJson(route('guru.progres', ['periode' => '30']))
+        ->assertOk()
+        ->json();
+
+    expect($payload['sebelumnya']['persentase'])->toBe(50)
+        ->and($payload['total']['persentase'])->toBe(100)
+        ->and($payload['selisih'])->toBe(50);
+});
+
+test('daftar perlu perhatian hanya berisi siswa di bawah ambang dan punya catatan', function () {
+    $guru = guruDenganAkun();
+    $kelas = Kelas::factory()->create(['nama_kelas' => 'X-A', 'status' => 'Aktif']);
+    $kelas->guru()->sync([$guru->id]);
+
+    $rajin = siswaDiKelas($kelas, 'Siswa Rajin');
+    $bolos = siswaDiKelas($kelas, 'Siswa Bolos');
+    siswaDiKelas($kelas, 'Siswa Tanpa Catatan');
+
+    $sesi = SesiAbsensi::create([
+        'kode_sesi' => 'SESI-PROGRES-PERHATIAN',
+        'waktu_mulai' => now()->startOfDay(),
+        'waktu_selesai' => now()->endOfDay(),
+        'status' => 'aktif',
+    ]);
+
+    // Rajin hadir 2 dari 2, bolos 1 dari 2 -> 50%.
+    foreach ([[$rajin, 'hadir'], [$rajin, 'hadir'], [$bolos, 'hadir'], [$bolos, 'alpha']] as [$siswa, $status]) {
+        Absensi::create([
+            'siswa_id' => $siswa->id,
+            'sesi_absensi_id' => $sesi->id,
+            'waktu_absen' => now(),
+            'status' => $status,
+        ]);
+    }
+
+    $payload = $this->actingAs($guru->user)
+        ->getJson(route('guru.progres'))
+        ->assertOk()
+        ->json();
+
+    expect(array_column($payload['perluPerhatian'], 'nama'))->toBe(['Siswa Bolos'])
+        // Kehadiran terendah diurutkan paling atas.
+        ->and(array_column($payload['perSiswa'], 'nama'))
+        ->toBe(['Siswa Bolos', 'Siswa Rajin', 'Siswa Tanpa Catatan']);
+});
+
+test('halaman progres absensi menampilkan ringkasan periode di layar', function () {
+    $guru = guruDenganAkun();
+    $kelas = Kelas::factory()->create(['nama_kelas' => 'X-A', 'status' => 'Aktif']);
+    $kelas->guru()->sync([$guru->id]);
+
+    siswaDiKelas($kelas, 'Siswa Tampil Progres');
+
+    $this->actingAs($guru->user)
+        ->get(route('guru.progres', ['periode' => '7']))
+        ->assertOk()
+        ->assertSee('Progres Absensi')
+        ->assertSee('Rata-rata Kehadiran')
+        ->assertSee('Tren Kehadiran Harian')
+        ->assertSee('Progres per Kelas')
+        ->assertSee('Progres per Siswa')
+        ->assertSee('Siswa Tampil Progres')
+        // Periodenya ikut terbaca di dropdown, bukan hardcoded di view.
+        ->assertSee('7 Hari Terakhir')
+        ->assertSee('grafikProgresHarian', false);
+});
+
+/*
+| Real-Time Monitoring. Kondisinya hari ini, sama seperti dashboard, tapi
+| halaman ini menyegarkan dirinya sendiri lewat endpoint JSON `guru.dashboard`
+| supaya guru tidak perlu reload tiap ada siswa yang memindai QR.
+*/
+
+test('real-time monitoring memakai json saat diminta untuk polling', function () {
+    $guru = guruDenganAkun();
+    $kelas = Kelas::factory()->create(['nama_kelas' => 'X-A', 'status' => 'Aktif']);
+    $kelas->guru()->sync([$guru->id]);
+
+    $siswa = siswaDiKelas($kelas, 'Siswa Realtime');
+
+    $sesi = SesiAbsensi::create([
+        'kode_sesi' => 'SESI-REALTIME-JSON',
+        'waktu_mulai' => now()->startOfDay(),
+        'waktu_selesai' => now()->endOfDay(),
+        'status' => 'aktif',
+    ]);
+
+    Absensi::create([
+        'siswa_id' => $siswa->id,
+        'sesi_absensi_id' => $sesi->id,
+        'waktu_absen' => now(),
+        'status' => 'hadir',
+    ]);
+
+    $payload = $this->actingAs($guru->user)
+        ->getJson(route('guru.realtime'))
+        ->assertOk()
+        ->json();
+
+    expect(array_column($payload['kelas'], 'nama'))->toBe(['X-A'])
+        ->and($payload['kelas'][0]['siswa'][0]['nama'])->toBe('Siswa Realtime')
+        // Status hari ini ikut terbawa supaya polling bisa langsung dipakai.
+        ->and($payload['kelas'][0]['siswa'][0]['absensi'])->toBe('hadir')
+        ->and($payload['kelas'][0]['siswa'][0]['waktu'])->not->toBeNull();
+});
+
+test('real-time monitoring hanya mengirim kelas yang diampu guru', function () {
+    $guru = guruDenganAkun();
+    $kelasMilik = Kelas::factory()->create(['nama_kelas' => 'X-A', 'status' => 'Aktif']);
+    $kelasLain = Kelas::factory()->create(['nama_kelas' => 'X-B', 'status' => 'Aktif']);
+    $kelasMilik->guru()->sync([$guru->id]);
+
+    siswaDiKelas($kelasMilik, 'Siswa Milik Saya');
+    siswaDiKelas($kelasLain, 'Siswa Milik Orang Lain');
+
+    $this->actingAs($guru->user)
+        ->get(route('guru.realtime'))
+        ->assertOk()
+        ->assertDontSee('Siswa Milik Orang Lain')
+        ->assertDontSee('X-B');
+
+    $payload = $this->actingAs($guru->user)
+        ->getJson(route('guru.realtime'))
+        ->assertOk()
+        ->json();
+
+    expect(array_column($payload['kelas'], 'nama'))->toBe(['X-A']);
+});
+
+test('halaman real-time monitoring punya kendali polling dan feed absensi', function () {
+    $guru = guruDenganAkun();
+    $kelas = Kelas::factory()->create(['nama_kelas' => 'X-A', 'status' => 'Aktif']);
+    $kelas->guru()->sync([$guru->id]);
+
+    $this->actingAs($guru->user)
+        ->get(route('guru.realtime'))
+        ->assertOk()
+        ->assertSee('Real-Time Monitoring')
+        ->assertSee('Progres Sesi')
+        ->assertSee('Absensi Masuk')
+        ->assertSee('Daftar Siswa')
+        // Poll dan tombol kendalinya harus ada, kalau tidak halaman diam saja.
+        ->assertSee('loadRealtimeFromStorage', false)
+        ->assertSee('startRealtimeAutoRefresh', false)
+        ->assertSee('tombolAutoRefresh', false)
+        ->assertSee('feedRealtime', false)
+        ->assertSee('tabelRealtime', false)
+        // Polling ditembak ke endpoint JSON dashboard, bukan endpoint baru.
+        ->assertSee(route('guru.dashboard'), false);
+});
+
+test('halaman real-time monitoring menangani guru tanpa kelas', function () {
+    $guru = guruDenganAkun();
+
+    $this->actingAs($guru->user)
+        ->get(route('guru.realtime'))
+        ->assertOk()
+        ->assertSee('Belum ada kelas yang diampu', false)
+        ->assertSee('realtimeKosongKelas', false);
+});

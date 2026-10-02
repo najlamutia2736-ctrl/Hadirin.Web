@@ -4,6 +4,25 @@
     // Menu & kartu "Absen Siswa" hanya untuk akun yang punya profil di tabel
     // `siswas`. Pemeriksaannya sama dengan AbsensiSiswaController.
     $bisaAbsen = auth()->user()?->siswa !== null;
+
+    $user = auth()->user();
+
+    /*
+    | Kartu peran "Siswa" sengaja selalu tampil, bukan ikut disembunyikan
+    | bersama menunya. Kartu ini adalah pintu masuk untuk memilih peran,
+    | jadi orang yang belum login justru yang paling butuh melihatnya.
+    | Yang menyesuaikan hanya tujuan kliknya, supaya halaman absensi tidak
+    | pernah bocor ke akun yang tidak berhak (lihat `MenuAbsensiTest`).
+    */
+    $tujuanSiswa = $bisaAbsen
+        ? route('absensi.index')
+        : ($user === null ? route('login') : route('guru.dashboard'));
+
+    $labelSiswa = match (true) {
+        $bisaAbsen => 'Absen Sekarang',
+        $user === null => 'Masuk sebagai Siswa',
+        default => 'Bukan Akun Siswa',
+    };
 @endphp
 <head>
     <meta charset="UTF-8" />
@@ -143,18 +162,33 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
 
             <!-- Card Siswa -->
-            @if ($bisaAbsen)
-                <div class="bg-white rounded-2xl shadow-md border border-slate-200/60 p-6 text-center card-hover transition-all duration-300">
-                    <div class="w-20 h-20 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-user-graduate text-3xl text-indigo-600"></i>
-                    </div>
-                    <h4 class="text-xl font-bold text-slate-800 mb-2">Siswa</h4>
-                    <p class="text-sm text-slate-500 mb-4">Absen mandiri lewat scan QRCode atau kode unik.</p>
-                    <a href="{{ route('absensi.index') }}" class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2.5 rounded-xl transition shadow-md shadow-indigo-200/60">
-                        <i class="fas fa-arrow-right mr-1"></i> Klik
-                    </a>
+            {{-- Kartu ini tidak pernah disembunyikan: pilih peran harus bisa
+                 dilakukan sebelum login. Yang dijaga hanya link tujuan, agar
+                 URL halaman absensi tidak bocor ke akun non-siswa. --}}
+            <div class="bg-white rounded-2xl shadow-md border border-slate-200/60 p-6 text-center card-hover transition-all duration-300">
+                <div class="w-20 h-20 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-user-graduate text-3xl text-indigo-600"></i>
                 </div>
-            @endif
+                <h4 class="text-xl font-bold text-slate-800 mb-2">Siswa</h4>
+                <p class="text-sm text-slate-500 mb-4">Absen mandiri lewat scan QRCode atau kode unik.</p>
+
+                @if ($bisaAbsen)
+                    <a href="{{ route('absensi.index') }}" class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2.5 rounded-xl transition shadow-md shadow-indigo-200/60">
+                        <i class="fas fa-arrow-right mr-1"></i> {{ $labelSiswa }}
+                    </a>
+                @elseif ($user === null)
+                    {{-- Belum login: arahkan ke login, bukan ke halaman absensi,
+                         supaya middleware tetap yang menjaga halamannya. --}}
+                    <a href="{{ route('login') }}" class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2.5 rounded-xl transition shadow-md shadow-indigo-200/60">
+                        <i class="fas fa-right-to-bracket mr-1"></i> {{ $labelSiswa }}
+                    </a>
+                @else
+                    {{-- Sudah login tapi bukan siswa: jelaskan, jangan paksa. --}}
+                    <span class="inline-block cursor-not-allowed rounded-xl border border-slate-200 bg-slate-100 px-6 py-2.5 font-medium text-slate-400" title="Gunakan akun siswa untuk absen.">
+                        <i class="fas fa-lock mr-1"></i> {{ $labelSiswa }}
+                    </span>
+                @endif
+            </div>
 
             <!-- Card Guru / Wali Kelas -->
             <div class="bg-white rounded-2xl shadow-md border border-slate-200/60 p-6 text-center card-hover transition-all duration-300 md:scale-105 md:shadow-lg">
