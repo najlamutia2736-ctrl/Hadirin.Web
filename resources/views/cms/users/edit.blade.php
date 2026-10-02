@@ -164,6 +164,25 @@
                         <p id="password-error" class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
+
+                <div class="sm:col-span-2">
+                    <label for="password_confirmation" class="mb-2 block text-sm font-semibold text-gray-700">
+                        Ulangi Password Baru
+                    </label>
+                    <input id="password_confirmation" name="password_confirmation" type="password" minlength="8"
+                        autocomplete="new-password" placeholder="Kosongkan juga jika password tidak diubah"
+                        aria-invalid="{{ $errors->has('password_confirmation') ? 'true' : 'false' }}"
+                        @class([
+                            'w-full rounded-lg border px-3 py-2.5 text-sm text-gray-700 shadow-sm transition placeholder:text-gray-400 focus:outline-none focus:ring-2',
+                            'border-red-500 bg-red-50/40 focus:border-red-500 focus:ring-red-500' => $errors->has('password_confirmation'),
+                            'border-gray-200 bg-white focus:border-indigo-500 focus:ring-indigo-500' => ! $errors->has('password_confirmation'),
+                        ])>
+                    @error('password_confirmation')
+                        <p id="password_confirmation-error" class="mt-1.5 text-xs text-red-600">
+                            {{ $message }}
+                        </p>
+                    @enderror
+                </div>
             </div>
 
             <div class="flex flex-col-reverse gap-3 border-t border-gray-200 bg-gray-50 px-6 py-4 sm:flex-row sm:justify-end">

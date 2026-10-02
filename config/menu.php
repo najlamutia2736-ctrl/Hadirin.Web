@@ -34,6 +34,7 @@ return [
                 ['label' => 'Students', 'route' => 'cms.student', 'icon' => 'fas fa-user-graduate'],
                 ['label' => 'Teachers', 'route' => 'cms.teachers', 'icon' => 'fas fa-chalkboard-teacher'],
                 ['label' => 'Classes', 'route' => 'cms.classes', 'icon' => 'fas fa-book-open'],
+                ['label' => 'Jadwal', 'route' => 'cms.jadwal', 'icon' => 'fas fa-calendar-days'],
             ],
         ],
         [

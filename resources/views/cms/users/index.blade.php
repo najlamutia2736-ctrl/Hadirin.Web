@@ -201,7 +201,7 @@
         </div>
     </div>
 
-    {{-- modal: tambah pengguna --}
+    {{-- modal: tambah pengguna --}}
     <div id="modal-tambah" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4"
         role="dialog" aria-modal="true" aria-labelledby="tambah-user-title">
         <div class="w-full max-w-md rounded-xl bg-white shadow-xl">
@@ -244,12 +244,34 @@
                         <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
                     @enderror
                 </div>
-                <div class="mb-6">
+                <div class="mb-4">
+                    <label class="mb-1.5 block text-sm font-medium text-gray-700" for="status">Status</label>
+                    <select id="status" name="status"
+                        class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                        <option value="Aktif" @selected(old('status', 'Aktif') === 'Aktif')>Aktif</option>
+                        <option value="Nonaktif" @selected(old('status') === 'Nonaktif')>Nonaktif</option>
+                    </select>
+                    @error('status')
+                        <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                    @enderror
+                </div>
+                <div class="mb-4">
                     <label class="mb-1.5 block text-sm font-medium text-gray-700" for="password">Password</label>
-                    <input id="password" name="password" type="password" required placeholder="Minimal 8 karakter"
-                        value="{{ old('password') }}"
+                    <input id="password" name="password" type="password" required minlength="8"
+                        placeholder="Minimal 8 karakter"
                         class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
                     @error('password')
+                        <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                    @enderror
+                </div>
+                <div class="mb-6">
+                    <label class="mb-1.5 block text-sm font-medium text-gray-700" for="password_confirmation">
+                        Ulangi Password
+                    </label>
+                    <input id="password_confirmation" name="password_confirmation" type="password" required
+                        minlength="8" placeholder="Ketik ulang password"
+                        class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                    @error('password_confirmation')
                         <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
                     @enderror
                 </div>

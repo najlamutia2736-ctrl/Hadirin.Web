@@ -117,6 +117,27 @@
                 </div>
 
                 <div>
+                    <label for="status" class="mb-2 block text-sm font-semibold text-gray-700">
+                        Status <span class="text-red-500" aria-hidden="true">*</span>
+                    </label>
+                    <select id="status" name="status" required
+                        aria-invalid="{{ $errors->has('status') ? 'true' : 'false' }}" @class([
+                            'w-full rounded-lg border px-3 py-2.5 text-sm text-gray-700 shadow-sm transition focus:outline-none focus:ring-2',
+                            'border-red-500 bg-red-50/40 focus:border-red-500 focus:ring-red-500' => $errors->has(
+                                'status'),
+                            'border-gray-200 bg-white focus:border-indigo-500 focus:ring-indigo-500' => !$errors->has(
+                                'status'),
+                        ])>
+                        <option value="Aktif" @selected(old('status', 'Aktif') === 'Aktif')>Aktif</option>
+                        <option value="Nonaktif" @selected(old('status') === 'Nonaktif')>Nonaktif</option>
+                    </select>
+                    <p class="mt-1.5 text-xs text-gray-500">Akun Nonaktif tetap terdaftar tapi tidak bisa masuk.</p>
+                    @error('status')
+                        <p id="status-error" class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
                     <label for="password" class="mb-2 block text-sm font-semibold text-gray-700">
                         Password <span class="text-red-500" aria-hidden="true">*</span>
                     </label>
@@ -131,6 +152,26 @@
                         ])>
                     @error('password')
                         <p id="password-error" class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div class="sm:col-span-2">
+                    <label for="password_confirmation" class="mb-2 block text-sm font-semibold text-gray-700">
+                        Ulangi Password <span class="text-red-500" aria-hidden="true">*</span>
+                    </label>
+                    <input id="password_confirmation" name="password_confirmation" type="password" required
+                        minlength="8" autocomplete="new-password" placeholder="Ketik ulang password di atas"
+                        aria-invalid="{{ $errors->has('password_confirmation') ? 'true' : 'false' }}" @class([
+                            'w-full rounded-lg border px-3 py-2.5 text-sm text-gray-700 shadow-sm transition placeholder:text-gray-400 focus:outline-none focus:ring-2',
+                            'border-red-500 bg-red-50/40 focus:border-red-500 focus:ring-red-500' => $errors->has(
+                                'password_confirmation'),
+                            'border-gray-200 bg-white focus:border-indigo-500 focus:ring-indigo-500' => !$errors->has(
+                                'password_confirmation'),
+                        ])>
+                    @error('password_confirmation')
+                        <p id="password_confirmation-error" class="mt-1.5 text-xs text-red-600">
+                            {{ $message }}
+                        </p>
                     @enderror
                 </div>
             </div>
@@ -151,7 +192,8 @@
 
         <div class="mt-5 flex gap-3 rounded-xl border border-indigo-100 bg-indigo-50 p-4 text-sm text-indigo-800">
             <i class="fas fa-info-circle mt-0.5 shrink-0"></i>
-            <p>Gunakan email aktif agar pengguna dapat menerima informasi akun. Password minimal 8 karakter.</p>
+            <p>Gunakan email aktif agar pengguna dapat menerima informasi akun. Password minimal 8 karakter dan harus
+                sama dengan kolom ulanginya.</p>
         </div>
     </div>
 @endsection

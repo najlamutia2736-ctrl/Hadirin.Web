@@ -369,6 +369,7 @@ test('pengguna boleh disimpan ulang tanpa mengubah email nya', function () {
         'name' => 'Nama Baru',
         'email' => 'guru@sekolah.sch.id',
         'role' => 'Guru',
+        'status' => 'Aktif',
     ])->assertSessionHasNoErrors();
 
     expect($user->fresh()->name)->toBe('Nama Baru');

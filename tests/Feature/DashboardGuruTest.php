@@ -47,6 +47,7 @@ test('semua halaman cms punya link kembali ke beranda', function () {
         'cms.student' => 'Students',
         'cms.teachers' => 'Teachers',
         'cms.classes' => 'Classes',
+        'cms.jadwal' => 'Jadwal',
         'cms.users' => 'Users',
         'cms.rekap' => 'Rekap',
     ];

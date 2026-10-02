@@ -27,7 +27,9 @@ test('pengguna baru dapat ditambahkan melalui modal tambah', function () {
         'name' => 'Dewi Lestari',
         'email' => 'dewi.lestari@sekolah.sch.id',
         'role' => 'Guru',
+        'status' => 'Aktif',
         'password' => 'rahasia123',
+        'password_confirmation' => 'rahasia123',
     ]);
 
     $response
@@ -37,6 +39,7 @@ test('pengguna baru dapat ditambahkan melalui modal tambah', function () {
     $this->assertDatabaseHas('users', [
         'email' => 'dewi.lestari@sekolah.sch.id',
         'role' => 'Guru',
+        'status' => 'Aktif',
         'name' => 'Dewi Lestari',
     ]);
 });
@@ -68,6 +71,140 @@ test('form tambah pengguna memvalidasi input wajib dan panjang password', functi
         ])
         ->assertRedirect(route('cms.users'))
         ->assertSessionHasErrors(['name', 'email', 'role', 'password']);
+});
+
+/*
+| Validasi tambahan yang mengikuti kolom tabel `users`.
+*/
+
+test('form tambah pengguna mewajibkan status sesuai kolom di tabel', function () {
+    // `status` sudah ada di tabel dan sudah ada di form ubah, jadi form
+    // tambah tidak boleh lagi bergantung pada nilai bawaan database.
+    $this->from(route('cms.users'))
+        ->post(route('cms.users.store'), [
+            'name' => 'Dewi Lestari',
+            'email' => 'dewi@sekolah.sch.id',
+            'role' => 'Guru',
+            'password' => 'rahasia123',
+            'password_confirmation' => 'rahasia123',
+        ])
+        ->assertSessionHasErrors('status');
+
+    $this->assertDatabaseCount('users', 0);
+
+    $this->from(route('cms.users'))
+        ->post(route('cms.users.store'), [
+            'name' => 'Dewi Lestari',
+            'email' => 'dewi@sekolah.sch.id',
+            'role' => 'Guru',
+            'status' => 'Dibekukan',
+            'password' => 'rahasia123',
+            'password_confirmation' => 'rahasia123',
+        ])
+        ->assertSessionHasErrors('status');
+
+    $this->assertDatabaseCount('users', 0);
+});
+
+test('form tambah pengguna bisa menyimpan status nonaktif', function () {
+    $this->post(route('cms.users.store'), [
+        'name' => 'Dewi Lestari',
+        'email' => 'dewi@sekolah.sch.id',
+        'role' => 'Guru',
+        'status' => 'Nonaktif',
+        'password' => 'rahasia123',
+        'password_confirmation' => 'rahasia123',
+    ])->assertSessionHas('success');
+
+    $this->assertDatabaseHas('users', [
+        'email' => 'dewi@sekolah.sch.id',
+        'status' => 'Nonaktif',
+    ]);
+});
+
+test('password harus sama dengan kolom konfirmasi', function () {
+    $this->from(route('cms.users'))
+        ->post(route('cms.users.store'), [
+            'name' => 'Dewi Lestari',
+            'email' => 'dewi@sekolah.sch.id',
+            'role' => 'Guru',
+            'status' => 'Aktif',
+            'password' => 'rahasia123',
+            'password_confirmation' => 'rahasia456',
+        ])
+        ->assertSessionHasErrors('password');
+
+    $this->assertDatabaseCount('users', 0);
+
+    $this->from(route('cms.users'))
+        ->post(route('cms.users.store'), [
+            'name' => 'Dewi Lestari',
+            'email' => 'dewi@sekolah.sch.id',
+            'role' => 'Guru',
+            'status' => 'Aktif',
+            'password' => 'rahasia123',
+        ])
+        ->assertSessionHasErrors('password');
+
+    $this->assertDatabaseCount('users', 0);
+});
+
+test('email dan nama dirapikan sebelum disimpan', function () {
+    // Spasi pinggir dan huruf besar pada email tidak boleh ikut tersimpan,
+    // kalau tidak `Budi@Sekolah.ID` dan `budi@sekolah.id` jadi dua akun.
+    $this->post(route('cms.users.store'), [
+        'name' => '  Budi Santoso  ',
+        'email' => '  BUDI.Santoso@Sekolah.ID  ',
+        'role' => 'Guru',
+        'status' => 'Aktif',
+        'password' => 'rahasia123',
+        'password_confirmation' => 'rahasia123',
+    ])->assertSessionHas('success');
+
+    $this->assertDatabaseHas('users', [
+        'name' => 'Budi Santoso',
+        'email' => 'budi.santoso@sekolah.id',
+    ]);
+});
+
+test('email yang berbeda huruf besar dianggap sudah terdaftar', function () {
+    User::factory()->create(['email' => 'budi.santoso@sekolah.id']);
+
+    $this->from(route('cms.users'))
+        ->post(route('cms.users.store'), [
+            'name' => 'Budi Santoso',
+            'email' => 'BUDI.Santoso@Sekolah.ID',
+            'role' => 'Guru',
+            'status' => 'Aktif',
+            'password' => 'rahasia123',
+            'password_confirmation' => 'rahasia123',
+        ])
+        ->assertSessionHasErrors('email');
+
+    $this->assertDatabaseCount('users', 1);
+});
+
+test('nama harus minimal dua karakter', function () {
+    $this->from(route('cms.users'))
+        ->post(route('cms.users.store'), [
+            'name' => 'A',
+            'email' => 'a@sekolah.sch.id',
+            'role' => 'Guru',
+            'status' => 'Aktif',
+            'password' => 'rahasia123',
+            'password_confirmation' => 'rahasia123',
+        ])
+        ->assertSessionHasErrors('name');
+
+    $this->assertDatabaseCount('users', 0);
+});
+
+test('form tambah pengguna memuat field status dan konfirmasi password', function () {
+    $this->get(route('cms.users.tambah'))
+        ->assertOk()
+        ->assertSee('name="status"', false)
+        ->assertSee('name="password_confirmation"', false)
+        ->assertSee('Ulangi Password');
 });
 
 test('filter peran pada halaman pengguna', function () {
@@ -204,6 +341,68 @@ test('modal tambah pengguna mengirim ke endpoint simpan pengguna', function () {
         ->assertSee(route('cms.users.store'), false);
 });
 
+test('tombol tambah pengguna benar-benar terhubung ke modalnya', function () {
+    // Tombol memakai `data-modal-open`, jadi id yang ditujunya harus benar-benar
+    // ada di halaman. Kalau modal hilang dari DOM, tombolnya diam-diam tidak
+    // melakukan apa-apa karena `getElementById` mengembalikan null.
+    $html = $this->get(route('cms.users'))->assertOk()->getContent();
+
+    preg_match('/data-modal-open="([^"]+)"/', $html, $tombol);
+
+    expect($tombol)->not->toBeEmpty();
+
+    $idModal = $tombol[1];
+
+    expect($html)->toContain('id="'.$idModal.'"');
+});
+
+test('modal tambah dan modal hapus ikut terender di halaman pengguna', function () {
+    // `{{--` yang tidak ditutup akan menelan markup berikutnya sebagai isi
+    // komentar, sehingga bagian halaman hilang tanpa error apa pun. Itulah yang
+    // membuat modal tambah diam-diam tidak pernah muncul di DOM.
+    $html = $this->get(route('cms.users'))->assertOk()->getContent();
+
+    expect($html)->toContain('id="modal-tambah"')
+        ->and($html)->toContain('id="modal-hapus"')
+        ->and($html)->toContain('id="tambah-user-title"');
+});
+
+test('form pada modal tambah memuat seluruh kolom yang diminta endpoint simpan', function () {
+    // Modal dan form /tambahuser harus mengirim kolom yang sama. Kalau modal
+    // kehilangan satu kolom yang menjadi wajib, setiap penyimpanan dari /users
+    // akan gagal saat validasi.
+    $html = $this->get(route('cms.users'))->assertOk()->getContent();
+
+    preg_match('/id="modal-tambah".*?<\/form>/s', $html, $modal);
+    $form = $modal[0] ?? '';
+
+    expect($form)->not->toBe('');
+
+    foreach (['name', 'email', 'role', 'status', 'password', 'password_confirmation'] as $kolom) {
+        expect($form)->toContain('name="'.$kolom.'"');
+    }
+});
+
+test('data yang dikirim form modal bisa disimpan tanpa error validasi', function () {
+    // Kirim persis kolom yang ada di modal, supaya kolom yang diwajibkan di
+    // backend tidak luput dari view.
+    $this->post(route('cms.users.store'), [
+        'name' => 'Dewi Lestari',
+        'email' => 'dewi.lestari@sekolah.sch.id',
+        'role' => 'Guru',
+        'status' => 'Aktif',
+        'password' => 'rahasia123',
+        'password_confirmation' => 'rahasia123',
+    ])
+        ->assertSessionHasNoErrors()
+        ->assertSessionHas('success', 'Pengguna berhasil ditambahkan.');
+
+    $this->assertDatabaseHas('users', [
+        'email' => 'dewi.lestari@sekolah.sch.id',
+        'status' => 'Aktif',
+    ]);
+});
+
 test('pagination pengguna mempertahankan filter yang aktif', function () {
     User::factory()->count(12)->create(['role' => 'Guru', 'status' => 'Aktif']);
     User::factory()->count(3)->create(['role' => 'Siswa', 'status' => 'Aktif']);
@@ -219,7 +418,9 @@ test('pengguna yang baru ditambahkan muncul di tabel setelah redirect', function
         'name' => 'Rina Wijaya',
         'email' => 'rina.wijaya@sekolah.sch.id',
         'role' => 'Siswa',
+        'status' => 'Aktif',
         'password' => 'rahasia123',
+        'password_confirmation' => 'rahasia123',
     ]);
 
     $this->get(route('cms.users'))

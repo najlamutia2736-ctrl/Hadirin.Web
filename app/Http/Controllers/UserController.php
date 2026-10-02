@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -115,16 +116,71 @@ class UserController extends Controller
     }
 
     /**
-     * Simpan pengguna baru dari modal "Tambah Pengguna".
+     * Rapikan input sebelum divalidasi.
+     *
+     * Spasi di pinggir dibuang supaya ` budi@sekolah.id ` tidak gagal
+     * validasi dan tidak tersimpan dengan spasi, dan email dilowercase
+     * supaya `Budi@Sekolah.ID` tidak tersimpan sebagai akun terpisah dari
+     * `budi@sekolah.id`.
+     */
+    private function rapikanInput(Request $request): void
+    {
+        foreach (['name', 'email'] as $kolom) {
+            $nilai = $request->input($kolom);
+
+            // Kalau bukan string (mis. `email[]`), biarkan saja supaya
+            // aturan validasi yang menolaknya, bukan kode ini.
+            if (! is_string($nilai)) {
+                continue;
+            }
+
+            $nilai = trim($nilai);
+
+            $request->merge([
+                $kolom => $kolom === 'email' ? Str::lower($nilai) : $nilai,
+            ]);
+        }
+    }
+
+    /**
+     * Aturan validasi untuk form pengguna, dipakai bersama oleh tambah & ubah.
+     *
+     * Disatukan supaya keduanya tidak bisa lagi berbeda aturan. Sebelumnya
+     * kolom `status` hanya divalidasi saat ubah, padahal kolom itu sudah ada
+     * di tabel `users` dan form ubah pun sudah menampilkannya.
+     *
+     * @return array<string, list<mixed>>
+     */
+    private function aturan(?User $user = null): array
+    {
+        return [
+            'name' => ['required', 'string', 'min:2', 'max:255'],
+            'email' => [
+                'required',
+                'string',
+                'email',
+                'max:255',
+                $user === null
+                    ? Rule::unique('users', 'email')
+                    : Rule::unique('users', 'email')->ignore($user->getKey(), 'id'),
+            ],
+            'role' => ['required', Rule::in(self::PERAN_TERSEDIA)],
+            'status' => ['required', Rule::in(self::STATUS_TERSEDIA)],
+            // Di form ubah, password dikosongkan berarti tidak diubah.
+            'password' => $user === null
+                ? ['required', 'string', 'min:8', 'confirmed']
+                : ['nullable', 'string', 'min:8', 'confirmed'],
+        ];
+    }
+
+    /**
+     * Simpan pengguna baru dari form "Tambah Pengguna".
      */
     public function store(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-            'role' => ['required', Rule::in(self::PERAN_TERSEDIA)],
-            'password' => ['required', 'string', 'min:8'],
-        ]);
+        $this->rapikanInput($request);
+
+        $validated = $request->validate($this->aturan());
 
         User::create($validated);
 
@@ -145,21 +201,17 @@ class UserController extends Controller
         ]);
     }
 
+    /**
+     * Simpan perubahan pengguna.
+     *
+     * Email miliknya sendiri tetap boleh dipakai, jadi aturan `unique`
+     * dikecualikan untuk baris yang sedang diedit.
+     */
     public function update(Request $request, User $user): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => [
-                'required',
-                'string',
-                'email',
-                'max:255',
-                Rule::unique('users', 'email')->ignore($user->id, 'id'),
-            ],
-            'role' => ['required', Rule::in(self::PERAN_TERSEDIA)],
-            'status' => ['sometimes', 'string', Rule::in(self::STATUS_TERSEDIA)],
-            'password' => ['nullable', 'string', 'min:8'],
-        ]);
+        $this->rapikanInput($request);
+
+        $validated = $request->validate($this->aturan($user));
 
         if (blank($validated['password'] ?? null)) {
             unset($validated['password']);

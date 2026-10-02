@@ -4,6 +4,7 @@ use App\Http\Controllers\AbsensiSiswaController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardGuruController;
 use App\Http\Controllers\GuruController;
+use App\Http\Controllers\JadwalController;
 use App\Http\Controllers\KelasController;
 use App\Http\Controllers\RekapController;
 use App\Http\Controllers\StudentController;
@@ -160,6 +161,28 @@ Route::controller(KelasController::class)->group(function () {
         ->name('cms.classes.destroy');
 });
 
+Route::controller(JadwalController::class)->group(function () {
+    Route::get('/jadwal', 'index')
+        ->name('cms.jadwal');
+
+    // `/jadwal/tambah` ditulis sebelum route `{jadwal}` supaya kata "tambah"
+    // tidak pernah tertangkap sebagai id jadwal.
+    Route::get('/jadwal/tambah', 'create')
+        ->name('cms.jadwal.create');
+
+    Route::post('/jadwal', 'store')
+        ->name('cms.jadwal.store');
+
+    Route::get('/jadwal/{jadwal}/edit', 'edit')
+        ->name('cms.jadwal.edit');
+
+    Route::put('/jadwal/{jadwal}', 'update')
+        ->name('cms.jadwal.update');
+
+    Route::delete('/jadwal/{jadwal}', 'destroy')
+        ->name('cms.jadwal.destroy');
+});
+
 Route::controller(UserController::class)->group(function () {
     Route::get('/users', 'index')
         ->name('cms.users');
@@ -189,4 +212,9 @@ Route::controller(RekapController::class)->group(function () {
 
     Route::get('/rekap/export/pdf', 'exportPdf')
         ->name('cms.rekap.export.pdf');
+});
+
+Route::controller(JadwalController::class)->group(function () {
+    Route::get('/jadwal', 'index')
+        ->name('cms.jadwal');
 });
