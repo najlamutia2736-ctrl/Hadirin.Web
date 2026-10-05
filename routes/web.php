@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardGuruController;
 use App\Http\Controllers\GuruController;
 use App\Http\Controllers\JadwalController;
+use App\Http\Controllers\JurusanController;
 use App\Http\Controllers\KelasController;
 use App\Http\Controllers\RekapController;
 use App\Http\Controllers\StudentController;
@@ -38,29 +39,33 @@ Route::prefix('/absensi')
         Route::get('/', [AbsensiSiswaController::class, 'index'])
             ->name('index');
 
-        Route::get('/identitas', function () {
-            return view('absensi.identitas');
-        })->name('identitas');
+        Route::get('/identitas', [AbsensiSiswaController::class, 'identitas'])
+            ->name('identitas');
 
-        Route::get('/metode', function () {
-            return view('absensi.metode');
-        })->name('metode');
+        Route::post('/identitas', [AbsensiSiswaController::class, 'updateIdentitas'])
+            ->name('identitas.update');
+
+        Route::get('/metode', [AbsensiSiswaController::class, 'metode'])
+            ->name('metode');
 
         Route::get('/scan-qr', function () {
             return view('absensi.scan-qr');
         })->name('scan-qr');
 
-        Route::get('/id-unik', function () {
-            return view('absensi.id-unik');
-        })->name('id-unik');
+        Route::get('/id-unik', [AbsensiSiswaController::class, 'idUnik'])
+            ->name('id-unik');
 
-        Route::get('/izin-sakit', function () {
-            return view('absensi.izin-sakit');
-        })->name('izin-sakit');
+        Route::post('/id-unik', [AbsensiSiswaController::class, 'storeIdUnik'])
+            ->name('id-unik.store');
 
-        Route::get('/notifikasi', function () {
-            return view('absensi.notifikasi');
-        })->name('notifikasi');
+        Route::get('/izin-sakit', [AbsensiSiswaController::class, 'izinSakit'])
+            ->name('izin-sakit');
+
+        Route::post('/izin-sakit', [AbsensiSiswaController::class, 'storeIzinSakit'])
+            ->name('izin-sakit.store');
+
+        Route::get('/notifikasi', [AbsensiSiswaController::class, 'notifikasi'])
+            ->name('notifikasi');
     });
 
 // Dashboard Guru.
@@ -100,6 +105,26 @@ Route::prefix('dashboard/guru')
 Route::get('/dashboard', function () {
     return view('cms.dashboard');
 })->name('cms.dashboard');
+
+Route::controller(JurusanController::class)->group(function () {
+    Route::get('/jurusan', 'index')
+        ->name('cms.jurusan');
+
+    Route::get('/tambahjurusan', 'create')
+        ->name('cms.jurusan.create');
+
+    Route::post('/jurusan', 'store')
+        ->name('cms.jurusan.store');
+
+    Route::get('/jurusan/{jurusan}/edit', 'edit')
+        ->name('cms.jurusan.edit');
+
+    Route::put('/jurusan/{jurusan}', 'update')
+        ->name('cms.jurusan.update');
+
+    Route::delete('/jurusan/{jurusan}', 'destroy')
+        ->name('cms.jurusan.destroy');
+});
 
 Route::controller(StudentController::class)->group(function () {
     Route::get('/students', 'index')

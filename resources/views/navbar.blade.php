@@ -35,9 +35,12 @@
                             <i class="fas fa-user-circle text-indigo-600 text-lg"></i>
                             <span>{{ Auth::user()->name }}</span>
                         </span>
-                        <a href="{{ route('login') }}" class="text-sm text-red-500 hover:text-red-700 transition">
-                            <i class="fas fa-sign-out-alt"></i> Logout
-                        </a>
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit" class="text-sm text-red-500 hover:text-red-700 transition">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </button>
+                        </form>
                     </div>
                 @else
                     <a href="{{ route('login') }}" class="inline-flex items-center gap-2 bg-indigo-600 text-white text-sm font-medium px-5 py-2.5 rounded-full shadow-md shadow-indigo-200 transition hover:bg-indigo-700">

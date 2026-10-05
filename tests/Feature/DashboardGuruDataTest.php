@@ -303,6 +303,35 @@ test('logout mengakhiri sesi', function () {
     $this->assertGuest();
 });
 
+/*
+| `POST /login` memakai middleware `guest`. Kalau tidak diberi arah, middleware
+| itu mencari route bernama `dashboard`, lalu `home`. Route dashboard di sini
+| bernama `cms.dashboard`, sehingga orang yang sudah login lalu submit form login
+| lagi akan mendarat di halaman awal, bukan beranda.
+*/
+
+test('login saat sudah login diarahkan ke beranda, bukan halaman awal', function () {
+    $user = User::factory()->create(['role' => 'Siswa', 'status' => 'Aktif']);
+
+    $this->actingAs($user)
+        ->post(route('login.store'), [
+            'email' => $user->email,
+            'password' => 'password',
+        ])
+        ->assertRedirect(route('beranda'));
+});
+
+test('halaman publik punya form logout yang benar-benar mengirim post', function () {
+    $user = User::factory()->create(['role' => 'Siswa', 'status' => 'Aktif']);
+
+    foreach (['home', 'beranda'] as $hal) {
+        $this->actingAs($user)
+            ->get(route($hal))
+            ->assertOk()
+            ->assertSee('<form method="POST" action="'.route('logout').'"', false);
+    }
+});
+
 test('waktu login terakhir tersimpan di database', function () {
     $guru = guruDenganAkun();
     $user = $guru->user;

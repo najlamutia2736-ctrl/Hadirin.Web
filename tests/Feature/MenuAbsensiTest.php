@@ -77,7 +77,9 @@ test('kartu peran siswa selalu tampil di beranda untuk semua pengunjung', functi
         ->assertSee('Siswa')
         ->assertSee('Guru / Wali Kelas')
         ->assertSee('Admin / Kepsek')
-        ->assertSee('Masuk sebagai Siswa');
+        // Teks tombol kartu sudah diubah menjadi "Klik" untuk ketiga peran,
+        // jadi yang dicek adalah isi kartu Siswanya sendiri, bukan label tombol.
+        ->assertSee('Absen mandiri lewat scan QRCode atau kode unik.');
 
     foreach (['Admin', 'Guru'] as $role) {
         $this->actingAs(User::factory()->create(['role' => $role]))

@@ -42,7 +42,7 @@
             'label' => 'Belum Absen',
             'ringkasan' => 'Pilih salah satu cara untuk absen hari ini',
             'ikon' => 'fa-hourglass-half',
-            'kartu' => 'from-slate-500 to-slate-600',
+            'kartu' => 'from-indigo-700 to-purple-500',
             'lencana' => 'bg-slate-100 text-slate-700',
             'garis' => 'bg-slate-400',
         ],

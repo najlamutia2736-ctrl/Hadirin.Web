@@ -94,6 +94,8 @@
                     @enderror
                 </div>
 
+                @include('cms.classes.partials.jurusan', ['kelas' => $kelas])
+
                 <div>
                     <label for="homeroom" class="mb-2 block text-sm font-semibold text-gray-700">Wali Kelas</label>
                     <select id="homeroom" name="homeroom"
