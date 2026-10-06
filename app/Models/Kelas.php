@@ -19,17 +19,21 @@ class Kelas extends Model
      *
      * Daftar ini adalah sumber kebenaran nama kelas. `siswas.kelas` dan
      * `kelas.nama_kelas` memakai nilai yang sama persis supaya relasi
-     * `Kelas::siswa()` benar-benar bisa menemukan siswanya.
+     * `Kelas::siswa()` benar-benar bisa menemukan siswanya, dan supaya jumlah
+     * siswa di halaman Classes selalu sama dengan isi tabel `siswas`.
      *
      * @var list<string>
      */
     public const ROMBEL_TERSEDIA = [
-        'X-A',
-        'X-B',
-        'XI-A',
-        'XI-B',
-        'XII-A',
-        'XII-B',
+        'X.1',
+        'X.2',
+        'X.3',
+        'XI.1',
+        'XI.2',
+        'XI.3',
+        'XII.1',
+        'XII.2',
+        'XII.3',
     ];
 
     protected $fillable = [

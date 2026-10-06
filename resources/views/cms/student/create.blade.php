@@ -102,11 +102,9 @@
                             'border-gray-200 bg-white focus:border-indigo-500 focus:ring-indigo-500' => ! $errors->has('class'),
                         ])>
                         <option value="">Pilih Kelas</option>
-                        <option value="X-A" @selected(old('class') === 'X-A')>X-A</option>
-                        <option value="X-B" @selected(old('class') === 'X-B')>X-B</option>
-                        <option value="XI-A" @selected(old('class') === 'XI-A')>XI-A</option>
-                        <option value="XI-B" @selected(old('class') === 'XI-B')>XI-B</option>
-                        <option value="XII-A" @selected(old('class') === 'XII-A')>XII-A</option>
+                        @foreach ($pilihanKelas as $kelas)
+                            <option value="{{ $kelas }}" @selected(old('class') === $kelas)>{{ $kelas }}</option>
+                        @endforeach
                     </select>
                     @error('class')
                         <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>

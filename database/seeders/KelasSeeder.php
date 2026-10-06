@@ -15,6 +15,12 @@ class KelasSeeder extends Seeder
      */
     public function run(): void
     {
-        Kelas::factory()->count(7)->create();
+        // Semua rombel dibuat dari daftar baku supaya isinya sama persis dengan
+        // yang dipakai form siswa dan halaman Classes.
+        foreach (Kelas::ROMBEL_TERSEDIA as $namaKelas) {
+            if (! Kelas::query()->where('nama_kelas', $namaKelas)->exists()) {
+                Kelas::factory()->create(['nama_kelas' => $namaKelas]);
+            }
+        }
     }
 }

@@ -60,8 +60,7 @@
     <div class="shrink-0 border-t border-gray-200 bg-white/70 p-4">
         <div class="flex items-center gap-3 rounded-xl bg-gray-50 p-3 ring-1 ring-gray-100">
             <div class="relative shrink-0">
-                <div
-                    class="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-sm font-semibold text-white"
+                <div class="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-sm font-semibold text-white"
                     id="sidebarInitial">{{ $menuUser['initial'] }}</div>
                 <span
                     class="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-gray-50"></span>

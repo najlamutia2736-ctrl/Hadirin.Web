@@ -22,7 +22,9 @@ class KelasFactory extends Factory
 
         return [
             'nama_kelas' => $namaKelas,
-            'tingkat' => explode('-', $namaKelas)[0],
+            // Nama kelas berformat "XII.1", jadi tingkat diambil dari bagian
+            // sebelum titik, bukan dari pemisah tanda hubung.
+            'tingkat' => explode('.', $namaKelas)[0],
             'mata_pelajaran_id' => MataPelajaran::factory(),
             'wali_kelas_id' => null,
             'ruang' => 'R. '.fake()->numberBetween(101, 999),

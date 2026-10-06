@@ -14,16 +14,6 @@ use Illuminate\View\View;
 class StudentController extends Controller
 {
     /**
-     * Kelas yang boleh dipilih pada form tambah & ubah siswa.
-     *
-     * Disimpan dari {@see Kelas::ROMBEL_TERSEDIA} supaya nama kelas pada form
-     * siswa, filter, dan tabel `kelas` tidak pernah berbeda sumber.
-     *
-     * @var list<string>
-     */
-    private const KELAS_TERSEDIA = Kelas::ROMBEL_TERSEDIA;
-
-    /**
      * Status keaktifan siswa yang recognized oleh form dan filter.
      *
      * @var list<string>
@@ -74,13 +64,14 @@ class StudentController extends Controller
             'filterStatus' => $status,
             'daftarKelas' => $daftarKelas,
             'daftarStatus' => $daftarStatus,
+            'pilihanKelas' => $this->pilihanKelas(),
         ]);
     }
 
     /**
-     * Kelas hasil union antara kelas yang dipakai siswa dan daftar baku.
+     * Kelas hasil union antara kelas yang dipakai siswa dan tabel `kelas`.
      *
-     * Kelas yang tidak ada di daftar baku ikut ditampilkan supaya siswa dengan
+     * Kelas yang tidak ada di tabel `kelas` ikut ditampilkan supaya siswa dengan
      * kelas lama tidak jadi tidak bisa difilter.
      *
      * @return list<string>
@@ -94,10 +85,29 @@ class StudentController extends Controller
             ->map(fn ($kelas) => (string) $kelas)
             ->all();
 
-        $daftar = array_values(array_unique([...self::KELAS_TERSEDIA, ...$dipakaiSiswa]));
+        $daftar = array_values(array_unique([...$this->pilihanKelas(), ...$dipakaiSiswa]));
         usort($daftar, 'strnatcmp');
 
         return $daftar;
+    }
+
+    /**
+     * Kelas yang boleh dipilih pada form tambah & ubah siswa.
+     *
+     * Dibaca langsung dari tabel `kelas` supaya pilihan di halaman siswa sama
+     * persis dengan kelas yang ada di halaman Classes. Karena `siswas.kelas`
+     * menyimpan nama kelas sebagai teks, kesamaan nama itulah yang membuat
+     * jumlah siswa di Classes ikut terisi.
+     *
+     * @return list<string>
+     */
+    private function pilihanKelas(): array
+    {
+        return Kelas::query()
+            ->orderBy('nama_kelas')
+            ->pluck('nama_kelas')
+            ->map(fn ($kelas) => (string) $kelas)
+            ->all();
     }
 
     /**
@@ -150,10 +160,12 @@ class StudentController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'nis' => ['required', 'digits:8', 'unique:siswas,nisn'],
-            'class' => ['required', Rule::in(self::KELAS_TERSEDIA)],
+            'class' => ['required', 'exists:kelas,nama_kelas'],
             'gender' => ['required', 'in:L,P'],
             'parent' => ['nullable', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:255'],
+        ], [
+            'class.exists' => 'Kelas tersebut belum terdaftar di halaman Classes.',
         ]);
 
         DB::transaction(function () use ($validated) {
@@ -183,7 +195,9 @@ class StudentController extends Controller
 
     public function tambahsiswa(Request $request): View
     {
-        return view('cms.student.create');
+        return view('cms.student.create', [
+            'pilihanKelas' => $this->pilihanKelas(),
+        ]);
     }
 
     public function edit(Siswa $siswa): View
@@ -192,6 +206,7 @@ class StudentController extends Controller
 
         return view('cms.student.edit', [
             'siswa' => $siswa,
+            'pilihanKelas' => $this->pilihanKelas(),
         ]);
     }
 
@@ -204,11 +219,13 @@ class StudentController extends Controller
                 'digits:8',
                 Rule::unique('siswas', 'nisn')->ignore($siswa->id, 'id'),
             ],
-            'class' => ['required', Rule::in(self::KELAS_TERSEDIA)],
+            'class' => ['required', 'exists:kelas,nama_kelas'],
             'gender' => ['required', Rule::in(['L', 'P'])],
             'parent' => ['nullable', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:20'],
             'status' => ['required', Rule::in(self::STATUS_TERSEDIA)],
+        ], [
+            'class.exists' => 'Kelas tersebut belum terdaftar di halaman Classes.',
         ]);
 
         DB::transaction(function () use ($validated, $siswa) {
