@@ -7,6 +7,12 @@
 
     $user = auth()->user();
 
+    // Sama seperti `navbar.blade.php`: area CMS dan dashboard guru dilindungi
+    // middleware `role`, jadi link-nya hanya untuk akun yang boleh membukanya.
+    // Kartu peran di bawah tetap tampil untuk semua pengunjung.
+    $bukaCms = in_array($user?->role, ['Admin', 'Operator'], true);
+    $bukaGuru = $user?->role === 'Guru';
+
     /*
     | Kartu peran "Siswa" sengaja selalu tampil, bukan ikut disembunyikan
     | bersama menunya. Kartu ini adalah pintu masuk untuk memilih peran,
@@ -54,7 +60,9 @@
             <nav class="flex items-center justify-between h-16 md:h-20">
                 <!-- Brand / Logo -->
                 <div class="flex items-center gap-2">
-                    <a href="{{ route('home') }}" class="text-2xl font-bold text-indigo-700 tracking-tight">
+                    {{-- Logo jadi jalan ke beranda, karena link "Beranda" di navbar
+                         sengaja tidak ditampilkan. --}}
+                    <a href="{{ route('beranda') }}" class="text-2xl font-bold text-indigo-700 tracking-tight">
                         Hadirin.<span class="text-slate-700">web</span>
                     </a>
                     <span
@@ -63,38 +71,51 @@
 
                 <!-- Menu Desktop -->
                 <div class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
-                    <a href="{{ route('beranda') }}"
-                        class="hover:text-indigo-600 transition text-indigo-600 font-semibold">Beranda</a>
                     @if ($bisaAbsen)
                         <a href="{{ route('absensi.index') }}" class="hover:text-indigo-600 transition">Absen Siswa</a>
                     @endif
-                    <a href="{{ route('guru.dashboard') }}" class="hover:text-indigo-600 transition">Dashboard Guru</a>
-                    <a href="{{ route('cms.dashboard') }}" class="hover:text-indigo-600 transition">Dashboard Admin</a>
-                    <a href="{{ route('cms.rekap') }}" class="hover:text-indigo-600 transition">Rekap</a>
+                    @if ($bukaGuru)
+                        <a href="{{ route('guru.dashboard') }}" class="hover:text-indigo-600 transition">Dashboard Guru</a>
+                    @endif
+                    @if ($bukaCms)
+                        <a href="{{ route('cms.dashboard') }}" class="hover:text-indigo-600 transition">Dashboard Admin</a>
+                        <a href="{{ route('cms.rekap') }}" class="hover:text-indigo-600 transition">Rekap</a>
+                    @endif
                 </div>
 
-                <!-- Tombol User (DINAMIS - NAMA DARI EMAIL) -->
+                <!-- Tombol User: nama diambil dari akun yang login, kalau belum
+                     ada session baru tampil tombol Log In. -->
                 <div class="hidden md:block">
-                    <div class="flex items-center gap-3">
-                        <span class="text-sm text-slate-600 flex items-center gap-2">
-                            <i class="fas fa-user-circle text-indigo-600 text-lg"></i>
-                            <span id="userNavName">Najla Mutia</span>
-                        </span>
-                        <form method="POST" action="{{ route('logout') }}">
-                            @csrf
-                            <button type="submit" class="text-sm text-red-500 hover:text-red-700 transition">
-                                <i class="fas fa-sign-out-alt"></i> Logout
-                            </button>
-                        </form>
-                    </div>
+                    @auth
+                        <div class="flex items-center gap-3">
+                            <span class="text-sm text-slate-600 flex items-center gap-2">
+                                <i class="fas fa-user-circle text-indigo-600 text-lg"></i>
+                                {{ Auth::user()->name }}
+                            </span>
+                            <form method="POST" action="{{ route('logout') }}">
+                                @csrf
+                                <button type="submit" class="text-sm text-red-500 hover:text-red-700 transition">
+                                    <i class="fas fa-sign-out-alt"></i> Logout
+                                </button>
+                            </form>
+                        </div>
+                    @else
+                        <a href="{{ route('login') }}" class="inline-flex items-center gap-2 bg-indigo-600 text-white text-sm font-medium px-5 py-2.5 rounded-full shadow-md shadow-indigo-200 transition hover:bg-indigo-700">
+                            <i class="fas fa-arrow-right-to-bracket text-xs"></i> Log In
+                        </a>
+                    @endauth
                 </div>
 
                 <!-- Mobile Menu -->
                 <div class="md:hidden flex items-center gap-3">
-                    <span class="text-sm font-medium text-slate-600 flex items-center gap-1">
-                        <i class="fas fa-user-circle text-indigo-600"></i>
-                        <span id="userNavNameMobile">Najla</span>
-                    </span>
+                    @auth
+                        <span class="text-sm font-medium text-slate-600 flex items-center gap-1">
+                            <i class="fas fa-user-circle text-indigo-600"></i>
+                            {{ Auth::user()->name }}
+                        </span>
+                    @else
+                        <a href="{{ route('login') }}" class="text-sm font-medium text-indigo-600 bg-indigo-50 px-4 py-2 rounded-full">Log In</a>
+                    @endauth
                     <button onclick="toggleMobileMenu()" class="text-slate-500 hover:text-indigo-600 transition">
                         <i class="fas fa-bars text-xl" id="mobileMenuIcon"></i>
                     </button>
@@ -103,36 +124,43 @@
             <!-- Mobile Dropdown Menu -->
             <div id="mobileMenu" class="hidden md:hidden border-t border-slate-200/60 bg-white/95 backdrop-blur-sm">
                 <div class="px-4 py-3 space-y-1">
-                    <a href="{{ route('beranda') }}"
-                        class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-indigo-600 bg-indigo-50">
-                        <i class="fas fa-home w-5"></i> Beranda
-                    </a>
                     @if ($bisaAbsen)
                         <a href="{{ route('absensi.index') }}"
                             class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
                             <i class="fas fa-user-graduate w-5"></i> Absen Siswa
                         </a>
                     @endif
-                    <a href="{{ route('guru.dashboard') }}"
-                        class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
-                        <i class="fas fa-chalkboard-teacher w-5"></i> Dashboard Guru
-                    </a>
-                    <a href="{{ route('cms.dashboard') }}"
-                        class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
-                        <i class="fas fa-user-shield w-5"></i> Dashboard Admin
-                    </a>
-                    <a href="{{ route('cms.rekap') }}"
-                        class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
-                        <i class="fas fa-file-alt w-5"></i> Rekap
-                    </a>
+                    @if ($bukaGuru)
+                        <a href="{{ route('guru.dashboard') }}"
+                            class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
+                            <i class="fas fa-chalkboard-teacher w-5"></i> Dashboard Guru
+                        </a>
+                    @endif
+                    @if ($bukaCms)
+                        <a href="{{ route('cms.dashboard') }}"
+                            class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
+                            <i class="fas fa-user-shield w-5"></i> Dashboard Admin
+                        </a>
+                        <a href="{{ route('cms.rekap') }}"
+                            class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
+                            <i class="fas fa-file-alt w-5"></i> Rekap
+                        </a>
+                    @endif
                     <div class="border-t border-slate-200/60 my-2"></div>
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-                        <button type="submit"
-                            class="flex w-full items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50">
-                            <i class="fas fa-sign-out-alt w-5"></i> Logout
-                        </button>
-                    </form>
+                    @auth
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit"
+                                class="flex w-full items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50">
+                                <i class="fas fa-sign-out-alt w-5"></i> Logout
+                            </button>
+                        </form>
+                    @else
+                        <a href="{{ route('login') }}"
+                            class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-indigo-600 bg-indigo-50">
+                            <i class="fas fa-arrow-right-to-bracket w-5"></i> Log In
+                        </a>
+                    @endauth
                 </div>
             </div>
         </div>
@@ -265,7 +293,7 @@
         </div>
     </footer>
 
-    <!-- ========== JAVASCRIPT: UPDATE NAMA DARI EMAIL ========== -->
+    <!-- ========== JAVASCRIPT: MOBILE MENU TOGGLE ========== -->
     <script>
         // ============================================================
         // MOBILE MENU TOGGLE
@@ -287,34 +315,12 @@
             }
         }
 
-        // ============================================================
-        // INIT - Update nama dari localStorage
-        // ============================================================
-        document.addEventListener('DOMContentLoaded', function() {
-            const nama = localStorage.getItem('user_nama');
-            const email = localStorage.getItem('user_email');
-
-            console.log('📧 Email dari storage:', email);
-            console.log('👤 Nama dari storage:', nama);
-
-            if (nama) {
-                // Update nama di navbar desktop
-                const navName = document.getElementById('userNavName');
-                if (navName) {
-                    navName.textContent = nama;
-                    console.log('✅ Navbar desktop diupdate:', nama);
-                }
-
-                // Update nama di navbar mobile (hanya nama depan)
-                const navNameMobile = document.getElementById('userNavNameMobile');
-                if (navNameMobile) {
-                    navNameMobile.textContent = nama.split(' ')[0];
-                    console.log('✅ Navbar mobile diupdate:', nama.split(' ')[0]);
-                }
-            } else {
-                console.warn('⚠️ Nama tidak ditemukan di localStorage. Silakan login dulu.');
-            }
-        });
+        /*
+         * Nama di navbar sengaja TIDAK lagi dibaca dari localStorage.
+         * Dulu halaman ini mengambil `user_nama` yang ditulis form login saat
+         * tombol ditekan, sehingga nama itu muncul walau login-nya gagal.
+         * Sekarang navbar memakai `Auth::user()` langsung dari server.
+         */
     </script>
 
 </body>

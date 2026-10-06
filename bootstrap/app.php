@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureUserHasRole;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -23,6 +24,14 @@ return Application::configure(basePath: dirname(__DIR__))
          * yang ditolak middleware `auth` tetap diarahkan ke halaman login.
          */
         $middleware->redirectUsersTo('/beranda');
+
+        /*
+         * Alias singkat untuk middleware pemeriksa role. Dipakai di routes/web.php
+         * dengan urutan `auth` lalu `role`, misalnya `role:Admin,Operator`.
+         */
+        $middleware->alias([
+            'role' => EnsureUserHasRole::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

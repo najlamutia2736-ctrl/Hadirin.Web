@@ -8,6 +8,14 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 /*
+| Manajemen siswa berada di area CMS, jadi setiap test di file ini dijalankan
+| sambil login sebagai admin.
+*/
+beforeEach(function () {
+    loginAdmin();
+});
+
+/*
 | Form siswa hanya menerima kelas yang benar-benar ada di tabel `kelas`, jadi
 | setiap test yang mengirim `class` perlu menyiapkan rombelnya lebih dulu.
 */
@@ -87,8 +95,10 @@ test('form tambah siswa menolak NIS yang sudah terdaftar', function () {
         ->assertSessionHasErrors('nis');
 
     $this->assertDatabaseCount('siswas', 1);
-    $this->assertDatabaseCount('users', 1);
-    expect($siswa->nisn)->toBe('20240101');
+    // Akun siswa tidak boleh ikut dibuat ulang, dan akun admin dari
+    // `loginAdmin()` juga tidak boleh berubah jadi akun siswa.
+    expect(User::query()->where('role', 'Siswa')->count())->toBe(1)
+        ->and($siswa->nisn)->toBe('20240101');
 });
 
 test('filter kelas pada halaman siswa', function () {
@@ -225,7 +235,9 @@ test('form tambah siswa memvalidasi input wajib dan pilihan yang diizinkan', fun
         ->assertSessionHasErrors(['name', 'nis', 'class', 'gender']);
 
     $this->assertDatabaseCount('siswas', 0);
-    $this->assertDatabaseCount('users', 0);
+    // Akun admin dari `loginAdmin()` tetap ada, jadi yang dicek tidak adanya
+    // akun siswa yang ikut terbentuk.
+    expect(User::query()->where('role', 'Siswa')->count())->toBe(0);
 });
 
 test('siswa yang baru ditambahkan muncul di tabel setelah redirect', function () {
@@ -282,7 +294,7 @@ test('form tambah siswa menolak kelas yang belum terdaftar di halaman classes', 
         ]);
 
     $this->assertDatabaseCount('siswas', 0);
-    $this->assertDatabaseCount('users', 0);
+    expect(User::query()->where('role', 'Siswa')->count())->toBe(0);
 });
 
 test('siswa yang ditambahkan langsung terhitung di halaman classes', function () {

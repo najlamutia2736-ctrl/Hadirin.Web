@@ -6,6 +6,14 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
+/*
+| Manajemen mata pelajaran berada di area CMS, jadi setiap test di file ini
+| dijalankan sambil login sebagai admin.
+*/
+beforeEach(function () {
+    loginAdmin();
+});
+
 test('halaman mata pelajaran menampilkan data dari database', function () {
     MataPelajaran::create([
         'kode_mata_pelajaran' => 'UJI1',

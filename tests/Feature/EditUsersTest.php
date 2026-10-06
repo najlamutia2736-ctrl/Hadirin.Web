@@ -6,6 +6,14 @@ use Illuminate\Support\Facades\Hash;
 
 uses(RefreshDatabase::class);
 
+/*
+| Form pengguna berada di area CMS, jadi setiap test di file ini dijalankan
+| sambil login sebagai admin.
+*/
+beforeEach(function () {
+    loginAdmin();
+});
+
 test('halaman edit menampilkan data pengguna', function () {
     $user = User::factory()->create([
         'name' => 'Ahmad Fauzi',

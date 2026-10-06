@@ -49,6 +49,7 @@ function siswaDiKelas(Kelas $kelas, string $nama = 'Siswa Uji'): Siswa
 }
 
 test('kelas yang disimpan dari dashboard cms menautkan guru pengampu', function () {
+    loginAdmin();
     $guru = guruDenganAkun();
 
     $this->post(route('cms.classes.store'), [
@@ -65,6 +66,7 @@ test('kelas yang disimpan dari dashboard cms menautkan guru pengampu', function 
 });
 
 test('form ubah kelas mengganti daftar guru pengampu', function () {
+    loginAdmin();
     $guruAwal = guruDenganAkun('Guru Awal');
     $guruBaru = guruDenganAkun('Guru Baru');
     $kelas = Kelas::factory()->create();
@@ -81,6 +83,7 @@ test('form ubah kelas mengganti daftar guru pengampu', function () {
 });
 
 test('guru pengampu yang tidak lagi dipilih dilepas dari kelas', function () {
+    loginAdmin();
     $guru = guruDenganAkun();
     $kelas = Kelas::factory()->create();
     $kelas->guru()->sync([$guru->id]);
@@ -228,16 +231,17 @@ test('dashboard guru mengirim data kelas dan siswa ke browser sebagai json', fun
         ->and($payload['kelas'][0]['siswa'][0]['nama'])->toBe('Ani');
 });
 
-test('tanpa login dashboard guru memakai mode pratinjau seluruh kelas aktif', function () {
-    $kelas = Kelas::factory()->create(['nama_kelas' => 'X-A', 'status' => 'Aktif']);
+test('tanpa login dashboard guru ditolak, bukan menampilkan pratinjau kelas', function () {
+    // Dulu halaman ini sengaja membuka "mode pratinjau" untuk pengunjung yang
+    // belum login. Sekarang area guru dilindungi middleware `auth`, jadi data
+    // kelas tidak boleh bocor sebelum pengguna masuk.
+    Kelas::factory()->create(['nama_kelas' => 'X-A', 'status' => 'Aktif']);
 
-    $payload = $this->getJson(route('guru.dashboard'))
-        ->assertOk()
-        ->json();
+    $this->getJson(route('guru.dashboard'))
+        ->assertUnauthorized();
 
-    expect($payload['teraut'])->toBeFalse()
-        ->and($payload['guru'])->toBeNull()
-        ->and(array_column($payload['kelas'], 'nama'))->toBe([$kelas->nama_kelas]);
+    $this->get(route('guru.dashboard'))
+        ->assertRedirect(route('login'));
 });
 
 test('sidebar dan header memakai nama user yang sedang login', function () {
@@ -351,6 +355,7 @@ test('waktu login terakhir tersimpan di database', function () {
 */
 
 test('kelas boleh disimpan ulang tanpa mengubah nama kelasnya', function () {
+    loginAdmin();
     $kelas = Kelas::factory()->create(['nama_kelas' => 'X-A', 'tingkat' => 'X']);
 
     $this->put(route('cms.classes.update', $kelas), [
@@ -364,6 +369,7 @@ test('kelas boleh disimpan ulang tanpa mengubah nama kelasnya', function () {
 });
 
 test('siswa boleh disimpan ulang tanpa mengubah nis nya', function () {
+    loginAdmin();
     $siswa = Siswa::factory()->create(['nisn' => '12345678']);
     $kelas = Kelas::factory()->create(['nama_kelas' => 'X-A']);
 
@@ -379,6 +385,7 @@ test('siswa boleh disimpan ulang tanpa mengubah nis nya', function () {
 });
 
 test('guru boleh disimpan ulang tanpa mengubah nip nya', function () {
+    loginAdmin();
     $guru = Guru::factory()->create(['nip' => '198001010001']);
 
     $this->put(route('cms.teachers.update', $guru), [
@@ -392,6 +399,7 @@ test('guru boleh disimpan ulang tanpa mengubah nip nya', function () {
 });
 
 test('pengguna boleh disimpan ulang tanpa mengubah email nya', function () {
+    loginAdmin();
     $user = User::factory()->create(['email' => 'guru@sekolah.sch.id']);
 
     $this->put(route('cms.users.update', $user), [
@@ -778,13 +786,15 @@ test('akun admin tidak bisa mengelola siswa lewat endpoint guru', function () {
 });
 
 test('pengunjung tanpa login tidak bisa menambah siswa', function () {
+    // Middleware `auth` sudah lebih dulu menolak, jadi jawabannya 401 bukan
+    // 403. Yang penting request-nya tidak pernah sampai ke controller.
     $this->postJson(route('guru.kelola.siswa.store'), [
         'name' => 'Siswa Tanpa Login',
         'nis' => '11223348',
         'class' => 'X-A',
         'gender' => 'L',
     ])
-        ->assertForbidden();
+        ->assertUnauthorized();
 });
 
 test('penambahan siswa memvalidasi nis dan kelas', function () {

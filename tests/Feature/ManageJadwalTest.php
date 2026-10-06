@@ -10,6 +10,14 @@ use Illuminate\Support\Facades\Route;
 
 uses(RefreshDatabase::class);
 
+/*
+| Jadwal berada di area CMS, jadi setiap test di file ini dijalankan sambil
+| login sebagai admin.
+*/
+beforeEach(function () {
+    loginAdmin();
+});
+
 /**
  * Guru lengkap dengan akun penggunanya, sama seperti dipakai modul lain.
  */

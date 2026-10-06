@@ -6,6 +6,14 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
+/*
+| Form pengguna berada di area CMS, jadi setiap test di file ini dijalankan
+| sambil login sebagai admin.
+*/
+beforeEach(function () {
+    loginAdmin();
+});
+
 test('halaman manajemen pengguna menampilkan data dari database', function () {
     $user = User::factory()->create(['name' => 'Ahmad Fauzi']);
 
@@ -58,7 +66,9 @@ test('form tambah pengguna menolak email yang sudah terdaftar', function () {
         ->assertRedirect(route('cms.users'))
         ->assertSessionHasErrors('email');
 
-    $this->assertDatabaseCount('users', 1);
+    // Akun admin dari `loginAdmin()` ikut ada, jadi yang dicek email yang
+    // bentrok itu tetap cuma satu baris dan tidak jadi dua.
+    expect(User::query()->where('email', 'ahmad.fauzi@sekolah.sch.id')->count())->toBe(1);
 });
 
 test('form tambah pengguna memvalidasi input wajib dan panjang password', function () {
@@ -90,7 +100,7 @@ test('form tambah pengguna mewajibkan status sesuai kolom di tabel', function ()
         ])
         ->assertSessionHasErrors('status');
 
-    $this->assertDatabaseCount('users', 0);
+    $this->assertDatabaseMissing('users', ['email' => 'dewi@sekolah.sch.id']);
 
     $this->from(route('cms.users'))
         ->post(route('cms.users.store'), [
@@ -103,7 +113,7 @@ test('form tambah pengguna mewajibkan status sesuai kolom di tabel', function ()
         ])
         ->assertSessionHasErrors('status');
 
-    $this->assertDatabaseCount('users', 0);
+    $this->assertDatabaseMissing('users', ['email' => 'dewi@sekolah.sch.id']);
 });
 
 test('form tambah pengguna bisa menyimpan status nonaktif', function () {
@@ -134,7 +144,7 @@ test('password harus sama dengan kolom konfirmasi', function () {
         ])
         ->assertSessionHasErrors('password');
 
-    $this->assertDatabaseCount('users', 0);
+    $this->assertDatabaseMissing('users', ['email' => 'dewi@sekolah.sch.id']);
 
     $this->from(route('cms.users'))
         ->post(route('cms.users.store'), [
@@ -146,7 +156,7 @@ test('password harus sama dengan kolom konfirmasi', function () {
         ])
         ->assertSessionHasErrors('password');
 
-    $this->assertDatabaseCount('users', 0);
+    $this->assertDatabaseMissing('users', ['email' => 'dewi@sekolah.sch.id']);
 });
 
 test('email dan nama dirapikan sebelum disimpan', function () {
@@ -181,7 +191,10 @@ test('email yang berbeda huruf besar dianggap sudah terdaftar', function () {
         ])
         ->assertSessionHasErrors('email');
 
-    $this->assertDatabaseCount('users', 1);
+    // Email yang bentrok tidak boleh membuat akun kedua. Email uppercase-nya
+    // sendiri tidak pernah tersimpan karena selalu dirapikan jadi huruf kecil.
+    expect(User::query()->where('email', 'budi.santoso@sekolah.id')->count())->toBe(1)
+        ->and(User::query()->where('email', 'BUDI.Santoso@Sekolah.ID')->exists())->toBeFalse();
 });
 
 test('nama harus minimal dua karakter', function () {
@@ -196,7 +209,7 @@ test('nama harus minimal dua karakter', function () {
         ])
         ->assertSessionHasErrors('name');
 
-    $this->assertDatabaseCount('users', 0);
+    $this->assertDatabaseMissing('users', ['email' => 'a@sekolah.sch.id']);
 });
 
 test('form tambah pengguna memuat field status dan konfirmasi password', function () {

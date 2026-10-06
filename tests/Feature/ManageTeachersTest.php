@@ -6,6 +6,14 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
+/*
+| Manajemen guru berada di area CMS, jadi setiap test di file ini dijalankan
+| sambil login sebagai admin.
+*/
+beforeEach(function () {
+    loginAdmin();
+});
+
 test('halaman guru menampilkan data dari database', function () {
     $user = User::factory()->create(['name' => 'Siti Nurhaliza, S.Pd.']);
     $teacher = Guru::create([

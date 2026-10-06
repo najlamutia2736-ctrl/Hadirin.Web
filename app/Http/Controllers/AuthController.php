@@ -78,12 +78,13 @@ class AuthController extends Controller
      * Dashboard awal tiap role.
      *
      * Guru diarahkan ke dashboard guru yang datanya sudah berasal dari
-     * database, admin ke dashboard CMS, dan siswa ke beranda.
+     * database, admin ke dashboard CMS, dan siswa ke beranda. Operator ikut ke
+     * dashboard CMS karena perannya juga mengelola data sekolah.
      */
     protected function berandaUntuk(?User $user): string
     {
         return match ($user?->role) {
-            'Admin' => route('cms.dashboard'),
+            'Admin', 'Operator' => route('cms.dashboard'),
             'Guru' => route('guru.dashboard'),
             'Siswa' => route('beranda'),
             default => route('home'),

@@ -10,6 +10,9 @@ uses(RefreshDatabase::class);
 
 beforeEach(function () {
     Carbon::setTestNow(Carbon::parse('2026-09-28 08:00:00'));
+
+    // Halaman rekap berada di area CMS yang hanya bisa dibuka admin.
+    loginAdmin();
 });
 
 afterEach(function () {

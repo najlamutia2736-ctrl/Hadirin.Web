@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\Guru;
+use App\Models\User;
 use Tests\TestCase;
 
 /*
@@ -46,4 +48,48 @@ expect()->extend('toBeOne', function () {
 function something()
 {
     // ..
+}
+
+/*
+|--------------------------------------------------------------------------
+| Helper Login
+|--------------------------------------------------------------------------
+|
+| Halaman CMS dan dashboard guru dilindungi middleware `auth` + `role`, jadi
+| test yang memanggil route-nya wajib login lebih dulu. Dua helper ini
+| shortening `actingAs()` supaya setiap test cukup menulis `$this->loginAdmin()`.
+|
+*/
+
+/**
+ * Masuk sebagai akun admin (atau operator bila peran itu diminta).
+ *
+ * Mengembalikan model user-nya supaya test bisa memakai `$user->id` dan
+ * sekaligus, tanpa perlu menulis `$this->actingAs()` lagi.
+ */
+function loginAdmin(string $role = 'Admin'): User
+{
+    $user = User::factory()->create(['role' => $role, 'status' => 'Aktif']);
+
+    test()->actingAs($user);
+
+    return $user;
+}
+
+/**
+ * Masuk sebagai akun guru yang juga punya baris di tabel `gurus`.
+ */
+function loginGuru(string $nama = 'Guru Uji'): User
+{
+    $user = User::factory()->create([
+        'name' => $nama,
+        'role' => 'Guru',
+        'status' => 'Aktif',
+    ]);
+
+    Guru::factory()->create(['user_id' => $user->id]);
+
+    test()->actingAs($user);
+
+    return $user;
 }
