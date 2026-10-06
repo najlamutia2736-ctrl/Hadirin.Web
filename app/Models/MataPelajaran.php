@@ -2,31 +2,31 @@
 
 namespace App\Models;
 
-use Database\Factories\JurusanFactory;
+use Database\Factories\MataPelajaranFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Jurusan extends Model
+class MataPelajaran extends Model
 {
-    /** @use HasFactory<JurusanFactory> */
+    /** @use HasFactory<MataPelajaranFactory> */
     use HasFactory;
 
     /**
-     * Tabel `jurusan` memang dibuat dalam bentuk tunggal oleh migration
+     * Tabel `mata_pelajaran` memang dibuat dalam bentuk tunggal oleh migration
      * `create_jurusan_table`, berbeda dari tabel lain di proyek ini yang
      * memakai bentuk jamak. Menyebutkan nama tabelnya secara eksplisit
      * menghindari perlu mengubah skema yang sudah ada.
      */
-    protected $table = 'jurusan';
+    protected $table = 'mata_pelajaran';
 
     protected $fillable = [
-        'kode_jurusan',
-        'nama_jurusan',
+        'kode_mata_pelajaran',
+        'nama_mata_pelajaran',
     ];
 
     public function kelas(): HasMany
     {
-        return $this->hasMany(Kelas::class, 'jurusan_id');
+        return $this->hasMany(Kelas::class, 'mata_pelajaran_id');
     }
 }

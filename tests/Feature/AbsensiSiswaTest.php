@@ -38,7 +38,7 @@ test('halaman absensi menampilkan identitas siswa yang login', function () {
     $siswa = siswaDenganAkun([
         'nisn' => '20240101',
         'kelas' => 'XII-A',
-        'jurusan' => 'RPL',
+        'mata_pelajaran' => 'Matematika',
     ]);
 
     $this->actingAs($siswa->user)
@@ -47,7 +47,7 @@ test('halaman absensi menampilkan identitas siswa yang login', function () {
         ->assertSee($siswa->user->name)
         ->assertSee('20240101')
         ->assertSee('XII-A')
-        ->assertSee('RPL')
+        ->assertSee('Matematika')
         ->assertSee('Identitas Siswa');
 });
 

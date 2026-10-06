@@ -93,7 +93,7 @@
                     @enderror
                 </div>
 
-                @include('cms.classes.partials.jurusan', ['kelas' => null])
+                @include('cms.classes.partials.mata-pelajaran', ['kelas' => null])
 
                 <div>
                     <label for="homeroom" class="mb-2 block text-sm font-semibold text-gray-700">Wali Kelas</label>

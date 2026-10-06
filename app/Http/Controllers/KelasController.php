@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Guru;
-use App\Models\Jurusan;
 use App\Models\Kelas;
+use App\Models\MataPelajaran;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -34,7 +34,7 @@ class KelasController extends Controller
     {
         $classes = Kelas::query()
             ->with('waliKelas.user')
-            ->with('jurusan:id,kode_jurusan,nama_jurusan')
+            ->with('mataPelajaran:id,kode_mata_pelajaran,nama_mata_pelajaran')
             ->with('guru.user:id,name')
             ->withCount('siswa')
             ->when($request->filled('q'), function ($query) use ($request) {
@@ -46,7 +46,7 @@ class KelasController extends Controller
                 });
             })
             ->when($request->filled('level'), fn ($query) => $query->where('tingkat', $request->string('level')))
-            ->when($request->filled('jurusan'), fn ($query) => $query->whereHas('jurusan', fn ($inner) => $inner->where('kode_jurusan', $request->string('jurusan'))))
+            ->when($request->filled('mata_pelajaran'), fn ($query) => $query->whereHas('mataPelajaran', fn ($inner) => $inner->where('kode_mata_pelajaran', $request->string('mata_pelajaran'))))
             ->when($request->filled('status'), fn ($query) => $query->where('status', $request->string('status')))
             ->latest('id')
             ->paginate(10)
@@ -60,23 +60,23 @@ class KelasController extends Controller
         return view('cms.classes.index', [
             'classes' => $classes,
             'gurus' => $gurus,
-            'jurusan' => $this->daftarJurusan(),
+            'mataPelajaran' => $this->daftarMataPelajaran(),
         ]);
     }
 
     /**
-     * Daftar jurusan untuk form kelas dan filter di halaman index.
+     * Daftar mata pelajaran untuk form kelas dan filter di halaman index.
      *
      * Diambil dalam satu query supaya form tambah, form ubah, dan filter
      * memakai sumber yang sama.
      *
-     * @return Collection<int, Jurusan>
+     * @return Collection<int, MataPelajaran>
      */
-    protected function daftarJurusan(): Collection
+    protected function daftarMataPelajaran(): Collection
     {
-        return Jurusan::query()
-            ->orderBy('nama_jurusan')
-            ->get(['id', 'kode_jurusan', 'nama_jurusan']);
+        return MataPelajaran::query()
+            ->orderBy('nama_mata_pelajaran')
+            ->get(['id', 'kode_mata_pelajaran', 'nama_mata_pelajaran']);
     }
 
     public function store(Request $request): RedirectResponse
@@ -84,7 +84,7 @@ class KelasController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:50', Rule::unique('kelas', 'nama_kelas')],
             'level' => ['required', Rule::in(['X', 'XI', 'XII'])],
-            'jurusan' => ['nullable', 'integer', 'exists:jurusan,id'],
+            'mata_pelajaran' => ['nullable', 'integer', 'exists:mata_pelajaran,id'],
             'homeroom' => ['nullable', 'integer', 'exists:gurus,id'],
             'room' => ['nullable', 'string', 'max:50'],
             'tahun_ajaran' => ['nullable', 'integer', 'min:2000', 'max:'.(now()->year + 1)],
@@ -94,7 +94,7 @@ class KelasController extends Controller
         $kelas = Kelas::create([
             'nama_kelas' => $validated['name'],
             'tingkat' => $validated['level'],
-            'jurusan_id' => $validated['jurusan'] ?? null,
+            'mata_pelajaran_id' => $validated['mata_pelajaran'] ?? null,
             'wali_kelas_id' => $validated['homeroom'] ?? null,
             'ruang' => $validated['room'] ?? null,
             'tahun_ajaran' => $validated['tahun_ajaran'] ?? now()->year,
@@ -117,7 +117,7 @@ class KelasController extends Controller
 
         return view('cms.classes.create', [
             'gurus' => $gurus,
-            'jurusan' => $this->daftarJurusan(),
+            'mataPelajaran' => $this->daftarMataPelajaran(),
         ]);
     }
 
@@ -133,7 +133,7 @@ class KelasController extends Controller
         return view('cms.classes.edit', [
             'kelas' => $kelas,
             'gurus' => $gurus,
-            'jurusan' => $this->daftarJurusan(),
+            'mataPelajaran' => $this->daftarMataPelajaran(),
         ]);
     }
 
@@ -149,7 +149,7 @@ class KelasController extends Controller
                 Rule::unique('kelas', 'nama_kelas')->ignore($kelas->id, 'id'),
             ],
             'level' => ['required', Rule::in(['X', 'XI', 'XII'])],
-            'jurusan' => ['nullable', 'integer', 'exists:jurusan,id'],
+            'mata_pelajaran' => ['nullable', 'integer', 'exists:mata_pelajaran,id'],
             'homeroom' => ['nullable', 'integer', 'exists:gurus,id'],
             'room' => ['nullable', 'string', 'max:50'],
             'tahun_ajaran' => ['nullable', 'integer', 'min:2000', 'max:'.(now()->year + 1)],
@@ -160,7 +160,7 @@ class KelasController extends Controller
         $kelas->update([
             'nama_kelas' => $validated['name'],
             'tingkat' => $validated['level'],
-            'jurusan_id' => $validated['jurusan'] ?? null,
+            'mata_pelajaran_id' => $validated['mata_pelajaran'] ?? null,
             'wali_kelas_id' => $validated['homeroom'] ?? null,
             'ruang' => $validated['room'] ?? null,
             'tahun_ajaran' => $validated['tahun_ajaran'] ?? $kelas->tahun_ajaran,

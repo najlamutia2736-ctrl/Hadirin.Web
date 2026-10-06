@@ -12,7 +12,7 @@ class Siswa extends Model
     /** @use HasFactory<SiswaFactory> */
     use HasFactory;
 
-    protected $fillable = ['user_id', 'nisn', 'kelas', 'jurusan', 'jenis_kelamin', 'wali', 'telepon_wali', 'status'];
+    protected $fillable = ['user_id', 'nisn', 'kelas', 'mata_pelajaran', 'jenis_kelamin', 'wali', 'telepon_wali', 'status'];
 
     // ===== RELASI =====
 

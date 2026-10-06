@@ -55,12 +55,12 @@
                     <option value="XI" @selected(request('level') === 'XI')>XI</option>
                     <option value="XII" @selected(request('level') === 'XII')>XII</option>
                 </select>
-                <select name="jurusan"
+                <select name="mata_pelajaran"
                     class="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                    <option value="">Semua Jurusan</option>
-                    @foreach ($jurusan as $item)
-                        <option value="{{ $item->kode_jurusan }}" @selected(request('jurusan') === $item->kode_jurusan)>
-                            {{ $item->nama_jurusan }}
+                    <option value="">Semua Mata Pelajaran</option>
+                    @foreach ($mataPelajaran as $item)
+                        <option value="{{ $item->kode_mata_pelajaran }}" @selected(request('mata_pelajaran') === $item->kode_mata_pelajaran)>
+                            {{ $item->nama_mata_pelajaran }}
                         </option>
                     @endforeach
                 </select>
@@ -83,7 +83,7 @@
                     <tr>
                         <th class="px-6 py-3">Kelas</th>
                         <th class="px-6 py-3">Tingkat</th>
-                        <th class="px-6 py-3">Jurusan</th>
+                        <th class="px-6 py-3">Mata Pelajaran</th>
                         <th class="px-6 py-3">Wali Kelas</th>
                         <th class="px-6 py-3">Guru Pengampu</th>
                         <th class="px-6 py-3">Jumlah Siswa</th>
@@ -114,10 +114,10 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4">
-                                @if ($class->jurusan)
+                                @if ($class->mataPelajaran)
                                     <span
                                         class="inline-block rounded-full bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-600">
-                                        {{ $class->jurusan->nama_jurusan }}
+                                        {{ $class->mataPelajaran->nama_mata_pelajaran }}
                                     </span>
                                 @else
                                     <span class="text-xs text-gray-400">Belum ditentukan</span>

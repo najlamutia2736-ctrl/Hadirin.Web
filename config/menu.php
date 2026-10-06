@@ -34,7 +34,7 @@ return [
                 ['label' => 'Students', 'route' => 'cms.student', 'icon' => 'fas fa-user-graduate'],
                 ['label' => 'Teachers', 'route' => 'cms.teachers', 'icon' => 'fas fa-chalkboard-teacher'],
                 ['label' => 'Classes', 'route' => 'cms.classes', 'icon' => 'fas fa-book-open'],
-                ['label' => 'Departments', 'route' => 'cms.jurusan', 'icon' => 'fas fa-layer-group'],
+                ['label' => 'Subjects', 'route' => 'cms.mata-pelajaran', 'icon' => 'fas fa-layer-group'],
                 ['label' => 'Timetables', 'route' => 'cms.jadwal', 'icon' => 'fas fa-calendar-days'],
             ],
         ],
@@ -42,7 +42,7 @@ return [
             'label' => 'Sistem',
             'items' => [
                 ['label' => 'Users', 'route' => 'cms.users', 'icon' => 'fas fa-users-cog'],
-                ['label' => 'Recap', 'route' => 'cms.rekap', 'icon' => 'fas fa-clipboard-list'],
+                ['label' => 'Summary', 'route' => 'cms.rekap', 'icon' => 'fas fa-clipboard-list'],
             ],
         ],
         [

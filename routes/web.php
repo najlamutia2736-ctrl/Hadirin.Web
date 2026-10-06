@@ -5,8 +5,8 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardGuruController;
 use App\Http\Controllers\GuruController;
 use App\Http\Controllers\JadwalController;
-use App\Http\Controllers\JurusanController;
 use App\Http\Controllers\KelasController;
+use App\Http\Controllers\MataPelajaranController;
 use App\Http\Controllers\RekapController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\UserController;
@@ -106,24 +106,24 @@ Route::get('/dashboard', function () {
     return view('cms.dashboard');
 })->name('cms.dashboard');
 
-Route::controller(JurusanController::class)->group(function () {
-    Route::get('/jurusan', 'index')
-        ->name('cms.jurusan');
+Route::controller(MataPelajaranController::class)->group(function () {
+    Route::get('/mata-pelajaran', 'index')
+        ->name('cms.mata-pelajaran');
 
-    Route::get('/tambahjurusan', 'create')
-        ->name('cms.jurusan.create');
+    Route::get('/tambahmata-pelajaran', 'create')
+        ->name('cms.mata-pelajaran.create');
 
-    Route::post('/jurusan', 'store')
-        ->name('cms.jurusan.store');
+    Route::post('/mata-pelajaran', 'store')
+        ->name('cms.mata-pelajaran.store');
 
-    Route::get('/jurusan/{jurusan}/edit', 'edit')
-        ->name('cms.jurusan.edit');
+    Route::get('/mata-pelajaran/{mata_pelajaran}/edit', 'edit')
+        ->name('cms.mata-pelajaran.edit');
 
-    Route::put('/jurusan/{jurusan}', 'update')
-        ->name('cms.jurusan.update');
+    Route::put('/mata-pelajaran/{mata_pelajaran}', 'update')
+        ->name('cms.mata-pelajaran.update');
 
-    Route::delete('/jurusan/{jurusan}', 'destroy')
-        ->name('cms.jurusan.destroy');
+    Route::delete('/mata-pelajaran/{mata_pelajaran}', 'destroy')
+        ->name('cms.mata-pelajaran.destroy');
 });
 
 Route::controller(StudentController::class)->group(function () {

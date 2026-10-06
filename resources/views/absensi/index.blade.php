@@ -264,8 +264,8 @@
                         <dd class="mt-1 font-semibold text-slate-800">{{ $siswa->kelas }}</dd>
                     </div>
                     <div>
-                        <dt class="text-xs uppercase tracking-wide text-slate-400">Jurusan</dt>
-                        <dd class="mt-1 font-semibold text-slate-800">{{ $siswa->jurusan ?? '-' }}</dd>
+                        <dt class="text-xs uppercase tracking-wide text-slate-400">Mata Pelajaran</dt>
+                        <dd class="mt-1 font-semibold text-slate-800">{{ $siswa->mata_pelajaran ?? '-' }}</dd>
                     </div>
                     <div>
                         <dt class="text-xs uppercase tracking-wide text-slate-400">Jenis Kelamin</dt>

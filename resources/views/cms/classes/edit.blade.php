@@ -94,7 +94,7 @@
                     @enderror
                 </div>
 
-                @include('cms.classes.partials.jurusan', ['kelas' => $kelas])
+                @include('cms.classes.partials.mata-pelajaran', ['kelas' => $kelas])
 
                 <div>
                     <label for="homeroom" class="mb-2 block text-sm font-semibold text-gray-700">Wali Kelas</label>

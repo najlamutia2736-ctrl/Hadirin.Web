@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Models\Jurusan;
 use App\Models\Kelas;
+use App\Models\MataPelajaran;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -23,7 +23,7 @@ class KelasFactory extends Factory
         return [
             'nama_kelas' => $namaKelas,
             'tingkat' => explode('-', $namaKelas)[0],
-            'jurusan_id' => Jurusan::factory(),
+            'mata_pelajaran_id' => MataPelajaran::factory(),
             'wali_kelas_id' => null,
             'ruang' => 'R. '.fake()->numberBetween(101, 999),
             'tahun_ajaran' => now()->year,

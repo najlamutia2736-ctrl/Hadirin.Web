@@ -74,8 +74,8 @@
                                     </h2>
                                     <p class="mt-0.5 text-sm text-slate-500">
                                         {{ $siswa->kelas }}
-                                        @if ($siswa->jurusan)
-                                            &middot; {{ $siswa->jurusan }}
+                                        @if ($siswa->mata_pelajaran)
+                                            &middot; {{ $siswa->mata_pelajaran }}
                                         @endif
                                     </p>
                                     <span

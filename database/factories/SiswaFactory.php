@@ -26,7 +26,7 @@ class SiswaFactory extends Factory
             'wali' => fake()->name(),
             'telepon_wali' => fake()->numerify('08##########'),
             'kelas' => fake()->randomElement(Kelas::ROMBEL_TERSEDIA),
-            'jurusan' => null,
+            'mata_pelajaran' => null,
             'status' => 'Aktif',
         ];
     }
