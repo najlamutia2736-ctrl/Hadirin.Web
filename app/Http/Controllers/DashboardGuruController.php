@@ -96,20 +96,6 @@ class DashboardGuruController extends Controller
      * milik guru yang sedang login, sehingga angkanya konsisten dengan
      * dashboard admin maupun laporan bulanan.
      */
-    public function progres(Request $request): View|JsonResponse
-    {
-        $progres = $this->dataProgres($request);
-
-        if ($request->wantsJson()) {
-            return response()->json($progres);
-        }
-
-        return view('guru.progres', [
-            'guruData' => $this->dataGuru($request),
-            'progres' => $progres,
-        ]);
-    }
-
     public function kelola(Request $request): View|JsonResponse
     {
         $guruData = $this->dataGuru($request);
@@ -124,16 +110,26 @@ class DashboardGuruController extends Controller
     }
 
     /**
-     * Laporan kehadiran bulanan.
+     * Laporan kehadiran: satu halaman untuk rekap bulanan dan progres.
      *
-     * Agregasi diambil dari tabel `absensis` yang sama dengan rekap di sisi
-     * admin, tetapi dibatasi hanya kelas yang diampu guru yang sedang login.
-     * Kalau admin menambah kelas atau siswa baru, angka di halaman ini ikut
-     * berubah tanpa perlu ada sinkronisasi terpisah.
+     * Dulu halaman ini terbagi dua, yaitu `laporan` (kalender bulan) dan
+     * `progres` (rentang 7/30/90/180 hari). Keduanya dihitung dari tabel
+     * `absensis` yang sama dan hanya berbeda cara memilih periodenya, jadi
+     * sekarang digabung ke sini dan dibedakan lewat tab.
+     *
+     * Yang aktif hanya tab yang sedang dibuka; aggregate periode lain tidak
+     * dihitung supaya halaman ini tidak membayar dua query ganda.
+     *
+     * Saat diminta JSON, halaman ini mengembalikan payload tab yang aktif
+     * apa adanya tanpa Blade.
      */
     public function laporan(Request $request): View|JsonResponse
     {
-        $laporan = $this->dataLaporan($request);
+        $tab = $this->tabValid($request->query('tab'));
+
+        $laporan = $tab === 'periode'
+            ? $this->dataLaporanPeriode($request)
+            : $this->dataLaporan($request);
 
         if ($request->wantsJson()) {
             return response()->json($laporan);
@@ -143,6 +139,29 @@ class DashboardGuruController extends Controller
             'guruData' => $this->dataGuru($request),
             'laporan' => $laporan,
         ]);
+    }
+
+    /**
+     * Tab yang sedang dibuka, default ke rekap bulanan.
+     */
+    protected function tabValid(mixed $nilai): string
+    {
+        $nilai = is_string($nilai) ? trim($nilai) : '';
+
+        return $nilai === 'periode' ? 'periode' : 'bulanan';
+    }
+
+    /**
+     * Opsi tab untuk navigasi atas halaman laporan.
+     *
+     * @return list<array{nilai: string, label: string}>
+     */
+    protected function pilihanTab(): array
+    {
+        return [
+            ['nilai' => 'bulanan', 'label' => 'Rekap Bulanan'],
+            ['nilai' => 'periode', 'label' => 'Progres Absensi'],
+        ];
     }
 
     /**
@@ -404,7 +423,7 @@ class DashboardGuruController extends Controller
      */
     protected function dataGuru(Request $request): array
     {
-        $guru = $request->user()?->guru;
+        $guru = $request->user()?->guru?->load('mataPelajaran');
 
         $kelas = $this->kelasYangDiampu($guru)
             ->map(fn (Kelas $kelas): array => $this->payloadKelas($kelas))
@@ -416,7 +435,11 @@ class DashboardGuruController extends Controller
             'guru' => $guru === null ? null : [
                 'nama' => $guru->user?->name,
                 'nip' => $guru->nip,
-                'mapel' => $guru->mata_pelajaran,
+                // Nama & kode mapel diambil dari tabel `mata_pelajaran` yang sama
+                // dengan dashboard admin, supaya guru yang sama tidak bisa tampil
+                // dengan mapel berbeda di kedua dashboard.
+                'mapel' => $guru->mataPelajaran?->nama_mata_pelajaran ?? $guru->mata_pelajaran,
+                'kodeMapel' => $guru->mataPelajaran?->kode_mata_pelajaran,
                 'kelas' => implode(', ', array_column($kelas, 'nama')),
             ],
             'kelas' => $kelas,
@@ -529,91 +552,6 @@ class DashboardGuruController extends Controller
     }
 
     /**
-     * Susun seluruh isi halaman progres absensi.
-     *
-     * @return array<string, mixed>
-     */
-    protected function dataProgres(Request $request): array
-    {
-        $guru = $this->guruYangLogin($request);
-
-        $pilihanKelas = $this->kelasYangDiampu($guru)->pluck('nama_kelas')->all();
-
-        $periode = $this->periodeValid($request->query('periode'));
-        $rentang = $this->rentangPeriode($periode);
-        $dari = $rentang['dari'];
-        $sampai = $rentang['sampai'];
-        $jumlahHari = (int) $dari->diffInDays($sampai) + 1;
-
-        // Filter kelas hanya diterima kalau benar-benar kelas milik guru ini,
-        // sama seperti halaman laporan, supaya `?kelas=` tidak membuka rekap
-        // kelas orang lain.
-        $diminta = $this->teks($request->query('kelas'));
-        $filterKelas = $diminta !== null && in_array($diminta, $pilihanKelas, true) ? $diminta : null;
-
-        $kelas = $filterKelas !== null ? [$filterKelas] : $pilihanKelas;
-
-        $rekap = $this->rekapLaporan($kelas, $dari, $sampai);
-
-        // Periode pembanding: rentang sepanjang sama, tepat sebelum periode
-        // terpilih. Tanpa ini guru hanya tahu angkanya, tidak tahu arahnya.
-        $sebelumnya = $this->rekapLaporan(
-            $kelas,
-            $dari->copy()->subDays($jumlahHari),
-            $dari->copy()->subDay()->endOfDay()
-        )['total'];
-
-        $perKelas = $rekap['perKelas'];
-
-        // Kelas paling baik di atas supaya daun一目rophe langsung terlihat.
-        usort($perKelas, fn (array $a, array $b): int => $b['persentase'] <=> $a['persentase']
-            ?: strnatcmp((string) $a['kelas'], (string) $b['kelas']));
-
-        // Siswa dengan kehadiran terendah dulu. Siswa tanpa catatan absensi
-        // disortir paling akhir supaya tidak dianggap sebagai yang paling buruk.
-        $perSiswa = $rekap['perSiswa'];
-
-        usort(
-            $perSiswa,
-            fn (array $a, array $b): int => [$a['total'] === 0 ? 1 : 0, $a['persentase'], $a['nama']]
-                <=> [$b['total'] === 0 ? 1 : 0, $b['persentase'], $b['nama']]
-        );
-
-        $perluPerhatian = array_values(array_filter(
-            $perSiswa,
-            fn (array $baris): bool => $baris['total'] > 0 && $baris['persentase'] < self::BATAS_PERHATIAN
-        ));
-
-        return [
-            'periode' => $periode,
-            'pilihanPeriode' => $this->pilihanPeriode(),
-            'jumlahHari' => $jumlahHari,
-            'dari' => $dari,
-            'sampai' => $sampai,
-            'label' => $this->labelPeriode($dari, $sampai),
-            'filterKelas' => $filterKelas,
-            'pilihanKelas' => $pilihanKelas,
-            'kelasDipakai' => $kelas,
-            'guru' => $guru === null ? null : [
-                'nama' => $guru->user?->name,
-                'nip' => $guru->nip,
-                'mapel' => $guru->mata_pelajaran,
-            ],
-            'total' => $rekap['total'],
-            'sebelumnya' => $sebelumnya,
-            'selisih' => $rekap['total']['persentase'] - $sebelumnya['persentase'],
-            'hariEfektif' => count($rekap['perHari']),
-            'trenHarian' => $this->trenHarian($rekap['perHari'], $dari, $sampai, $jumlahHari),
-            'perKelas' => $perKelas,
-            'perSiswa' => $perSiswa,
-            'perluPerhatian' => $perluPerhatian,
-            'batasPerhatian' => self::BATAS_PERHATIAN,
-            'adaCatatan' => $rekap['total']['total'] > 0,
-            'dicetak' => now()->locale('id')->translatedFormat('d F Y H:i'),
-        ];
-    }
-
-    /**
      * Deret harian untuk grafik progres.
      *
      * `perHari` dari rekap laporan hanya berisi tanggal yang ada catatannya.
@@ -718,7 +656,10 @@ class DashboardGuruController extends Controller
     }
 
     /**
-     * Susun seluruh isi halaman laporan bulanan.
+     * Isi halaman laporan untuk tab Rekap Bulanan.
+     *
+     * Dipakai juga oleh ekspor CSV, jadi payload-nya sengaja tidak bergantung
+     * pada tab yang sedang dibuka di layar.
      *
      * @return array<string, mixed>
      */
@@ -732,35 +673,182 @@ class DashboardGuruController extends Controller
         $dari = Carbon::createFromFormat('Y-m-d', $bulan.'-01')->startOfDay();
         $sampai = $dari->copy()->endOfMonth()->endOfDay();
 
-        // Filter kelas hanya diterima kalau benar-benar kelas milik guru ini,
-        // supaya `?kelas=` tidak bisa membuka rekap kelas orang lain.
-        $diminta = $this->teks($request->query('kelas'));
-        $filterKelas = $diminta !== null && in_array($diminta, $pilihanKelas, true) ? $diminta : null;
+        $filterKelas = $this->filterKelasValid($request, $pilihanKelas);
 
-        $kelas = $filterKelas !== null ? [$filterKelas] : $pilihanKelas;
+        $rekap = $this->rekapLaporan(
+            $filterKelas !== null ? [$filterKelas] : $pilihanKelas,
+            $dari,
+            $sampai,
+        );
 
-        $siswa = $this->siswaLaporan($kelas);
-        $rekap = $this->rekapLaporan($kelas, $dari, $sampai);
+        $jumlahHari = (int) $dari->diffInDays($sampai) + 1;
 
         return [
+            'tab' => 'bulanan',
+            'pilihanTab' => $this->pilihanTab(),
             'bulan' => $bulan,
+            'periode' => $this->periodeValid($request->query('periode')),
+            'jumlahHari' => $jumlahHari,
             'label' => $dari->locale('id')->translatedFormat('F Y'),
             'dari' => $dari,
             'sampai' => $sampai,
             'filterKelas' => $filterKelas,
             'pilihanKelas' => $pilihanKelas,
             'pilihanBulan' => $this->pilihanBulan(),
-            'guru' => $guru === null ? null : [
-                'nama' => $guru->user?->name,
-                'nip' => $guru->nip,
-                'mapel' => $guru->mata_pelajaran,
-            ],
+            'pilihanPeriode' => $this->pilihanPeriode(),
+            'guru' => $this->identitasGuru($guru),
             'perKelas' => $rekap['perKelas'],
             'perSiswa' => $rekap['perSiswa'],
             'perHari' => $rekap['perHari'],
+            'trenHarian' => $this->trenHarian($rekap['perHari'], $dari, $sampai, $jumlahHari),
             'total' => $rekap['total'],
+            'sebelumnya' => null,
+            'selisih' => null,
+            'hariEfektif' => count($rekap['perHari']),
+            'batasPerhatian' => self::BATAS_PERHATIAN,
+            'perluPerhatian' => $this->siswaPerluPerhatian($rekap['perSiswa']),
+            'adaCatatan' => $rekap['total']['total'] > 0,
             'dicetak' => now()->locale('id')->translatedFormat('d F Y H:i'),
         ];
+    }
+
+    /**
+     * Isi halaman laporan untuk tab Progres Absensi.
+     *
+     * Bedanya dengan rekap bulanan: periodenya bukan satu bulan kalender,
+     * melainkan rentang berpatokan hari ke belakang. Karena itu halaman ini
+     * selalu membandingkan periodenya dengan rentang sepanjang durasi yang
+     * sama tepat sebelumnya, supaya guru tahu arah kehadiran bukan cuma
+     * angkanya.
+     *
+     * @return array<string, mixed>
+     */
+    protected function dataLaporanPeriode(Request $request): array
+    {
+        $guru = $this->guruYangLogin($request);
+
+        $pilihanKelas = $this->kelasYangDiampu($guru)->pluck('nama_kelas')->all();
+
+        $periode = $this->periodeValid($request->query('periode'));
+        $rentang = $this->rentangPeriode($periode);
+        $dari = $rentang['dari'];
+        $sampai = $rentang['sampai'];
+        $jumlahHari = (int) $dari->diffInDays($sampai) + 1;
+
+        $filterKelas = $this->filterKelasValid($request, $pilihanKelas);
+
+        $kelas = $filterKelas !== null ? [$filterKelas] : $pilihanKelas;
+
+        $rekap = $this->rekapLaporan($kelas, $dari, $sampai);
+
+        // Periode pembanding: rentang sepanjang sama, tepat sebelum periode
+        // terpilih. Tanpa ini guru hanya tahu angkanya, tidak tahu arahnya.
+        $sebelumnya = $this->rekapLaporan(
+            $kelas,
+            $dari->copy()->subDays($jumlahHari),
+            $dari->copy()->subDay()->endOfDay(),
+        )['total'];
+
+        $perKelas = $rekap['perKelas'];
+
+        // Kelas paling baik di atas supaya daun一目rophe langsung terlihat.
+        usort($perKelas, fn (array $a, array $b): int => $b['persentase'] <=> $a['persentase']
+            ?: strnatcmp((string) $a['kelas'], (string) $b['kelas']));
+
+        // Siswa dengan kehadiran terendah dulu. Siswa tanpa catatan absensi
+        // disortir paling akhir supaya tidak dianggap sebagai yang paling buruk.
+        $perSiswa = $rekap['perSiswa'];
+
+        usort(
+            $perSiswa,
+            fn (array $a, array $b): int => [$a['total'] === 0 ? 1 : 0, $a['persentase'], $a['nama']]
+                <=> [$b['total'] === 0 ? 1 : 0, $b['persentase'], $b['nama']]
+        );
+
+        return [
+            'tab' => 'periode',
+            'pilihanTab' => $this->pilihanTab(),
+            // Ekspor CSV selalu memakai bulan, jadi `bulan` tetap ikut dikirim
+            // supaya tombol ekspor di tab ini tidak kehilangan konteks.
+            'bulan' => $this->bulanValid($request->query('bulan')) ?? now()->format('Y-m'),
+            'periode' => $periode,
+            'jumlahHari' => $jumlahHari,
+            'label' => $this->labelPeriode($dari, $sampai),
+            'dari' => $dari,
+            'sampai' => $sampai,
+            'filterKelas' => $filterKelas,
+            'pilihanKelas' => $pilihanKelas,
+            'pilihanBulan' => $this->pilihanBulan(),
+            'pilihanPeriode' => $this->pilihanPeriode(),
+            'guru' => $this->identitasGuru($guru),
+            'perKelas' => $perKelas,
+            'perSiswa' => $perSiswa,
+            'perHari' => $rekap['perHari'],
+            'trenHarian' => $this->trenHarian($rekap['perHari'], $dari, $sampai, $jumlahHari),
+            'total' => $rekap['total'],
+            'sebelumnya' => $sebelumnya,
+            'selisih' => $rekap['total']['persentase'] - $sebelumnya['persentase'],
+            'hariEfektif' => count($rekap['perHari']),
+            'batasPerhatian' => self::BATAS_PERHATIAN,
+            'perluPerhatian' => $this->siswaPerluPerhatian($rekap['perSiswa']),
+            'adaCatatan' => $rekap['total']['total'] > 0,
+            'dicetak' => now()->locale('id')->translatedFormat('d F Y H:i'),
+        ];
+    }
+
+    /**
+     * Identitas guru untuk kepala laporan & ekspor CSV.
+     *
+     * Nama dan kode mapel diambil dari tabel `mata_pelajaran` yang sama dengan
+     * dashboard admin, supaya laporan tidak pernah mencantumkan mapel yang
+     * berbeda dari yang tampil di dashboard.
+     *
+     * @return array<string, string|null>|null
+     */
+    protected function identitasGuru(?Guru $guru): ?array
+    {
+        if ($guru === null) {
+            return null;
+        }
+
+        return [
+            'nama' => $guru->user?->name,
+            'nip' => $guru->nip,
+            'mapel' => $guru->namaMataPelajaran(),
+            'kodeMapel' => $guru->mataPelajaran?->kode_mata_pelajaran,
+        ];
+    }
+
+    /**
+     * Filter kelas dari query string, kalau memang milik guru yang sedang login.
+     *
+     * Nilai yang tidak dikenal diabaikan, bukan dipakai apa adanya, supaya
+     * `?kelas=` tidak pernah membuka rekap kelas orang lain.
+     *
+     * @param  list<string>  $pilihanKelas
+     */
+    protected function filterKelasValid(Request $request, array $pilihanKelas): ?string
+    {
+        $diminta = $this->teks($request->query('kelas'));
+
+        return $diminta !== null && in_array($diminta, $pilihanKelas, true) ? $diminta : null;
+    }
+
+    /**
+     * Siswa yang kehadirannya di bawah ambang dan punya catatan absensi.
+     *
+     * Tanpa catatan absensi tidak dihitung, karena "tidak punya data" bukan
+     * sama dengan "kehadirannya rendah".
+     *
+     * @param  list<array<string, mixed>>  $perSiswa
+     * @return list<array<string, mixed>>
+     */
+    protected function siswaPerluPerhatian(array $perSiswa): array
+    {
+        return array_values(array_filter(
+            $perSiswa,
+            fn (array $baris): bool => $baris['total'] > 0 && $baris['persentase'] < self::BATAS_PERHATIAN
+        ));
     }
 
     /**
@@ -1010,7 +1098,9 @@ class DashboardGuruController extends Controller
      */
     protected function guruYangLogin(Request $request): ?Guru
     {
-        return $request->user()?->guru;
+        // `mataPelajaran` dimuat di sini supaya semua halaman guru yang
+        // menampilkan nama & kode mapel tidak_query ulang per halaman.
+        return $request->user()?->guru?->load('mataPelajaran');
     }
 
     /**

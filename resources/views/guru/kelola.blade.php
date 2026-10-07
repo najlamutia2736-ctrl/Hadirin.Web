@@ -784,10 +784,6 @@
         initHalamanGuru(function () {
             daftarKelas = daftarKelasServer();
 
-            if (daftarKelas.length === 0) {
-                daftarKelas = Object.keys(globalData.siswaPerKelas || {});
-            }
-
             kelasAktif = daftarKelas.indexOf(identitasGuru.kelasLengkap) !== -1
                 ? identitasGuru.kelasLengkap
                 : (daftarKelas[0] || null);

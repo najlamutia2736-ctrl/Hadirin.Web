@@ -104,27 +104,24 @@
     ];
 
     /*
-    | Pintasan ke halaman guru lain. Halamannya masih kosong, jadi usefulness
-    | kartu ini sekaligus became reminder-route saat nanti diisi.
+    | Pintasan ke halaman guru lain. usefulness kartu ini sekaligus menjadi
+    | pengingat rute saat halaman-halamannya nanti diisi.
+    |
+    | Rekap bulanan dan progres absensi sudah digabung ke `guru.laporan`, jadi
+    | shortcut "Progres Absensi" yang lama dihapus. Tidak ada lagi dua pintu ke
+    | laporan yang sama.
     */
     $shortcuts = [
         [
-            'label' => 'Progres Absensi',
-            'description' => 'Pantau tren kehadiran siswa dari awal semester.',
-            'route' => 'guru.progres',
-            'icon' => 'fas fa-chart-line',
-            'tone' => 'blue',
-        ],
-        [
             'label' => 'Kelola Data Kelas',
-            'description' => 'Atur siswa, jadwal, dan مادة yang diampu.',
+            'description' => 'Atur siswa, jadwal, dan mata pelajaran yang diampu.',
             'route' => 'guru.kelola',
             'icon' => 'fas fa-users-cog',
             'tone' => 'green',
         ],
         [
             'label' => 'Laporan Bulanan',
-            'description' => 'Unduh rekap kehadiran siap cetak per bulan.',
+            'description' => 'Rekap bulanan, tren kehadiran, dan progres per siswa.',
             'route' => 'guru.laporan',
             'icon' => 'fas fa-file-alt',
             'tone' => 'amber',
@@ -456,11 +453,9 @@
         // SELECTOR KELAS
         // ============================================================
         function daftarKelasDiajarkan() {
-            const dariServer = daftarKelasServer();
-
-            if (dariServer.length > 0) return dariServer;
-
-            return Object.keys(globalData.siswaPerKelas || {});
+            // Hanya kelas dari database. Kalau guru belum diampu kelas,
+            // daftarnya kosong dan halaman menampilkan kondisi kosong.
+            return daftarKelasServer();
         }
 
         function renderPemilihKelas() {
@@ -593,7 +588,7 @@
 
             setTeks('[data-rekap-total]', total);
             setTeks('[data-donut-persen]', persen(stat.hadir, total) + '%');
-            setTeks('[data-ringkasanKelas]', kelasAktif + ' · hari ini');
+            setTeks('[data-ringkasanKelas]', kelasAktif ? kelasAktif + ' · hari ini' : 'Belum ada kelas');
 
             if (!donut) return;
 
@@ -624,7 +619,9 @@
             const tbody = document.getElementById('tabelAbsensi');
             if (!tbody) return;
 
-            setTeks('[data-tabelSubtitle]', kelasAktif + ' · ' + list.length + ' siswa tercatat');
+            setTeks('[data-tabelSubtitle]', kelasAktif
+                ? kelasAktif + ' · ' + list.length + ' siswa tercatat'
+                : 'Belum ada kelas yang diampu');
 
             tbody.innerHTML = '';
 

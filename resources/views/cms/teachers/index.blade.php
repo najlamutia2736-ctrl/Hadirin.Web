@@ -51,12 +51,11 @@
                 <select name="subject"
                     class="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
                     <option value="">Semua Mapel</option>
-                    <option value="Matematika" @selected(request('subject') === 'Matematika')>Matematika</option>
-                    <option value="Bahasa Indonesia" @selected(request('subject') === 'Bahasa Indonesia')>Bahasa Indonesia</option>
-                    <option value="Bahasa Inggris" @selected(request('subject') === 'Bahasa Inggris')>Bahasa Inggris</option>
-                    <option value="Informatika" @selected(request('subject') === 'Informatika')>Informatika</option>
-                    <option value="IPA" @selected(request('subject') === 'IPA')>IPA</option>
-                    <option value="Sejarah" @selected(request('subject') === 'Sejarah')>Sejarah</option>
+                    @foreach ($mataPelajaran as $mapel)
+                        <option value="{{ $mapel->id }}" @selected((string) request('subject') === (string) $mapel->id)>
+                            {{ $mapel->nama_mata_pelajaran }}
+                        </option>
+                    @endforeach
                 </select>
                 <select name="status"
                     class="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
@@ -100,13 +99,18 @@
                             </td>
                             <td class="px-6 py-4 text-gray-500">{{ $teacher->nip }}</td>
                             <td class="px-6 py-4">
-                                <span
-                                    class="inline-block rounded-full bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-600">
-                                    {{ $teacher->mata_pelajaran }}
-                                </span>
+                                @if ($teacher->mataPelajaran)
+                                    <span
+                                        class="inline-block rounded-full bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-600">
+                                        {{ $teacher->mataPelajaran->nama_mata_pelajaran }}
+                                        <span class="text-[10px] opacity-70">{{ $teacher->mataPelajaran->kode_mata_pelajaran }}</span>
+                                    </span>
+                                @else
+                                    <span class="text-xs text-gray-400">Belum ditentukan</span>
+                                @endif
                             </td>
                             <td class="px-6 py-4 text-gray-500">
-                                {{ $teacher->kelas->pluck('nama_kelas')->join(', ') ?: 'Belum ada kelas' }}
+                                {{ $teacher->kelasDiampu->pluck('nama_kelas')->join(', ') ?: 'Belum ada kelas' }}
                             </td>
                             <td class="px-6 py-4">
                                 @if ($teacher->status === 'Aktif')
@@ -199,18 +203,7 @@
                     @enderror
                 </div>
                 <div class="mb-4">
-                    <label class="mb-1.5 block text-sm font-medium text-gray-700" for="subject">Mata Pelajaran</label>
-                    <input id="subject" name="subject" type="text" value="{{ old('subject') }}" required
-                        maxlength="100" placeholder="Contoh: Matematika" @class([
-                            'w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-1',
-                            'border-red-500 focus:border-red-500 focus:ring-red-500' => $errors->has(
-                                'subject'),
-                            'border-gray-200 focus:border-indigo-500 focus:ring-indigo-500' => !$errors->has(
-                                'subject'),
-                        ])>
-                    @error('subject')
-                        <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
-                    @enderror
+                    @include('cms.teachers.partials.mata-pelajaran', ['guru' => null])
                 </div>
                 <div class="mb-4">
                     <label class="mb-1.5 block text-sm font-medium text-gray-700" for="phone">No. Telepon</label>

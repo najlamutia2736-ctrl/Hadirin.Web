@@ -58,7 +58,6 @@ return [
             'label' => 'Menu Utama',
             'items' => [
                 ['label' => 'Dashboard', 'route' => 'guru.dashboard', 'icon' => 'fas fa-tachometer-alt'],
-                ['label' => 'Progres Absensi', 'route' => 'guru.progres', 'icon' => 'fas fa-chart-line'],
                 ['label' => 'Kelola Data Kelas', 'route' => 'guru.kelola', 'icon' => 'fas fa-users-cog'],
             ],
         ],

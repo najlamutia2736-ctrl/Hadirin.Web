@@ -408,11 +408,8 @@
         // SUMBER DATA
         // ============================================================
         function daftarKelasDiajarkan() {
-            const dariServer = daftarKelasServer();
-
-            if (dariServer.length > 0) return dariServer;
-
-            return Object.keys(globalData.siswaPerKelas || {});
+            // Hanya kelas dari database; tanpa data contoh.
+            return daftarKelasServer();
         }
 
         /**

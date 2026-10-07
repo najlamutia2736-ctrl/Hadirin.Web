@@ -3,6 +3,7 @@
 use App\Models\Absensi;
 use App\Models\Guru;
 use App\Models\Kelas;
+use App\Models\MataPelajaran;
 use App\Models\SesiAbsensi;
 use App\Models\Siswa;
 use App\Models\User;
@@ -391,7 +392,7 @@ test('guru boleh disimpan ulang tanpa mengubah nip nya', function () {
     $this->put(route('cms.teachers.update', $guru), [
         'name' => 'Nama Baru',
         'nip' => '198001010001',
-        'subject' => 'Matematika',
+        'subject' => $guru->mata_pelajaran_id,
         'status' => 'Aktif',
     ])->assertSessionHasNoErrors();
 
@@ -864,7 +865,7 @@ test('progres absensi menghitung kehadiran dari tabel absensi', function () {
     }
 
     $payload = $this->actingAs($guru->user)
-        ->getJson(route('guru.progres'))
+        ->getJson(route('guru.laporan', ['tab' => 'periode']))
         ->assertOk()
         ->json();
 
@@ -898,7 +899,7 @@ test('progres absensi memakai json saat diminta', function () {
     ]);
 
     $payload = $this->actingAs($guru->user)
-        ->getJson(route('guru.progres'))
+        ->getJson(route('guru.laporan', ['tab' => 'periode']))
         ->assertOk()
         ->json();
 
@@ -919,7 +920,7 @@ test('progres absensi hanya menghitung kelas yang diampu guru', function () {
     siswaDiKelas($kelasLain, 'Siswa Milik Orang Lain');
 
     $this->actingAs($guru->user)
-        ->get(route('guru.progres'))
+        ->get(route('guru.laporan', ['tab' => 'periode']))
         ->assertOk()
         ->assertSee('Siswa Milik Saya')
         ->assertDontSee('Siswa Milik Orang Lain')
@@ -932,7 +933,7 @@ test('filter kelas yang bukan miliknya diabaikan, bukan membuka progres orang la
     siswaDiKelas($kelasLain, 'Siswa Milik Orang Lain');
 
     $payload = $this->actingAs($guru->user)
-        ->getJson(route('guru.progres', ['kelas' => 'X-B']))
+        ->getJson(route('guru.laporan', ['tab' => 'periode', 'kelas' => 'X-B']))
         ->assertOk()
         ->json();
 
@@ -944,7 +945,7 @@ test('filter periode yang tidak valid diabaikan dan kembali ke 30 hari', functio
     $guru = guruDenganAkun();
 
     $payload = $this->actingAs($guru->user)
-        ->getJson(route('guru.progres', ['periode' => 'bukan-periode']))
+        ->getJson(route('guru.laporan', ['tab' => 'periode', 'periode' => 'bukan-periode']))
         ->assertOk()
         ->json();
 
@@ -974,7 +975,7 @@ test('periode progres hanya menghitung absensi di dalam rentangnya', function ()
     ]);
 
     $payload = $this->actingAs($guru->user)
-        ->getJson(route('guru.progres', ['periode' => '30']))
+        ->getJson(route('guru.laporan', ['tab' => 'periode', 'periode' => '30']))
         ->assertOk()
         ->json();
 
@@ -991,7 +992,7 @@ test('tren harian progres memuat seluruh hari pada periode, termasuk hari kosong
     $kelas->guru()->sync([$guru->id]);
 
     $payload = $this->actingAs($guru->user)
-        ->getJson(route('guru.progres', ['periode' => '7']))
+        ->getJson(route('guru.laporan', ['tab' => 'periode', 'periode' => '7']))
         ->assertOk()
         ->json();
 
@@ -1043,7 +1044,7 @@ test('selisih progres membandingkan periode terpilih dengan periode sebelumnya',
     }
 
     $payload = $this->actingAs($guru->user)
-        ->getJson(route('guru.progres', ['periode' => '30']))
+        ->getJson(route('guru.laporan', ['tab' => 'periode', 'periode' => '30']))
         ->assertOk()
         ->json();
 
@@ -1079,7 +1080,7 @@ test('daftar perlu perhatian hanya berisi siswa di bawah ambang dan punya catata
     }
 
     $payload = $this->actingAs($guru->user)
-        ->getJson(route('guru.progres'))
+        ->getJson(route('guru.laporan', ['tab' => 'periode']))
         ->assertOk()
         ->json();
 
@@ -1097,8 +1098,11 @@ test('halaman progres absensi menampilkan ringkasan periode di layar', function 
     siswaDiKelas($kelas, 'Siswa Tampil Progres');
 
     $this->actingAs($guru->user)
-        ->get(route('guru.progres', ['periode' => '7']))
+        ->get(route('guru.laporan', ['tab' => 'periode', 'periode' => '7']))
         ->assertOk()
+        // Judul halaman tetap "Laporan Bulanan" karena keduanya sudah digabung,
+        // sementara isi tabnya yang berbeda.
+        ->assertSee('Laporan Bulanan')
         ->assertSee('Progres Absensi')
         ->assertSee('Rata-rata Kehadiran')
         ->assertSee('Tren Kehadiran Harian')
@@ -1107,7 +1111,109 @@ test('halaman progres absensi menampilkan ringkasan periode di layar', function 
         ->assertSee('Siswa Tampil Progres')
         // Periodenya ikut terbaca di dropdown, bukan hardcoded di view.
         ->assertSee('7 Hari Terakhir')
-        ->assertSee('grafikProgresHarian', false);
+        ->assertSee('grafikTrenHarian', false);
+});
+
+/*
+| Rekap bulanan dan progres absensi sudah digabung ke satu halaman
+| `guru.laporan`. Bedanya cuma cara memilih periode, jadi keduanya dibedakan
+| lewat query `?tab=`, bukan halaman terpisah.
+*/
+
+test('laporan bulanan dan progres absensi digabung jadi satu halaman', function () {
+    $guru = guruDenganAkun();
+    $kelas = Kelas::factory()->create(['nama_kelas' => 'X-A', 'status' => 'Aktif']);
+    $kelas->guru()->sync([$guru->id]);
+
+    siswaDiKelas($kelas, 'Siswa Gabung');
+
+    // Tanpa `?tab=` halaman membuka rekap bulanan, bukan progres.
+    $default = $this->actingAs($guru->user)
+        ->get(route('guru.laporan'))
+        ->assertOk();
+
+    $default->assertSee('Laporan Bulanan')
+        ->assertSee('Periode Bulan')
+        ->assertSee('Rekap per Kelas')
+        ->assertSee('Rincian per Siswa')
+        // Ekspor CSV hanya ada di tab bulanan.
+        ->assertSee('Ekspor CSV')
+        // Grafik bulanan memakai batang bertumpuk per status.
+        ->assertSee('grafikTrenHarian', false);
+
+    // Tab periode membuka isi yang dulu ada di halaman `guru.progres`.
+    $periode = $this->actingAs($guru->user)
+        ->get(route('guru.laporan', ['tab' => 'periode']))
+        ->assertOk();
+
+    $periode->assertSee('Laporan Bulanan')
+        ->assertSee('Progres per Kelas')
+        ->assertSee('Progres per Siswa')
+        ->assertSee('Absensi Hari Ini')
+        // Tombol ekspor mengikuti periode bulanan, jadi tidak ada di tab ini.
+        ->assertDontSee('Ekspor CSV');
+});
+
+test('tab yang tidak dikenal kembali ke rekap bulanan', function () {
+    $guru = guruDenganAkun();
+
+    $payload = $this->actingAs($guru->user)
+        ->getJson(route('guru.laporan', ['tab' => 'entah']))
+        ->assertOk()
+        ->json();
+
+    expect($payload['tab'])->toBe('bulanan')
+        ->and($payload['sebelumnya'])->toBeNull()
+        ->and($payload['selisih'])->toBeNull();
+});
+
+test('perpindahan tab membawa pilihan periode yang lain', function () {
+    $guru = guruDenganAkun();
+    $kelas = Kelas::factory()->create(['nama_kelas' => 'X-A', 'status' => 'Aktif']);
+    $kelas->guru()->sync([$guru->id]);
+
+    // Link tab harus bring kelas yang sedang difilter, supaya guru tidak
+    // kehilangan filter ketika berpindah tab.
+    $this->actingAs($guru->user)
+        ->get(route('guru.laporan', ['kelas' => 'X-A']))
+        ->assertOk()
+        ->assertSee('kelas=X-A', false)
+        ->assertSee('tab=periode', false);
+});
+
+test('halaman progres yang lama sudah tidak ada', function () {
+    // Route `guru.progres` dihapus karena sekarang jadi tab di `guru.laporan`.
+    $this->get('/dashboard/guru/progres')->assertNotFound();
+});
+
+test('ekspor csv tetap memakai periode bulanan meski dari tab progres', function () {
+    $guru = guruDenganAkun();
+    $kelas = Kelas::factory()->create(['nama_kelas' => 'X-A', 'status' => 'Aktif']);
+    $kelas->guru()->sync([$guru->id]);
+
+    $siswa = siswaDiKelas($kelas, 'Siswa Ekspor Gabung');
+
+    SesiAbsensi::create([
+        'kode_sesi' => 'SESI-EKSPOR-GABUNG',
+        'waktu_mulai' => now()->startOfMonth(),
+        'waktu_selesai' => now()->endOfMonth(),
+        'status' => 'aktif',
+    ]);
+
+    Absensi::create([
+        'siswa_id' => $siswa->id,
+        'sesi_absensi_id' => SesiAbsensi::query()->where('kode_sesi', 'SESI-EKSPOR-GABUNG')->value('id'),
+        'waktu_absen' => now(),
+        'status' => 'hadir',
+    ]);
+
+    $response = $this->actingAs($guru->user)->get(route('guru.laporan.export'));
+
+    $response->assertOk();
+    $response->assertDownload();
+
+    expect($response->streamedContent())->toContain('LAPORAN KEHADIRAN BULANAN')
+        ->toContain('Siswa Ekspor Gabung');
 });
 
 /*
@@ -1202,4 +1308,120 @@ test('halaman real-time monitoring menangani guru tanpa kelas', function () {
         ->assertOk()
         ->assertSee('Belum ada kelas yang diampu', false)
         ->assertSee('realtimeKosongKelas', false);
+});
+
+/*
+| Mata pelajaran guru harus sama persis di dashboard admin dan dashboard guru.
+|
+| Dulunya `gurus.mata_pelajaran` adalah teks bebas yang tidak terhubung ke tabel
+| `mata_pelajaran`, sementara dashboard guru jatuh ke data contoh `XII.RPL`
+| kalau gurunya belum punya kelas. Akibatnya Martha Arinda (Desain Komunikasi
+| Visual) terlihat mengajar `XII.RPL` di dashboard guru, padahal dashboard
+| admin memakai kode DKV.
+*/
+
+test('mata pelajaran guru sama di dashboard admin dan dashboard guru', function () {
+    $dkv = mapelDenganKode('DKV', 'Desain Komunikasi Visual');
+
+    $user = User::factory()->create([
+        'name' => 'Martha Arinda S.Pd',
+        'role' => 'Guru',
+        'status' => 'Aktif',
+    ]);
+
+    $guru = Guru::factory()->create(['user_id' => $user->id, 'mata_pelajaran_id' => $dkv->id]);
+
+    $kelas = Kelas::factory()->create(['nama_kelas' => 'XII-DKV', 'status' => 'Aktif']);
+    $kelas->guru()->sync([$guru->id]);
+
+    // Sisi guru: mapel dan kode mapel dikirim dari baris `mata_pelajaran`.
+    $payload = $this->actingAs($guru->user)
+        ->getJson(route('guru.dashboard'))
+        ->assertOk()
+        ->json();
+
+    expect($payload['guru']['mapel'])->toBe('Desain Komunikasi Visual')
+        ->and($payload['guru']['kodeMapel'])->toBe('DKV');
+
+    // Sisi admin: halaman guru menampilkan nama & kode dari baris yang sama.
+    loginAdmin();
+
+    $this->get(route('cms.teachers'))
+        ->assertOk()
+        ->assertSee('Desain Komunikasi Visual')
+        ->assertSee('DKV')
+        ->assertDontSee('XII.RPL');
+});
+
+test('dashboard guru tidak lagi menampilkan data contoh kelas milik guru lain', function () {
+    // Guru tanpa kelas tidak boleh melihat kelas hardcode XII.RPL beserta
+    // siswa contohnya, karena itu membuat dia terlihat mengampu mapel orang.
+    $dkv = mapelDenganKode('DKV', 'Desain Komunikasi Visual');
+
+    $user = User::factory()->create([
+        'name' => 'Martha Arinda S.Pd',
+        'role' => 'Guru',
+        'status' => 'Aktif',
+    ]);
+
+    $guru = Guru::factory()->create(['user_id' => $user->id, 'mata_pelajaran_id' => $dkv->id]);
+
+    // Bersihkan cache browser supaya test tidak ikut membaca data lama.
+    $this->actingAs($guru->user)
+        ->get(route('guru.dashboard'))
+        ->assertOk()
+        ->assertSee('Belum ada kelas yang diampu', false)
+        // Nama siswa dari data contoh tidak boleh bocor ke halaman.
+        ->assertDontSee('Najla Mutia')
+        ->assertDontSee('XII.RPL');
+
+    $payload = $this->actingAs($guru->user)
+        ->getJson(route('guru.dashboard'))
+        ->assertOk()
+        ->json();
+
+    expect($payload['kelas'])->toBe([])
+        ->and($payload['guru']['kelas'])->toBe('')
+        ->and($payload['guru']['mapel'])->toBe('Desain Komunikasi Visual');
+});
+
+test('mengubah mapel guru di admin langsung terlihat di dashboard guru', function () {
+    $rpl = mapelDenganKode('RPL', 'Rekayasa Perangkat Lunak');
+    $dkv = mapelDenganKode('DKV', 'Desain Komunikasi Visual');
+
+    $user = User::factory()->create([
+        'name' => 'Martha Arinda S.Pd',
+        'role' => 'Guru',
+        'status' => 'Aktif',
+    ]);
+
+    $guru = Guru::factory()->create(['user_id' => $user->id, 'mata_pelajaran_id' => $rpl->id]);
+
+    loginAdmin();
+
+    $this->put(route('cms.teachers.update', $guru), [
+        'name' => $user->name,
+        'nip' => $guru->nip,
+        'subject' => $dkv->id,
+        'status' => 'Aktif',
+    ])->assertSessionHasNoErrors();
+
+    $payload = $this->actingAs($guru->user)
+        ->getJson(route('guru.dashboard'))
+        ->assertOk()
+        ->json();
+
+    expect($payload['guru']['mapel'])->toBe('Desain Komunikasi Visual')
+        ->and($payload['guru']['kodeMapel'])->toBe('DKV');
+});
+
+test('kolom mapel guru lama diisi dari mapel yang dipilih', function () {
+    // Kolom teks `mata_pelajaran` dipertahankan supaya data lama tidak hilang,
+    // tapi isinya harus selalu mengikuti mapel yang dipilih lewat form.
+    $mapel = MataPelajaran::factory()->create(['nama_mata_pelajaran' => 'Kimia Industri']);
+
+    $guru = Guru::factory()->create(['mata_pelajaran_id' => $mapel->id]);
+
+    expect($guru->fresh()->mata_pelajaran)->toBe('Kimia Industri')
+        ->and($guru->namaMataPelajaran())->toBe('Kimia Industri');
 });

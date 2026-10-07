@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Guru;
+use App\Models\MataPelajaran;
 use App\Models\User;
 use Tests\TestCase;
 
@@ -92,4 +93,19 @@ function loginGuru(string $nama = 'Guru Uji'): User
     test()->actingAs($user);
 
     return $user;
+}
+
+/**
+ * Mata pelajaran dari daftar bawaan migration, atau dibuat kalau belum ada.
+ *
+ * `DKV` dan `RPL` sudah diisi migration `add_jurusan_id_to_kelas_table`, jadi
+ * test yang memakai kode tersebut tidak boleh memanggil factory (kode dan nama
+ * mapel unique) tanpa mengecek dulu.
+ */
+function mapelDenganKode(string $kode, string $nama): MataPelajaran
+{
+    return MataPelajaran::query()->firstOrCreate(
+        ['kode_mata_pelajaran' => $kode],
+        ['nama_mata_pelajaran' => $nama],
+    );
 }

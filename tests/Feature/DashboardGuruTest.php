@@ -4,10 +4,11 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-test('lima halaman dashboard guru dapat diakses dan memakai layout sidebar', function () {
+test('empat halaman dashboard guru dapat diakses dan memakai layout sidebar', function () {
+    // Rekap bulanan dan progres absensi sudah digabung, jadi halaman guru
+    // tinggal empat: dashboard, kelola, laporan, dan real-time.
     $halaman = [
         'guru.dashboard' => 'Dashboard',
-        'guru.progres' => 'Progres Absensi',
         'guru.kelola' => 'Kelola Data Kelas',
         'guru.laporan' => 'Laporan Bulanan',
         'guru.realtime' => 'Real-Time Monitoring',
@@ -28,7 +29,7 @@ test('lima halaman dashboard guru dapat diakses dan memakai layout sidebar', fun
 test('sidebar guru menampilkan menu area guru dan menandai halaman aktif', function () {
     loginGuru();
 
-    $this->get(route('guru.progres'))
+    $this->get(route('guru.laporan'))
         ->assertOk()
         ->assertSee(route('guru.dashboard'), false)
         ->assertSee(route('guru.realtime'), false)
@@ -44,7 +45,7 @@ test('sidebar cms tetap memakai menu cms dan tidak menampilkan menu guru', funct
         ->assertOk()
         ->assertSee(route('cms.users'), false)
         ->assertSee(route('cms.rekap'), false)
-        ->assertDontSee(route('guru.progres'), false);
+        ->assertDontSee(route('guru.laporan'), false);
 });
 
 test('semua halaman cms punya link kembali ke beranda', function () {
@@ -83,16 +84,17 @@ test('halaman guru memuat data layer dan script yang dibutuhkan', function () {
 });
 
 test('halaman guru tidak mengarahkan ke form identitas guru', function () {
-    // Identitas guru hanya dibaca dari localStorage di sisi browser. Kalau
-    // belum diisi, halaman harus tetap tampil memakai nilai bawaan.
-    $halaman = ['guru.dashboard', 'guru.progres', 'guru.kelola', 'guru.laporan', 'guru.realtime'];
+    // Identitas guru dibaca dari database lewat `window.HADIRIN_GURU`. Kalau
+    // guru belum punya kelas, halaman harus tetap tampil dengan kondisi
+    // kosong, bukan dialihkan ke form identitas.
+    $halaman = ['guru.dashboard', 'guru.kelola', 'guru.laporan', 'guru.realtime'];
 
     loginGuru();
 
     foreach ($halaman as $route) {
         $this->get(route($route))
             ->assertOk()
-            ->assertSee('DEFAULT_IDENTITAS', false)
+            ->assertSee('IDENTITAS_KOSONG', false)
             ->assertDontSee('/identitas-guru', false);
     }
 });

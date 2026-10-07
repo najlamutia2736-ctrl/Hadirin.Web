@@ -12,7 +12,7 @@ use App\Http\Controllers\StudentController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/home', function () {
+Route::get('/', function () {
     return view('halaman-awal');
 })->name('home');
 
@@ -43,7 +43,7 @@ Route::prefix('/absensi')
     ->name('absensi.')
     ->middleware('auth')
     ->group(function () {
-        Route::get('/', [AbsensiSiswaController::class, 'index'])
+        Route::get('/index', [AbsensiSiswaController::class, 'index'])
             ->name('index');
 
         Route::get('/identitas', [AbsensiSiswaController::class, 'identitas'])
@@ -84,9 +84,6 @@ Route::prefix('dashboard/guru')
         Route::get('/', 'dashboard')
             ->name('dashboard');
 
-        Route::get('/progres', 'progres')
-            ->name('progres');
-
         Route::get('/kelola', 'kelola')
             ->name('kelola');
 
@@ -112,7 +109,7 @@ Route::prefix('dashboard/guru')
 // Dashboard CMS dan seluruh halaman lainnya. Wajib login dan hanya untuk akun
 // admin. Operator diperlakukan sama karena perannya juga mengelola data sekolah.
 Route::middleware(['auth', 'role:Admin,Operator'])->group(function () {
-    Route::get('/dashboard', function () {
+    Route::get('/dashboard-admin', function () {
         return view('cms.dashboard');
     })->name('cms.dashboard');
 

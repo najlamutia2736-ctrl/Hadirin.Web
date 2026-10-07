@@ -1,15 +1,18 @@
 {{--
     Data layer bersama untuk seluruh halaman Guru.
 
-    Dua sumber data, berurutan prioritasnya:
+    Sumber data hanya satu: **Server (database)**, yang dipasang lewat
+    `window.HADIRIN_GURU` oleh `DashboardGuruController`. Ini sumber yang sama
+    dengan dashboard admin, jadi kelas, siswa, dan mata pelajaran yang baru
+    ditambah dari dashboard CMS langsung muncul di sini tanpa langkah
+    tambahan.
 
-    1. **Server (database)** — dipasang lewat `window.HADIRIN_GURU` oleh
-       `DashboardGuruController`. Ini sumber yang sama dengan dashboard admin,
-       jadi kelas & siswa yang baru ditambahkan dari dashboard CMS langsung
-       muncul di sini. Dipakai selama `window.HADIRIN_GURU` tidak null.
-    2. **localStorage** — hanya dipakai sebagai fallback kalau halaman
-       dibuka tanpa data dari server (mis. halaman guru yang belum punya
-       controller). Isinya `GLOBAL_DATA_KEY` beserta data contoh bawaan.
+    Sebelumnya file ini masih punya data contoh bawaan (`XII.RPL`, `XI.RPL`,
+    dst.) yang dipakai kalau server tidak mengirim kelas. Itu membuat dashboard
+    guru menunjukkan mata pelajaran dan kelas milik guru lain — misalnya
+    Martha Arinda (Desain Komunikasi Visual) terlihat mengajar `XII.RPL`.
+    Data contoh tersebut sudah dihapus: kalau guru memang belum diampu kelas,
+    halamannya menampilkan kondisi kosong, bukan kelas palsu.
 
     File ini hanya menangani state + pemuatan data. Logic render per halaman
     tetap ada di file halaman masing-masing. Dipakai lewat:
@@ -24,43 +27,18 @@
     const GLOBAL_DATA_KEY = 'hadirin_global_data';
     const STORAGE_KEY_SISWA_ABSEN = 'siswa_absen';
     const STORAGE_KEY_DAFTAR_ABSEN = 'daftar_absen';
-    const STORAGE_KEY_IDENTITAS = 'identitas_guru';
 
     // Data dari server, dipasang oleh halaman sebelum include ini.
     const SERVER_DATA = window.HADIRIN_GURU ?? null;
 
-    // Data default (dipakai kalau server tidak mengirim data).
-    const defaultSiswaPerKelas = {
-        'XII.RPL': [
-            { nama: 'Najla Mutia', nis: '12345' },
-            { nama: 'Yasmin Zahra', nis: '12346' },
-            { nama: 'Dina Karima', nis: '12347' },
-            { nama: 'Alex Pratama', nis: '12348' },
-            { nama: 'Arjuna Wijaya', nis: '12349' }
-        ],
-        'XI.RPL': [
-            { nama: 'Budi Santoso', nis: '22345' },
-            { nama: 'Siti Rahayu', nis: '22346' },
-            { nama: 'Ahmad Fauzi', nis: '22347' }
-        ],
-        'XII.TKJ': [
-            { nama: 'Rizky Ramadhan', nis: '32345' },
-            { nama: 'Maya Sari', nis: '32346' }
-        ],
-        'X.RPL': [
-            { nama: 'Hana Permata', nis: '42345' },
-            { nama: 'Gilang Pratama', nis: '42346' }
-        ]
-    };
-
-    // Identitas hanya dipakai untuk mengisi nama & kelas di tampilan.
-    // Kalau guru belum pernah mengisi form identitas, pakai nilai bawaan
-    // supaya halaman dashboard tetap bisa langsung dibuka.
-    const DEFAULT_IDENTITAS = {
+    // Identitas guru. Semua isinya berasal dari database; tidak ada lagi nilai
+    // bawaan yang mengarang nama kelas atau mata pelajaran.
+    const IDENTITAS_KOSONG = {
         nama: 'Guru',
-        kelasLengkap: 'XII.RPL',
-        jurusan: '-',
-        kepentingan: '-'
+        nip: '-',
+        mapel: '-',
+        kodeMapel: '-',
+        kelasLengkap: '-'
     };
 
     // ============================================================
@@ -78,28 +56,26 @@
     /**
      * Data awal untuk halaman.
      *
-     * Kalau server mengirim kelas, localStorage sengaja diabaikan supaya
-     * data lama yang tertinggal di browser tidak menimpa data database.
+     * Kalau server tidak mengirim kelas, `siswaPerKelas` dibiarkan kosong.
+     * Halaman-halaman guru sudah punya kondisi "belum ada kelas yang diampu"
+     * untuk kasus itu, jadi tidak perlu data contoh apa pun.
      */
     function sourceDataAwal() {
-        if (!SERVER_DATA || !Array.isArray(SERVER_DATA.kelas) || SERVER_DATA.kelas.length === 0) {
-            return loadGlobalData();
-        }
-
         const data = {
             siswaPerKelas: {},
             lastUpdate: new Date().toISOString(),
             sumber: 'database'
         };
 
+        if (!SERVER_DATA || !Array.isArray(SERVER_DATA.kelas)) {
+            return data;
+        }
+
         SERVER_DATA.kelas.forEach(function (kelas) {
             data.siswaPerKelas[kelas.nama] = (kelas.siswa || []).map(function (siswa) {
                 return { nama: siswa.nama, nis: siswa.nis };
             });
         });
-
-        // Samakan cache browser dengan isi database.
-        saveGlobalData(data);
 
         return data;
     }
@@ -129,36 +105,6 @@
     }
 
     // ============================================================
-    // LOAD / SAVE DATA GLOBAL
-    // ============================================================
-    function loadGlobalData() {
-        const saved = localStorage.getItem(GLOBAL_DATA_KEY);
-
-        if (saved) {
-            try {
-                return JSON.parse(saved);
-            } catch (e) {
-                console.error('Error parsing global data:', e);
-            }
-        }
-
-        // Kalau belum ada, simpan default
-        const defaultData = {
-            siswaPerKelas: defaultSiswaPerKelas,
-            lastUpdate: new Date().toISOString(),
-            sumber: 'contoh'
-        };
-        localStorage.setItem(GLOBAL_DATA_KEY, JSON.stringify(defaultData));
-
-        return defaultData;
-    }
-
-    function saveGlobalData(data) {
-        data.lastUpdate = new Date().toISOString();
-        localStorage.setItem(GLOBAL_DATA_KEY, JSON.stringify(data));
-    }
-
-    // ============================================================
     // IDENTITAS GURU
     // ============================================================
     function cekIdentitasGuru() {
@@ -166,30 +112,16 @@
             const kelasPertama = (SERVER_DATA.guru.kelas || '').split(',')[0].trim();
 
             identitasGuru = {
-                ...DEFAULT_IDENTITAS,
-                nama: SERVER_DATA.guru.nama || DEFAULT_IDENTITAS.nama,
-                kelasLengkap: kelasPertama || DEFAULT_IDENTITAS.kelasLengkap,
-                nip: SERVER_DATA.guru.nip || '-',
-                mapel: SERVER_DATA.guru.mapel || '-'
+                nama: SERVER_DATA.guru.nama || IDENTITAS_KOSONG.nama,
+                nip: SERVER_DATA.guru.nip || IDENTITAS_KOSONG.nip,
+                mapel: SERVER_DATA.guru.mapel || IDENTITAS_KOSONG.mapel,
+                kodeMapel: SERVER_DATA.guru.kodeMapel || IDENTITAS_KOSONG.kodeMapel,
+                // Guru yang belum diampu kelas tampil sebagai "-", bukan kelas
+                // hardcode. Kondisinya sudah ditangani tiap halaman.
+                kelasLengkap: kelasPertama || IDENTITAS_KOSONG.kelasLengkap
             };
-
-            isiIdentitasKeHalaman(identitasGuru);
-
-            return identitasGuru;
-        }
-
-        const saved = localStorage.getItem(STORAGE_KEY_IDENTITAS);
-
-        // Belum pernah mengisi identitas -> pakai nilai bawaan, jangan diarahkan.
-        if (!saved) {
-            identitasGuru = { ...DEFAULT_IDENTITAS };
         } else {
-            try {
-                identitasGuru = { ...DEFAULT_IDENTITAS, ...JSON.parse(saved) };
-            } catch (e) {
-                console.error('Error:', e);
-                identitasGuru = { ...DEFAULT_IDENTITAS };
-            }
+            identitasGuru = { ...IDENTITAS_KOSONG };
         }
 
         isiIdentitasKeHalaman(identitasGuru);
@@ -226,9 +158,10 @@
     /**
      * Susun `presensiList` untuk satu kelas.
      *
-     * Kalau kelasnya ada di data server, isi apa adanya dari database
-     * (termasuk siswa yang belum absen, berstatus null). Kalau tidak, dipakai
-     * data contoh bawaan supaya halaman tetap bisa tampil.
+     * Semua baris berasal dari database. Siswa yang belum punya catatan absensi
+     * hari ini tetap ikut masuk dengan status null supaya tidak salah
+     * dihitung sebagai alpha. Kelas yang tidak ada di database guru ini
+     * menghasilkan daftar kosong, bukan data contoh.
      */
     function loadDataKelas(kelas) {
         presensiList = [];
@@ -236,41 +169,19 @@
 
         const server = dataKelasServer(kelas);
 
-        if (server) {
-            (server.siswa || []).forEach(function (siswa) {
-                presensiList.push({
-                    id: nextId++,
-                    nama: siswa.nama,
-                    nis: siswa.nis,
-                    kelas: kelas,
-                    waktu: siswa.waktu ? new Date(siswa.waktu) : null,
-                    metode: siswa.metode,
-                    status: toLabelStatus(siswa.absensi)
-                });
-            });
+        if (!server) return presensiList;
 
-            return presensiList;
-        }
-
-        const students = globalData.siswaPerKelas[kelas] || globalData.siswaPerKelas['XII.RPL'] || [];
-        const statuses = ['Hadir', 'Hadir', 'Hadir', 'Izin', 'Sakit'];
-        const metodes = ['Scan QR', 'ID Unik', 'Izin/Sakit'];
-        const now = new Date();
-
-        for (let i = 0; i < students.length; i++) {
-            const time = new Date(now);
-            time.setMinutes(now.getMinutes() - (students.length - 1 - i) * 5);
-
+        (server.siswa || []).forEach(function (siswa) {
             presensiList.push({
                 id: nextId++,
-                nama: students[i].nama,
-                nis: students[i].nis,
+                nama: siswa.nama,
+                nis: siswa.nis,
                 kelas: kelas,
-                waktu: time,
-                metode: metodes[i % metodes.length],
-                status: statuses[i % statuses.length]
+                waktu: siswa.waktu ? new Date(siswa.waktu) : null,
+                metode: siswa.metode,
+                status: toLabelStatus(siswa.absensi)
             });
-        }
+        });
 
         return presensiList;
     }

@@ -106,20 +106,7 @@
                 </div>
 
                 <div class="sm:col-span-2">
-                    <label for="subject" class="mb-2 block text-sm font-semibold text-gray-700">
-                        Mata Pelajaran <span class="text-red-500" aria-hidden="true">*</span>
-                    </label>
-                    <input id="subject" name="subject" type="text" value="{{ old('subject') }}" required maxlength="100"
-                        placeholder="Contoh: Matematika"
-                        aria-invalid="{{ $errors->has('subject') ? 'true' : 'false' }}"
-                        @class([
-                            'w-full rounded-lg border px-3 py-2.5 text-sm text-gray-700 shadow-sm transition placeholder:text-gray-400 focus:outline-none focus:ring-2',
-                            'border-red-500 bg-red-50/40 focus:border-red-500 focus:ring-red-500' => $errors->has('subject'),
-                            'border-gray-200 bg-white focus:border-indigo-500 focus:ring-indigo-500' => ! $errors->has('subject'),
-                        ])>
-                    @error('subject')
-                        <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
-                    @enderror
+                    @include('cms.teachers.partials.mata-pelajaran', ['guru' => null])
                 </div>
 
                 <div>
