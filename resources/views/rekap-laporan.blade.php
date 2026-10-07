@@ -39,7 +39,6 @@
                     <a href="{{ route('home') }}" class="text-2xl font-bold text-indigo-700 tracking-tight">
                         Hadirin.<span class="text-slate-700">web</span>
                     </a>
-                    <span class="hidden sm:inline-block text-[10px] font-medium bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full">beta</span>
                 </div>
 
                 <!-- Menu Desktop -->

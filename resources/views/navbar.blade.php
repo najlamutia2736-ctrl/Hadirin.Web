@@ -1,16 +1,33 @@
 <!-- resources/views/navbar.blade.php -->
 @php
+    /*
+    | Halaman ini punya dua wajah: untuk pengunjung umum, dan untuk pengguna
+    | yang sudah masuk.
+    |
+    | `$publik` memaksa wajah pengunjung umum dipakai apa pun isi sesinya.
+    | Halaman awal memakainya karena halaman itu adalah pintu masuk, bukan
+    | beranda pengguna — jadi nama akun, tombol Logout, dan link dashboard
+    | tidak boleh muncul di sana meski sesinya masih hidup.
+    |
+    | Dipakai lewat:
+    |     @include('navbar')                              // mengikuti sesi
+    |     @include('navbar', ['publik' => true])          // selalu versi tamu
+    */
+    $publik = $publik ?? false;
+
+    $user = $publik ? null : auth()->user();
+
     // Menu "Absen Siswa" hanya untuk akun yang punya profil di tabel `siswas`.
     // Pemeriksaannya sama dengan yang dipakai AbsensiSiswaController, supaya
     // menu ini tidak pernah mengarah ke halaman yang akan menolak user.
-    $bisaAbsen = auth()->user()?->siswa !== null;
+    $bisaAbsen = $user?->siswa !== null;
 
     // Halaman CMS dan Guru sudah dilindungi middleware `role`, jadi link-nya
     // hanya ditampilkan ke akun yang benar-benar boleh membukanya. Tanpa ini,
     // tamu akan melihat link yang setelah diklik hanya memantulkan ke halaman
     // login.
-    $bukaCms = in_array(auth()->user()?->role, ['Admin', 'Operator'], true);
-    $bukaGuru = auth()->user()?->role === 'Guru';
+    $bukaCms = in_array($user?->role, ['Admin', 'Operator'], true);
+    $bukaGuru = $user?->role === 'Guru';
 @endphp
 <header class="w-full bg-white/80 backdrop-blur-sm border-b border-slate-200/60 sticky top-0 z-10">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -22,7 +39,6 @@
                 <a href="{{ route('beranda') }}" class="text-2xl font-bold text-indigo-700 tracking-tight">
                     Hadirin.<span class="text-slate-700">web</span>
                 </a>
-                <span class="hidden sm:inline-block text-[10px] font-medium bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full">beta</span>
             </div>
 
             <!-- Menu Desktop -->
@@ -41,11 +57,11 @@
 
             <!-- Tombol Login / User -->
             <div class="hidden md:block">
-                @auth
+                @if ($user)
                     <div class="flex items-center gap-3">
                         <span class="text-sm text-slate-600 flex items-center gap-2">
                             <i class="fas fa-user-circle text-indigo-600 text-lg"></i>
-                            <span>{{ Auth::user()->name }}</span>
+                            <span>{{ $user->name }}</span>
                         </span>
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
@@ -58,16 +74,16 @@
                     <a href="{{ route('login') }}" class="inline-flex items-center gap-2 bg-indigo-600 text-white text-sm font-medium px-5 py-2.5 rounded-full shadow-md shadow-indigo-200 transition hover:bg-indigo-700">
                         <i class="fas fa-arrow-right-to-bracket text-xs"></i> Log In
                     </a>
-                @endauth
+                @endif
             </div>
 
             <!-- Mobile Menu -->
             <div class="md:hidden flex items-center gap-3">
-                @auth
-                    <span class="text-sm font-medium text-slate-600">{{ Auth::user()->name }}</span>
+                @if ($user)
+                    <span class="text-sm font-medium text-slate-600">{{ $user->name }}</span>
                 @else
                     <a href="{{ route('login') }}" class="text-sm font-medium text-indigo-600 bg-indigo-50 px-4 py-2 rounded-full">Log In</a>
-                @endauth
+                @endif
                 <button class="text-slate-500 hover:text-indigo-600 transition" onclick="toggleMobileNav()">
                     <i class="fas fa-bars text-xl" id="mobileNavIcon"></i>
                 </button>

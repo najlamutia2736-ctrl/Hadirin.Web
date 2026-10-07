@@ -65,20 +65,21 @@
                     <a href="{{ route('beranda') }}" class="text-2xl font-bold text-indigo-700 tracking-tight">
                         Hadirin.<span class="text-slate-700">web</span>
                     </a>
-                    <span
-                        class="hidden sm:inline-block text-[10px] font-medium bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full">beta</span>
                 </div>
 
                 <!-- Menu Desktop -->
                 <div class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
                     @if ($bisaAbsen)
-                        <a href="{{ route('absensi.index') }}" class="hover:text-indigo-600 transition">Absen Siswa</a>
+                        <a href="{{ route('absensi.index') }}" class="hover:text-indigo-600 transition">HALAMAN ABSENSI
+                            SISWA</a>
                     @endif
                     @if ($bukaGuru)
-                        <a href="{{ route('guru.dashboard') }}" class="hover:text-indigo-600 transition">Dashboard Guru</a>
+                        <a href="{{ route('guru.dashboard') }}" class="hover:text-indigo-600 transition">HALAMAN
+                            DASHBOARD GURU</a>
                     @endif
                     @if ($bukaCms)
-                        <a href="{{ route('cms.dashboard') }}" class="hover:text-indigo-600 transition">Dashboard Admin</a>
+                        <a href="{{ route('cms.dashboard') }}" class="hover:text-indigo-600 transition">HALAMAN
+                            DASHBOARD ADMIN</a>
                         <a href="{{ route('cms.rekap') }}" class="hover:text-indigo-600 transition">Rekap</a>
                     @endif
                 </div>
@@ -100,7 +101,8 @@
                             </form>
                         </div>
                     @else
-                        <a href="{{ route('login') }}" class="inline-flex items-center gap-2 bg-indigo-600 text-white text-sm font-medium px-5 py-2.5 rounded-full shadow-md shadow-indigo-200 transition hover:bg-indigo-700">
+                        <a href="{{ route('login') }}"
+                            class="inline-flex items-center gap-2 bg-indigo-600 text-white text-sm font-medium px-5 py-2.5 rounded-full shadow-md shadow-indigo-200 transition hover:bg-indigo-700">
                             <i class="fas fa-arrow-right-to-bracket text-xs"></i> Log In
                         </a>
                     @endauth
@@ -114,7 +116,8 @@
                             {{ Auth::user()->name }}
                         </span>
                     @else
-                        <a href="{{ route('login') }}" class="text-sm font-medium text-indigo-600 bg-indigo-50 px-4 py-2 rounded-full">Log In</a>
+                        <a href="{{ route('login') }}"
+                            class="text-sm font-medium text-indigo-600 bg-indigo-50 px-4 py-2 rounded-full">Log In</a>
                     @endauth
                     <button onclick="toggleMobileMenu()" class="text-slate-500 hover:text-indigo-600 transition">
                         <i class="fas fa-bars text-xl" id="mobileMenuIcon"></i>
@@ -195,9 +198,10 @@
                     <i class="fas fa-robot"></i>
                 </div>
                 <div>
-                    <h2 class="text-lg font-semibold text-slate-800 mb-2">Apa itu Hadirin?</h2>
+                    <h2 class="text-lg font-semibold text-slate-800 mb-2">Apa itu Hadirin.web?</h2>
                     <p class="text-sm text-slate-600 leading-relaxed max-w-4xl">
-                        Hadirin mengganti buku absensi kertas dengan pencatatan otomatis dan terpusat.
+                        Hadirin.web merupakan alternatif pengganti buku absensi kertas dengan pencatatan otomatis dan
+                        terpusat.
                         Siswa cukup memindai kode QR atau memasukkan ID unik miliknya.
                         <span class="text-indigo-600 font-medium">— guru dan wali murid langsung melihat status
                             kehadiran secara real-time.</span>
@@ -288,8 +292,6 @@
             <span>© 2026 Sistem Absensi</span>
             <span class="w-px h-3 bg-slate-300"></span>
             <span>Hadirin.web</span>
-            <span class="w-px h-3 bg-slate-300"></span>
-            <span><i class="fas fa-image mr-1"></i> Beranda.png</span>
         </div>
     </footer>
 

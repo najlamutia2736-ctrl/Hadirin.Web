@@ -84,56 +84,15 @@
     ];
 
     /*
-    | Tren kehadiran 12 bulan. sourced dari controller bila someday sudah ada
-    | (`$monthlyTrend ?? ...`), sementara ini masih placeholder dengan satuan
-    | persen, sama seperti dashboard admin.
-    */
-    $monthlyTrend = $monthlyTrend ?? [
-        ['month' => 'Jan', 'hadir' => 92, 'izin' => 8],
-        ['month' => 'Feb', 'hadir' => 95, 'izin' => 5],
-        ['month' => 'Mar', 'hadir' => 89, 'izin' => 11],
-        ['month' => 'Apr', 'hadir' => 94, 'izin' => 6],
-        ['month' => 'Mei', 'hadir' => 91, 'izin' => 9],
-        ['month' => 'Jun', 'hadir' => 96, 'izin' => 4],
-        ['month' => 'Jul', 'hadir' => 88, 'izin' => 12],
-        ['month' => 'Agu', 'hadir' => 93, 'izin' => 7],
-        ['month' => 'Sep', 'hadir' => 96, 'izin' => 4],
-        ['month' => 'Okt', 'hadir' => 90, 'izin' => 10],
-        ['month' => 'Nov', 'hadir' => 94, 'izin' => 6],
-        ['month' => 'Des', 'hadir' => 92, 'izin' => 8],
-    ];
-
-    /*
-    | Pintasan ke halaman guru lain. usefulness kartu ini sekaligus menjadi
-    | pengingat rute saat halaman-halamannya nanti diisi.
+    | Tren kehadiran 12 bulan, dikirim controller dari tabel `absensis`.
     |
-    | Rekap bulanan dan progres absensi sudah digabung ke `guru.laporan`, jadi
-    | shortcut "Progres Absensi" yang lama dihapus. Tidak ada lagi dua pintu ke
-    | laporan yang sama.
+    | Dulu isinya placeholder di Blade (92, 95, 89, dst.), sehingga grafik
+    | selalu penuh walaupun belum ada satu pun catatan absensi. Sekarang
+    | angkanya dari database, jadi kalau belum ada absensi, `$trenBulanan`
+    | berisi deret yang seluruhnya nol dan `total`-nya 0.
     */
-    $shortcuts = [
-        [
-            'label' => 'Kelola Data Kelas',
-            'description' => 'Atur siswa, jadwal, dan mata pelajaran yang diampu.',
-            'route' => 'guru.kelola',
-            'icon' => 'fas fa-users-cog',
-            'tone' => 'green',
-        ],
-        [
-            'label' => 'Laporan Bulanan',
-            'description' => 'Rekap bulanan, tren kehadiran, dan progres per siswa.',
-            'route' => 'guru.laporan',
-            'icon' => 'fas fa-file-alt',
-            'tone' => 'amber',
-        ],
-        [
-            'label' => 'Real-Time Monitoring',
-            'description' => 'Lihat absensi masuk langsung saat siswa memindai QR.',
-            'route' => 'guru.realtime',
-            'icon' => 'fas fa-clock',
-            'tone' => 'red',
-        ],
-    ];
+    $tren = $trenBulanan['tren'] ?? [];
+    $punyaTren = ($trenBulanan['total'] ?? 0) > 0;
 
     $actions = new Illuminate\Support\HtmlString(
         view('guru.partials.banner-actions')->render()
@@ -226,7 +185,13 @@
                         </span>
                         <div>
                             <h3 class="font-semibold text-gray-800">Tren Kehadiran Bulanan</h3>
-                            <p class="text-xs text-gray-500">Persentase hadir siswa sepanjang tahun</p>
+                            <p class="text-xs text-gray-500">
+                                @if ($punyaTren)
+                                    Persentase hadir siswa sepanjang 12 bulan terakhir
+                                @else
+                                    Menunggu absensi pertama
+                                @endif
+                            </p>
                         </div>
                     </div>
                     <div class="flex items-center gap-4 text-[11px] font-medium text-gray-500">
@@ -234,15 +199,43 @@
                             <span class="h-2.5 w-2.5 rounded-sm bg-gradient-to-t from-emerald-500 to-emerald-400"></span> Hadir
                         </span>
                         <span class="flex items-center gap-1.5">
-                            <span class="h-2.5 w-2.5 rounded-sm bg-gradient-to-t from-amber-500 to-amber-400"></span> Izin / Sakit
+                            <span class="h-2.5 w-2.5 rounded-sm bg-blue-500"></span> Izin
+                        </span>
+                        <span class="flex items-center gap-1.5">
+                            <span class="h-2.5 w-2.5 rounded-sm bg-amber-500"></span> Sakit
+                        </span>
+                        <span class="flex items-center gap-1.5">
+                            <span class="h-2.5 w-2.5 rounded-sm bg-rose-500"></span> Alpa
                         </span>
                     </div>
                 </div>
 
                 <div class="px-6 py-5">
-                    <div class="chart-container">
-                        <canvas id="trenChart"></canvas>
-                    </div>
+                    @if ($punyaTren)
+                        <div class="chart-container">
+                            <canvas id="trenChart"></canvas>
+                        </div>
+                    @else
+                        {{-- Batang kosong 12 bulan dengan label tetap tampil, supaya
+                             kerangka grafiknya terlihat tapi tidak mengarang
+                             persentase seperti sebelumnya. --}}
+                        <div class="chart-container flex items-end gap-2 pb-6">
+                            @foreach ($tren as $bar)
+                                <div class="flex flex-1 flex-col items-center gap-2">
+                                    <div class="flex w-full flex-1 items-end">
+                                        <div class="w-full rounded-t-md border border-dashed border-gray-200 bg-gray-50"
+                                            style="height: 4px"
+                                            title="{{ $bar['label'] }}: belum ada catatan"></div>
+                                    </div>
+                                    <span class="text-[11px] text-gray-400">{{ $bar['label'] }}</span>
+                                </div>
+                            @endforeach
+                        </div>
+                        <p class="-mt-2 text-center text-sm text-gray-400">
+                            <i class="fas fa-chart-simple mb-2 block text-2xl text-gray-300"></i>
+                            Belum ada catatan absensi untuk kelas yang Anda ampu.
+                        </p>
+                    @endif
                 </div>
             </div>
         </div>
@@ -357,28 +350,7 @@
         </div>
     </div>
 
-    {{-- pintasan halaman guru lainnya --}}
-    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
-        @foreach ($shortcuts as $shortcut)
-            @php $tone = $tones[$shortcut['tone']]; @endphp
-            <a href="{{ route($shortcut['route']) }}"
-                class="group flex items-start gap-4 rounded-xl border border-gray-100 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-indigo-100 hover:shadow-md">
-                <span
-                    class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-lg transition-transform duration-300 group-hover:scale-110 {{ $tone['chip'] }}">
-                    <i class="{{ $shortcut['icon'] }}"></i>
-                </span>
-                <span class="min-w-0 flex-1">
-                    <span class="flex items-center justify-between gap-2">
-                        <span class="truncate text-sm font-semibold text-gray-800">{{ $shortcut['label'] }}</span>
-                        <i
-                            class="fas fa-arrow-up-right-from-square shrink-0 text-[10px] text-gray-300 transition-colors group-hover:text-indigo-500"></i>
-                    </span>
-                    <span class="mt-1 block text-xs leading-relaxed text-gray-500">{{ $shortcut['description'] }}</span>
-                </span>
-            </a>
-        @endforeach
-    </div>
-@endsection
+    @endsection
 
 @push('styles')
     @include('guru.partials.styles')
@@ -426,7 +398,7 @@
         let daftarKelas = [];
         let trenChart = null;
 
-        const DATA_TREN_BULANAN = @json($monthlyTrend);
+        const DATA_TREN_BULANAN = @json($tren);
 
         const BADGE_STATUS = {
             'Hadir': 'badge-hadir',
@@ -739,29 +711,59 @@
             if (kelasAktif) loadDataKelas(kelasAktif);
         }
 
-        // ============================================================
+// ============================================================
         // TREN KEHADIRAN BULANAN
         // ============================================================
+        // Data berasal dari server (tabel `absensis`), jadi yang digambar di
+        // sini hanya bentuk visualnya. Babel-bulan tanpa catatan sengaja
+        // dilewati supaya batang lompat tidak terjadi; halaman sudah
+        // menampilkan kondisi kosong lewat Blade kalau belum ada absensi sama
+        // sekali, jadi fungsi ini tidak perlu menggambar apa pun dalam kasus itu.
         function initTrenChart() {
             const canvas = document.getElementById('trenChart');
-            if (!canvas || typeof Chart === 'undefined') return;
+            if (!canvas || typeof Chart === 'undefined' || !DATA_TREN_BULANAN.length) return;
+
+            const totalKeseluruhan = DATA_TREN_BULANAN.reduce(function (jumlah, bar) {
+                return jumlah + bar.total;
+            }, 0);
+
+            if (totalKeseluruhan === 0) return;
+
+            // Sumbu Y memakai persentase, jadi tiap batang dinormalkan ke 100%.
+            // Angka aslinya tetap dipakai di tooltip supaya guru bisa melihat
+            // jumlahsiswa, bukan cuma rationya.
+            const persen = function (jumlah, bar) {
+                return bar.total > 0 ? (jumlah / bar.total) * 100 : 0;
+            };
 
             trenChart = new Chart(canvas, {
                 type: 'bar',
                 data: {
-                    labels: DATA_TREN_BULANAN.map(function (bar) { return bar.month; }),
+                    labels: DATA_TREN_BULANAN.map(function (bar) { return bar.label; }),
                     datasets: [
                         {
                             label: 'Hadir',
-                            data: DATA_TREN_BULANAN.map(function (bar) { return bar.hadir; }),
+                            data: DATA_TREN_BULANAN.map(function (bar) { return persen(bar.hadir, bar); }),
                             backgroundColor: '#10b981',
                             borderRadius: { topLeft: 0, topRight: 0, bottomLeft: 6, bottomRight: 6 },
                             borderSkipped: false
                         },
                         {
-                            label: 'Izin / Sakit',
-                            data: DATA_TREN_BULANAN.map(function (bar) { return bar.izin; }),
+                            label: 'Izin',
+                            data: DATA_TREN_BULANAN.map(function (bar) { return persen(bar.izin, bar); }),
+                            backgroundColor: '#3b82f6',
+                            borderSkipped: false
+                        },
+                        {
+                            label: 'Sakit',
+                            data: DATA_TREN_BULANAN.map(function (bar) { return persen(bar.sakit, bar); }),
                             backgroundColor: '#f59e0b',
+                            borderSkipped: false
+                        },
+                        {
+                            label: 'Alpa',
+                            data: DATA_TREN_BULANAN.map(function (bar) { return persen(bar.alpa, bar); }),
+                            backgroundColor: '#f43f5e',
                             borderRadius: { topLeft: 6, topRight: 6, bottomLeft: 0, bottomRight: 0 },
                             borderSkipped: false
                         }
@@ -775,7 +777,15 @@
                         tooltip: {
                             callbacks: {
                                 label: function (ctx) {
-                                    return ctx.dataset.label + ': ' + ctx.parsed.y + '%';
+                                    const bar = DATA_TREN_BULANAN[ctx.dataIndex];
+                                    const kunci = ctx.dataset.label.toLowerCase();
+
+                                    return ctx.dataset.label + ': ' + bar[kunci]
+                                        + ' (' + ctx.parsed.y.toFixed(0) + '%)';
+                                },
+                                footer: function (items) {
+                                    const bar = DATA_TREN_BULANAN[items[0].dataIndex];
+                                    return 'Total ' + bar.total + ' catatan';
                                 }
                             }
                         }
@@ -784,6 +794,7 @@
                         x: { stacked: true, grid: { display: false }, ticks: { font: { size: 11 } } },
                         y: {
                             stacked: true,
+                            min: 0,
                             max: 100,
                             grid: { color: '#f1f5f9' },
                             ticks: { font: { size: 11 }, callback: function (v) { return v + '%'; } }

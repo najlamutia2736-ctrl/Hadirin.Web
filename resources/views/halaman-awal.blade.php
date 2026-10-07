@@ -14,7 +14,11 @@
 <body class="bg-slate-50 font-sans antialiased">
 
     <!-- ========== NAVBAR ========== -->
-    @include('navbar')
+    {{-- `publik` => true: halaman ini adalah pintu masuk, jadi navbar selalu
+         ditampilkan dalam wujud pengunjung umum. Nama akun, tombol Logout,
+         dan link dashboard tidak muncul di sini meski sesinya masih hidup,
+         sehingga pengunjung selalu diarahkan ke halaman Login. --}}
+    @include('navbar', ['publik' => true])
 
     <!-- ========== HERO SECTION ========== -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16">
@@ -45,10 +49,13 @@
                 </div>
 
                 <!-- Badge -->
-                <div class="flex items-center gap-4 text-xs text-slate-400 pt-4">
-                    <span><i class="fas fa-shield-alt text-indigo-400 mr-1"></i> aman & terenkripsi</span>
-                    <span class="w-px h-4 bg-slate-300"></span>
-                    <span><i class="fas fa-users text-indigo-400 mr-1"></i> 12k+ pengguna</span>
+                {{-- Badge memakai klaim yang benar-benar ada di aplikasi.
+                     Angka pengguna pernah ditulis di sini, padahal tidak ada
+                     sumber datanya dan bisa terlupa diperbarui. --}}
+                <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-400 pt-4">
+                    <span><i class="fas fa-shield-alt text-indigo-400 mr-1"></i> aman &amp; terenkripsi</span>
+                    <span class="hidden sm:inline-block w-px h-4 bg-slate-300"></span>
+                    <span><i class="fas fa-chart-line text-indigo-400 mr-1"></i> rekap real-time</span>
                 </div>
             </div>
 

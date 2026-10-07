@@ -56,6 +56,11 @@ class DashboardGuruController extends Controller
     private const BATAS_PERHATIAN = 75;
 
     /**
+     * Berapa bulan ke belakang untuk grafik tren dashboard guru.
+     */
+    private const BULAN_TREN = 12;
+
+    /**
      * Periode yang dipakai kalau guru belum memilih atau memilih nilai aneh.
      */
     private const PERIODE_BAWAAN = '30';
@@ -81,6 +86,7 @@ class DashboardGuruController extends Controller
 
         return view('guru.dashboard', [
             'guruData' => $guruData,
+            'trenBulanan' => $this->trenBulanan($this->guruYangLogin($request)),
         ]);
     }
 
@@ -443,6 +449,77 @@ class DashboardGuruController extends Controller
                 'kelas' => implode(', ', array_column($kelas, 'nama')),
             ],
             'kelas' => $kelas,
+        ];
+    }
+
+    /**
+     * Tren kehadiran 12 bulan terakhir untuk kelas yang diampu guru.
+     *
+     * Angkanya diambil dari tabel `absensis` yang sama dengan halaman Rekap di
+     * sisi admin dan dengan laporan bulanan guru, sehingga grafik di dashboard
+     * tidak mungkin berbeda dari angka di halaman lain.
+     *
+     * Bulan tanpa catatan tetap ikut dikembalikan dengan angka nol supaya
+     * kurvanya tidak lompat. `total` di luar deret dipakai halaman untuk
+     * membedakan "belum ada absensi sama sekali" dari "sudah ada, tapi bulan
+     * ini kosong".
+     *
+     * @return array{tren:list<array<string,int|string>>,total:int}
+     */
+    protected function trenBulanan(?Guru $guru): array
+    {
+        $deret = [];
+
+        $kelas = $this->kelasYangDiampu($guru)->pluck('nama_kelas');
+
+        if ($kelas->isNotEmpty()) {
+            $siswaIds = Siswa::query()->whereIn('kelas', $kelas)->pluck('id');
+
+            if ($siswaIds->isNotEmpty()) {
+                $deret = Absensi::query()
+                    ->whereIn('siswa_id', $siswaIds)
+                    ->where('waktu_absen', '>=', now()->startOfMonth()->subMonths(self::BULAN_TREN - 1))
+                    ->selectRaw('substr(waktu_absen, 1, 7) as periode')
+                    ->selectRaw('count(*) as total')
+                    ->selectRaw('sum(case when status = ? then 1 else 0 end) as hadir', ['hadir'])
+                    ->selectRaw('sum(case when status = ? then 1 else 0 end) as izin', ['izin'])
+                    ->selectRaw('sum(case when status = ? then 1 else 0 end) as sakit', ['sakit'])
+                    ->selectRaw('sum(case when status = ? then 1 else 0 end) as alpha', ['alpha'])
+                    ->groupBy('periode')
+                    ->get()
+                    ->mapWithKeys(fn ($baris): array => [
+                        (string) $baris->periode => [
+                            'hadir' => (int) $baris->hadir,
+                            'izin' => (int) $baris->izin,
+                            'sakit' => (int) $baris->sakit,
+                            'alpa' => (int) $baris->alpha,
+                            'total' => (int) $baris->total,
+                        ],
+                    ])
+                    ->all();
+            }
+        }
+
+        $tren = [];
+        $mulai = now()->startOfMonth()->subMonths(self::BULAN_TREN - 1);
+
+        for ($i = 0; $i < self::BULAN_TREN; $i++) {
+            $awal = $mulai->copy()->addMonthsNoOverflow($i);
+            $baris = $deret[$awal->format('Y-m')] ?? null;
+
+            $tren[] = [
+                'label' => $awal->locale('id')->translatedFormat('M'),
+                'hadir' => $baris['hadir'] ?? 0,
+                'izin' => $baris['izin'] ?? 0,
+                'sakit' => $baris['sakit'] ?? 0,
+                'alpa' => $baris['alpa'] ?? 0,
+                'total' => $baris['total'] ?? 0,
+            ];
+        }
+
+        return [
+            'tren' => $tren,
+            'total' => array_sum(array_column($deret, 'total')),
         ];
     }
 

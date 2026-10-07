@@ -326,15 +326,97 @@ test('login saat sudah login diarahkan ke beranda, bukan halaman awal', function
         ->assertRedirect(route('beranda'));
 });
 
-test('halaman publik punya form logout yang benar-benar mengirim post', function () {
+test('halaman beranda punya form logout yang benar-benar mengirim post', function () {
+    // Halaman `home` sengaja tidak ikut di sini: ia adalah pintu masuk dan
+    // mengakhiri sesi, jadi tidak mungkin menampilkan form logout.
     $user = User::factory()->create(['role' => 'Siswa', 'status' => 'Aktif']);
 
-    foreach (['home', 'beranda'] as $hal) {
+    $this->actingAs($user)
+        ->get(route('beranda'))
+        ->assertOk()
+        ->assertSee('<form method="POST" action="'.route('logout').'"', false);
+});
+
+/*
+| Halaman awal (`/`) adalah pintu masuk. Segera atau sengaja, begitu dibuka
+| sesinya harus berakhir supaya pengunjung selalu diarahkan ke halaman Login,
+| bukan menemukan nama akun, tombol Logout, atau link dashboard di navbar.
+*/
+
+test('halaman awal mengakhiri sesi yang masih hidup', function () {
+    $user = User::factory()->create(['name' => 'Najla Mutia', 'role' => 'Siswa', 'status' => 'Aktif']);
+
+    $this->actingAs($user)->get(route('home'))->assertOk();
+
+    $this->assertGuest();
+});
+
+test('halaman awal tidak menampilkan identitas maupun link dashboard', function () {
+    $guru = guruDenganAkun('Martha Arinda S.Pd');
+    $siswa = User::factory()->create(['name' => 'Najla Mutia', 'role' => 'Siswa', 'status' => 'Aktif']);
+    $admin = User::factory()->create(['name' => 'Budi Santoso', 'role' => 'Admin', 'status' => 'Aktif']);
+
+    foreach ([$guru->user, $siswa, $admin] as $user) {
         $this->actingAs($user)
-            ->get(route($hal))
+            ->get(route('home'))
             ->assertOk()
-            ->assertSee('<form method="POST" action="'.route('logout').'"', false);
+            // Nama akun, tombol Logout, dan form logout semuanya hilang.
+            ->assertDontSee($user->name)
+            ->assertDontSee('Logout')
+            ->assertDontSee(route('logout'), false)
+            // Link dashboard hanya untuk sesi yang masih hidup, jadi di sini
+            // tidak boleh muncul sama sekali.
+            ->assertDontSee('Dashboard Guru')
+            ->assertDontSee('Dashboard Admin')
+            ->assertDontSee('Absen Siswa')
+            // Yang tetap ada: pintu masuknya.
+            ->assertSee(route('login'), false)
+            ->assertSee('Log In');
     }
+});
+
+test('halaman awal sama persis untuk pengunjung yang sudah logout', function () {
+    $user = User::factory()->create(['name' => 'Najla Mutia', 'role' => 'Admin', 'status' => 'Aktif']);
+
+    $dariSesiHidup = $this->actingAs($user)->get(route('home'))->assertOk()->getContent();
+
+    $this->assertGuest();
+
+    $dariTamu = $this->get(route('home'))->assertOk()->getContent();
+
+    expect($dariSesiHidup)->toBe($dariTamu);
+});
+
+test('halaman awal tidak menghapus data yang sudah disimpan', function () {
+    // Mengakhiri sesi hanya menyentuh sisi browser. Baris yang sudah ada di
+    // database harus tetap utuh setelah pengunjung membuka halaman awal.
+    $guru = guruDenganAkun();
+    $kelas = Kelas::factory()->create(['status' => 'Aktif']);
+    $kelas->guru()->sync([$guru->id]);
+    $siswa = siswaDiKelas($kelas, 'Siswa Tetap Ada');
+
+    $jumlahSiswa = Siswa::count();
+    $jumlahGuru = Guru::count();
+    $jumlahKelas = Kelas::count();
+
+    $this->actingAs($guru->user)->get(route('home'))->assertOk();
+
+    expect(Siswa::count())->toBe($jumlahSiswa)
+        ->and(Guru::count())->toBe($jumlahGuru)
+        ->and(Kelas::count())->toBe($jumlahKelas)
+        ->and(Siswa::query()->find($siswa->id))->not->toBeNull()
+        ->and($guru->fresh())->not->toBeNull()
+        ->and($kelas->fresh()->guru()->pluck('gurus.id')->all())->toBe([$guru->id]);
+});
+
+test('halaman beranda tidak mengakhiri sesi', function () {
+    // Hanya halaman awal yang jadi pintu masuk. `/beranda` tetap halaman
+    // pengguna, jadi sesi harus tetap hidup.
+    $user = User::factory()->create(['role' => 'Siswa', 'status' => 'Aktif']);
+
+    $this->actingAs($user)->get(route('beranda'))->assertOk();
+
+    $this->assertAuthenticatedAs($user);
 });
 
 test('waktu login terakhir tersimpan di database', function () {

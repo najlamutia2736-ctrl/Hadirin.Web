@@ -13,9 +13,13 @@ use App\Http\Controllers\StudentController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('halaman-awal');
-})->name('home');
+/*
+ * Halaman awal adalah pintu masuk, bukan beranda pengguna. `AuthController::awal`
+ * mengakhiri sesi yang masih hidup supaya halaman ini selalu tampil dalam wujud
+ * pengunjung umum, sehingga terbuka lewat GET pun tidak menyisakan nama akun
+ * atau tombol Logout di navbar.
+ */
+Route::get('/', [AuthController::class, 'awal'])->name('home');
 
 /*
  * `guest` dipakai juga di halaman login (bukan hanya saat submit), supaya

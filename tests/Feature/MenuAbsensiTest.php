@@ -14,6 +14,20 @@ function halamanDenganMenuAbsen(): array
     return ['/', '/login', '/beranda'];
 }
 
+/**
+ * Halaman yang masih bisa dibuka pengguna yang sudah login.
+ *
+ * `/` tidak ikut di sini karena halaman awal adalah pintu masuk: membukanya
+ * mengakhiri sesi, jadi link "Absen Siswa" tidak pernah muncul di sana.
+ *
+ * `/login` juga tidak, karena middleware `guest` mengalihkan pengguna yang
+ * sudah login ke halaman awal.
+ */
+function halamanYangTerbukaSaatLogin(): array
+{
+    return ['/beranda'];
+}
+
 test('link absen siswa disembunyikan saat belum login', function () {
     foreach (halamanDenganMenuAbsen() as $url) {
         $this->get($url)
@@ -23,7 +37,7 @@ test('link absen siswa disembunyikan saat belum login', function () {
 });
 
 test('link absen siswa disembunyikan untuk akun admin dan guru', function () {
-    foreach (halamanDenganMenuAbsen() as $url) {
+    foreach (halamanYangTerbukaSaatLogin() as $url) {
         foreach (['Admin', 'Guru'] as $role) {
             $this->actingAs(User::factory()->create(['role' => $role]))
                 ->get($url)
@@ -38,7 +52,7 @@ test('link absen siswa muncul untuk akun siswa yang punya profil', function () {
 
     Siswa::factory()->create(['user_id' => $user->id]);
 
-    foreach (halamanDenganMenuAbsen() as $url) {
+    foreach (halamanYangTerbukaSaatLogin() as $url) {
         $this->actingAs($user->fresh())
             ->get($url)
             ->assertOk()
@@ -54,12 +68,27 @@ test('link absen siswa tetap disembunyikan untuk akun siswa tanpa profil', funct
 
     expect($user->siswa)->toBeNull();
 
-    foreach (halamanDenganMenuAbsen() as $url) {
+    foreach (halamanYangTerbukaSaatLogin() as $url) {
         $this->actingAs($user)
             ->get($url)
             ->assertOk()
             ->assertDontSee(route('absensi.index'), false);
     }
+});
+
+test('halaman awal tidak pernah menampilkan link absen siswa meski profilnya ada', function () {
+    // Halaman awal mengakhiri sesi lalu menampilkan navbar versi tamu, jadi
+    // link "Absen Siswa" tidak boleh bocor ke sana meski akunnya sudah punya
+    // profil siswa yang lengkap.
+    $user = User::factory()->create(['role' => 'Siswa']);
+
+    Siswa::factory()->create(['user_id' => $user->id]);
+
+    $this->actingAs($user)
+        ->get('/')
+        ->assertOk()
+        ->assertDontSee(route('absensi.index'), false)
+        ->assertDontSee('Absen Siswa');
 });
 
 /*
