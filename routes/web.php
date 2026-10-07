@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AbsensiSiswaController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DashboardAdminController;
 use App\Http\Controllers\DashboardGuruController;
 use App\Http\Controllers\GuruController;
 use App\Http\Controllers\JadwalController;
@@ -109,9 +110,10 @@ Route::prefix('dashboard/guru')
 // Dashboard CMS dan seluruh halaman lainnya. Wajib login dan hanya untuk akun
 // admin. Operator diperlakukan sama karena perannya juga mengelola data sekolah.
 Route::middleware(['auth', 'role:Admin,Operator'])->group(function () {
-    Route::get('/dashboard-admin', function () {
-        return view('cms.dashboard');
-    })->name('cms.dashboard');
+    Route::controller(DashboardAdminController::class)->group(function () {
+        Route::get('/dashboard-admin', 'index')
+            ->name('cms.dashboard');
+    });
 
     Route::controller(MataPelajaranController::class)->group(function () {
         Route::get('/mata-pelajaran', 'index')
