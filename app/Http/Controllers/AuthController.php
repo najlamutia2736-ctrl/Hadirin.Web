@@ -75,18 +75,24 @@ class AuthController extends Controller
     }
 
     /**
-     * Dashboard awal tiap role.
+     * Halaman tujuan setelah login, tiap role.
      *
-     * Guru diarahkan ke dashboard guru yang datanya sudah berasal dari
-     * database, admin ke dashboard CMS, dan siswa ke beranda. Operator ikut ke
-     * dashboard CMS karena perannya juga mengelola data sekolah.
+     * Guru diarahkan ke dashboard guru, admin dan operator ke dashboard CMS.
+     * Siswa langsung ke halaman absensi karena halaman itu memang tempat
+     * kegiatannya, sama seperti admin yang langsung masuk ke dashboard CMS.
+     * Dengan begitu halaman depan tidak muncul lagi setelah siswa berhasil
+     * masuk.
+     *
+     * Siswa yang belum punya baris di tabel `siswas` tetap dikirim ke halaman
+     * depan. Halaman absensi menolak akun tanpa profil dengan 403, jadi
+     * mengirimnya ke sana hanya akan menghasilkan halaman error.
      */
     protected function berandaUntuk(?User $user): string
     {
         return match ($user?->role) {
             'Admin', 'Operator' => route('cms.dashboard'),
             'Guru' => route('guru.dashboard'),
-            'Siswa' => route('beranda'),
+            'Siswa' => $user->siswa !== null ? route('absensi.index') : route('beranda'),
             default => route('beranda'),
         };
     }

@@ -276,6 +276,35 @@ test('login admin diarahkan ke dashboard cms', function () {
     ])->assertRedirect(route('cms.dashboard'));
 });
 
+test('login siswa langsung ke halaman absensi, bukan ke halaman depan', function () {
+    // Siswa punya tempat kegiatannya sendiri, jadi setelah login tidak perlu
+    // lewat halaman depan dulu. Sama seperti admin yang langsung masuk ke
+    // dashboard CMS dan guru yang langsung masuk ke dashboard guru.
+    $user = User::factory()->create(['role' => 'Siswa', 'status' => 'Aktif']);
+
+    Siswa::factory()->create(['user_id' => $user->id]);
+
+    $this->post(route('login.store'), [
+        'email' => $user->email,
+        'password' => 'password',
+    ])->assertRedirect(route('absensi.index'));
+
+    $this->assertAuthenticatedAs($user);
+});
+
+test('login siswa tanpa profil tetap dikirim ke halaman depan', function () {
+    // Halaman absensi menolak akun tanpa baris di tabel `siswas` dengan 403,
+    // jadi akun seperti ini harus tetap mendarat di halaman depan.
+    $user = User::factory()->create(['role' => 'Siswa', 'status' => 'Aktif']);
+
+    expect($user->siswa)->toBeNull();
+
+    $this->post(route('login.store'), [
+        'email' => $user->email,
+        'password' => 'password',
+    ])->assertRedirect(route('beranda'));
+});
+
 test('login dengan password salah ditolak tanpa membocorkan email terdaftar', function () {
     $user = User::factory()->create(['role' => 'Guru', 'status' => 'Aktif']);
 
@@ -312,7 +341,11 @@ test('logout mengakhiri sesi', function () {
 | `POST /login` memakai middleware `guest`. Kalau tidak diberi arah, middleware
 | itu mencari route bernama `dashboard`, lalu `home`. Route dashboard di sini
 | bernama `cms.dashboard`, sehingga orang yang sudah login lalu submit form login
-| lagi akan mendarat di halaman awal, bukan beranda.
+| lagi akan mendarat di halaman depan `/`, bukan ke halaman tugasnya.
+|
+| Akun pada test ini sengaja tanpa profil siswa, karena yang diperiksa di sini
+| adalah middleware `guest`, bukan tujuan login. Arahan untuk siswa berprofil
+| ada di test `login siswa langsung ke halaman absensi` di atas.
 */
 
 test('login saat sudah login diarahkan ke beranda, bukan halaman awal', function () {
