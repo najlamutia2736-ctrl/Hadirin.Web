@@ -36,7 +36,7 @@
             <nav class="flex items-center justify-between h-16 md:h-20">
                 <!-- Brand / Logo -->
                 <div class="flex items-center gap-2">
-                    <a href="{{ route('home') }}" class="text-2xl font-bold text-indigo-700 tracking-tight">
+                    <a href="{{ route('beranda') }}" class="text-2xl font-bold text-indigo-700 tracking-tight">
                         Hadirin.<span class="text-slate-700">web</span>
                     </a>
                 </div>

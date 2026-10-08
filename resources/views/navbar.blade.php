@@ -1,21 +1,14 @@
 <!-- resources/views/navbar.blade.php -->
 @php
     /*
-    | Halaman ini punya dua wajah: untuk pengunjung umum, dan untuk pengguna
-    | yang sudah masuk.
-    |
-    | `$publik` memaksa wajah pengunjung umum dipakai apa pun isi sesinya.
-    | Halaman awal memakainya karena halaman itu adalah pintu masuk, bukan
-    | beranda pengguna — jadi nama akun, tombol Logout, dan link dashboard
-    | tidak boleh muncul di sana meski sesinya masih hidup.
+    | Navbar punya dua wajah: untuk pengunjung umum, dan untuk pengguna yang
+    | sudah masuk. Wajahnya ditentukan langsung dari sesi, jadi halaman yang
+    | memakainya tidak perlu mengirim flag apa pun.
     |
     | Dipakai lewat:
-    |     @include('navbar')                              // mengikuti sesi
-    |     @include('navbar', ['publik' => true])          // selalu versi tamu
+    |     @include('navbar')
     */
-    $publik = $publik ?? false;
-
-    $user = $publik ? null : auth()->user();
+    $user = auth()->user();
 
     // Menu "Absen Siswa" hanya untuk akun yang punya profil di tabel `siswas`.
     // Pemeriksaannya sama dengan yang dipakai AbsensiSiswaController, supaya
@@ -34,7 +27,7 @@
         <nav class="flex items-center justify-between h-16 md:h-20">
             <!-- Brand / Logo -->
             <div class="flex items-center gap-2">
-                {{-- Logo jadi jalan ke beranda, karena link "Beranda" di navbar
+                {{-- Logo jadi jalan ke halaman depan, karena link "Beranda" di navbar
                      sengaja tidak ditampilkan. --}}
                 <a href="{{ route('beranda') }}" class="text-2xl font-bold text-indigo-700 tracking-tight">
                     Hadirin.<span class="text-slate-700">web</span>

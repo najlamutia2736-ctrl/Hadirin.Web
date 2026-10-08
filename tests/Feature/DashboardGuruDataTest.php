@@ -338,58 +338,66 @@ test('halaman beranda punya form logout yang benar-benar mengirim post', functio
 });
 
 /*
-| Halaman awal (`/`) adalah pintu masuk. Segera atau sengaja, begitu dibuka
-| sesinya harus berakhir supaya pengunjung selalu diarahkan ke halaman Login,
-| bukan menemukan nama akun, tombol Logout, atau link dashboard di navbar.
+| Halaman depan ada di `/`. `/beranda` lama hanya pengalihan ke sana, jadi
+| halaman yang sama berlaku untuk pengunjung umum maupun pengguna yang sudah
+| masuk, dan sesi tidak lagi diakhiri oleh halaman mana pun.
 */
 
-test('halaman awal mengakhiri sesi yang masih hidup', function () {
-    $user = User::factory()->create(['name' => 'Najla Mutia', 'role' => 'Siswa', 'status' => 'Aktif']);
-
-    $this->actingAs($user)->get(route('home'))->assertOk();
-
-    $this->assertGuest();
+test('halaman depan beralamat di akar situs', function () {
+    expect(route('beranda'))->toBe(url('/'));
 });
 
-test('halaman awal tidak menampilkan identitas maupun link dashboard', function () {
+test('alamat lama beranda hanya mengalihkan ke halaman depan', function () {
+    $this->get('/beranda')
+        ->assertRedirect(route('beranda'));
+});
+
+test('halaman beranda tidak mengakhiri sesi', function () {
+    $user = User::factory()->create(['role' => 'Siswa', 'status' => 'Aktif']);
+
+    $this->actingAs($user)->get(route('beranda'))->assertOk();
+
+    $this->assertAuthenticatedAs($user);
+});
+
+test('halaman depan menampilkan identitas dan link sesuai peran yang masuk', function () {
+    // Beranda sekarang satu halaman untuk semua orang, jadi yang menentukan
+    // adalah navbar dan tombol hero: guru melihat dashboardnya, akun lain
+    // tidak boleh melihat link yang bukan haknya.
     $guru = guruDenganAkun('Martha Arinda S.Pd');
-    $siswa = User::factory()->create(['name' => 'Najla Mutia', 'role' => 'Siswa', 'status' => 'Aktif']);
+
+    $this->actingAs($guru->user)
+        ->get(route('beranda'))
+        ->assertOk()
+        ->assertSee($guru->user->name)
+        ->assertSee('Logout')
+        // Link navbar ke dashboard gurunya sendiri boleh tampil.
+        ->assertSee('>Dashboard Guru<', false)
+        ->assertDontSee('>Dashboard Admin<', false);
+
     $admin = User::factory()->create(['name' => 'Budi Santoso', 'role' => 'Admin', 'status' => 'Aktif']);
 
-    foreach ([$guru->user, $siswa, $admin] as $user) {
-        $this->actingAs($user)
-            ->get(route('home'))
-            ->assertOk()
-            // Nama akun, tombol Logout, dan form logout semuanya hilang.
-            ->assertDontSee($user->name)
-            ->assertDontSee('Logout')
-            ->assertDontSee(route('logout'), false)
-            // Link dashboard hanya untuk sesi yang masih hidup, jadi di sini
-            // tidak boleh muncul sama sekali.
-            ->assertDontSee('Dashboard Guru')
-            ->assertDontSee('Dashboard Admin')
-            ->assertDontSee('Absen Siswa')
-            // Yang tetap ada: pintu masuknya.
-            ->assertSee(route('login'), false)
-            ->assertSee('Log In');
-    }
+    $this->actingAs($admin)
+        ->get(route('beranda'))
+        ->assertOk()
+        ->assertSee('>Dashboard Admin<', false)
+        ->assertDontSee('>Dashboard Guru<', false);
 });
 
-test('halaman awal sama persis untuk pengunjung yang sudah logout', function () {
-    $user = User::factory()->create(['name' => 'Najla Mutia', 'role' => 'Admin', 'status' => 'Aktif']);
-
-    $dariSesiHidup = $this->actingAs($user)->get(route('home'))->assertOk()->getContent();
-
-    $this->assertGuest();
-
-    $dariTamu = $this->get(route('home'))->assertOk()->getContent();
-
-    expect($dariSesiHidup)->toBe($dariTamu);
+test('halaman depan untuk tamu tetap menampilkan pintu masuk', function () {
+    // Hero memakai navbar yang sama persis, jadi nama akun dan tombol Logout
+    // tidak boleh bocor ke pengunjung yang belum masuk.
+    $this->get(route('beranda'))
+        ->assertOk()
+        ->assertSee(route('login'), false)
+        ->assertSee('GET STARTED')
+        ->assertDontSee('Logout')
+        ->assertDontSee('fa-user-circle', false);
 });
 
-test('halaman awal tidak menghapus data yang sudah disimpan', function () {
-    // Mengakhiri sesi hanya menyentuh sisi browser. Baris yang sudah ada di
-    // database harus tetap utuh setelah pengunjung membuka halaman awal.
+test('halaman depan tidak menghapus data yang sudah disimpan', function () {
+    // Membuka beranda hanya membaca tampilan. Baris yang sudah ada di database
+    // harus tetap utuh.
     $guru = guruDenganAkun();
     $kelas = Kelas::factory()->create(['status' => 'Aktif']);
     $kelas->guru()->sync([$guru->id]);
@@ -399,7 +407,7 @@ test('halaman awal tidak menghapus data yang sudah disimpan', function () {
     $jumlahGuru = Guru::count();
     $jumlahKelas = Kelas::count();
 
-    $this->actingAs($guru->user)->get(route('home'))->assertOk();
+    $this->actingAs($guru->user)->get(route('beranda'))->assertOk();
 
     expect(Siswa::count())->toBe($jumlahSiswa)
         ->and(Guru::count())->toBe($jumlahGuru)
@@ -407,16 +415,6 @@ test('halaman awal tidak menghapus data yang sudah disimpan', function () {
         ->and(Siswa::query()->find($siswa->id))->not->toBeNull()
         ->and($guru->fresh())->not->toBeNull()
         ->and($kelas->fresh()->guru()->pluck('gurus.id')->all())->toBe([$guru->id]);
-});
-
-test('halaman beranda tidak mengakhiri sesi', function () {
-    // Hanya halaman awal yang jadi pintu masuk. `/beranda` tetap halaman
-    // pengguna, jadi sesi harus tetap hidup.
-    $user = User::factory()->create(['role' => 'Siswa', 'status' => 'Aktif']);
-
-    $this->actingAs($user)->get(route('beranda'))->assertOk();
-
-    $this->assertAuthenticatedAs($user);
 });
 
 test('waktu login terakhir tersimpan di database', function () {

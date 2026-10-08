@@ -145,14 +145,16 @@ test('logout mengembalikan akun ke status tamu', function () {
 | Navbar tidak boleh menawarkan link yang hanya akan memantulkan tamu ke login.
 */
 
-test('navbar tamu hanya menawarkan halaman publik dan tombol login', function () {
-    // `/home` dan `/login` memakai `navbar.blade.php` tanpa kartu peran, jadi
-    // di situ tidak boleh ada satu pun link ke area CMS maupun guru.
-    foreach (['home', 'login'] as $route) {
+test('navbar tamu tidak menampilkan link dashboard', function () {
+    // Yang dicek adalah label link di navbar, bukan URL-nya: kartu peran di
+    // beranda memang memuat tautan ke dashboard guru dan admin karena tugasnya
+    // justru menawarkan pilihan peran. Yang tidak boleh bocor ke tamu adalah
+    // menu navigasi, karena keduanya dilindungi middleware `role`.
+    foreach (['beranda', 'login'] as $route) {
         $this->get(route($route))
             ->assertOk()
             ->assertSee(route('login'), false)
-            ->assertDontSee(route('guru.dashboard'), false)
+            ->assertDontSee('>Dashboard Guru<', false)
             ->assertDontSee('>Dashboard Admin<', false)
             ->assertDontSee('>Rekap<', false);
     }
@@ -202,7 +204,9 @@ test('halaman publik tidak menampilkan nama akun maupun tombol logout untuk tamu
         ->assertSee(route('login'), false)
         ->assertDontSee('Logout')
         ->assertDontSee('fa-user-circle', false);
-})->with(['home', 'login', 'beranda']);
+    // Route `home` tidak ikut karena `/beranda` lama sekarang hanya
+    // pengalihan, bukan halaman yang dirender.
+})->with(['login', 'beranda']);
 
 test('halaman login tidak menampilkan nama akun yang sedang login', function () {
     $user = User::factory()->create(['name' => 'Martha Arinda S.Pd', 'status' => 'Aktif']);

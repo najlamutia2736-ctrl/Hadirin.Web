@@ -17,13 +17,13 @@ return Application::configure(basePath: dirname(__DIR__))
          * jelas, `RedirectIfAuthenticated` mencari route bernama `dashboard`
          * lalu `home`, dan karena route dashboard di sini bernama
          * `cms.dashboard`, orang yang sudah login lalu membuka `/login`
-         * lagi akan mendarat di halaman awal, bukan beranda.
+         * lagi akan mendarat di `/beranda` yang hanya pengalihan.
          *
          * Dipakai path literal, bukan `route()`, karena route belum dimuat
          * pada fase boot ini. `guests` sengaja tidak diubah supaya tamu
          * yang ditolak middleware `auth` tetap diarahkan ke halaman login.
          */
-        $middleware->redirectUsersTo('/beranda');
+        $middleware->redirectUsersTo('/');
 
         /*
          * Alias singkat untuk middleware pemeriksa role. Dipakai di routes/web.php

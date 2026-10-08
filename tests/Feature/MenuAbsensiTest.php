@@ -11,21 +11,18 @@ uses(RefreshDatabase::class);
  */
 function halamanDenganMenuAbsen(): array
 {
-    return ['/', '/login', '/beranda'];
+    return ['/login', '/'];
 }
 
 /**
  * Halaman yang masih bisa dibuka pengguna yang sudah login.
  *
- * `/` tidak ikut di sini karena halaman awal adalah pintu masuk: membukanya
- * mengakhiri sesi, jadi link "Absen Siswa" tidak pernah muncul di sana.
- *
- * `/login` juga tidak, karena middleware `guest` mengalihkan pengguna yang
- * sudah login ke halaman awal.
+ * `/login` tidak ikut di sini karena middleware `guest` mengalihkan pengguna
+ * yang sudah login ke halaman depannya.
  */
 function halamanYangTerbukaSaatLogin(): array
 {
-    return ['/beranda'];
+    return ['/'];
 }
 
 test('link absen siswa disembunyikan saat belum login', function () {
@@ -76,19 +73,21 @@ test('link absen siswa tetap disembunyikan untuk akun siswa tanpa profil', funct
     }
 });
 
-test('halaman awal tidak pernah menampilkan link absen siswa meski profilnya ada', function () {
-    // Halaman awal mengakhiri sesi lalu menampilkan navbar versi tamu, jadi
-    // link "Absen Siswa" tidak boleh bocor ke sana meski akunnya sudah punya
-    // profil siswa yang lengkap.
+test('membuka halaman lewat alamat lama beranda tidak mengakhiri sesi', function () {
+    // `/beranda` lama hanya pengalihan ke `/`. Sesi harus tetap hidup supaya
+    // akun siswa yang punya profil tidak kehilangan sesinya.
     $user = User::factory()->create(['role' => 'Siswa']);
 
     Siswa::factory()->create(['user_id' => $user->id]);
 
-    $this->actingAs($user)
-        ->get('/')
+    $this->actingAs($user)->get('/beranda')->assertRedirect(route('beranda'));
+
+    $this->assertAuthenticatedAs($user);
+
+    $this->get(route('beranda'))
         ->assertOk()
-        ->assertDontSee(route('absensi.index'), false)
-        ->assertDontSee('Absen Siswa');
+        ->assertSee(route('absensi.index'), false)
+        ->assertSee('Absen Siswa');
 });
 
 /*
@@ -101,7 +100,7 @@ test('halaman awal tidak pernah menampilkan link absen siswa meski profilnya ada
 test('kartu peran siswa selalu tampil di beranda untuk semua pengunjung', function () {
     // Tamu, siswa tanpa profil, guru, dan admin semuanya tetap melihat
     // ketiga kartu peran supaya bisa memilih masuk sebagai siswa.
-    $this->get('/beranda')
+    $this->get('/')
         ->assertOk()
         ->assertSee('Siswa')
         ->assertSee('Guru / Wali Kelas')
@@ -112,7 +111,7 @@ test('kartu peran siswa selalu tampil di beranda untuk semua pengunjung', functi
 
     foreach (['Admin', 'Guru'] as $role) {
         $this->actingAs(User::factory()->create(['role' => $role]))
-            ->get('/beranda')
+            ->get('/')
             ->assertOk()
             ->assertSee('Siswa')
             ->assertSee('Bukan Akun Siswa');
@@ -121,7 +120,7 @@ test('kartu peran siswa selalu tampil di beranda untuk semua pengunjung', functi
     $tanpaProfil = User::factory()->create(['role' => 'Siswa']);
 
     $this->actingAs($tanpaProfil)
-        ->get('/beranda')
+        ->get('/')
         ->assertOk()
         ->assertSee('Siswa')
         ->assertSee('Bukan Akun Siswa');
@@ -130,7 +129,7 @@ test('kartu peran siswa selalu tampil di beranda untuk semua pengunjung', functi
 test('kartu peran siswa untuk tamu mengarah ke login, bukan ke halaman absensi', function () {
     // Middleware auth yang menjaga /absensi, jadi kartu cukup mengarahkan ke
     // login dan tidak boleh memuat URL absensi sama sekali.
-    $this->get('/beranda')
+    $this->get('/')
         ->assertOk()
         ->assertSee(route('login'), false)
         ->assertDontSee(route('absensi.index'), false);
@@ -142,7 +141,7 @@ test('kartu peran siswa untuk siswa yang punya profil langsung ke halaman absens
     Siswa::factory()->create(['user_id' => $user->id]);
 
     $this->actingAs($user->fresh())
-        ->get('/beranda')
+        ->get('/')
         ->assertOk()
         ->assertSee(route('absensi.index'), false)
         ->assertSee('Absen Sekarang');

@@ -14,12 +14,24 @@ use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 /*
- * Halaman awal adalah pintu masuk, bukan beranda pengguna. `AuthController::awal`
- * mengakhiri sesi yang masih hidup supaya halaman ini selalu tampil dalam wujud
- * pengunjung umum, sehingga terbuka lewat GET pun tidak menyisakan nama akun
- * atau tombol Logout di navbar.
+ * Halaman depan aplikasi. Nama routenya tetap `beranda` supaya seluruh
+ * `route('beranda')` yang sudah dipakai di navbar, halaman absensi, dan
+ * dashboard otomatis menunjuk ke `/`.
+ *
+ * Halaman ini berlaku untuk pengunjung umum maupun pengguna yang sudah masuk;
+ * navbar dan tombol hero yang menyesuaikan diri mengikuti sesi masing-masing.
+ * Halaman ini tidak pernah mengakhiri sesi.
  */
-Route::get('/', [AuthController::class, 'awal'])->name('home');
+Route::get('/', function () {
+    return view('beranda');
+})->name('beranda');
+
+/*
+ * `/beranda` lama sekarang jadi alamat lain dari halaman depan yang sama, jadi
+ * hanya mengalihkan. Bookmark dan tautan lama yang masih tersebar tidak ikut
+ * rusak.
+ */
+Route::get('/beranda', fn () => redirect()->route('beranda'))->name('home');
 
 /*
  * `guest` dipakai juga di halaman login (bukan hanya saat submit), supaya
@@ -38,10 +50,6 @@ Route::post('/login', [AuthController::class, 'store'])
 Route::post('/logout', [AuthController::class, 'destroy'])
     ->middleware('auth')
     ->name('logout');
-
-Route::get('/beranda', function () {
-    return view('beranda');
-})->name('beranda');
 
 // Halaman Absensi Siswa.
 Route::prefix('/absensi')

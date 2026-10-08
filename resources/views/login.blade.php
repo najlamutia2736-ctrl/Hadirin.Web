@@ -82,7 +82,7 @@
             </div>
 
             <div class="text-center mt-5 text-xs text-slate-400">
-                <a href="{{ route('home') }}" class="hover:text-indigo-500 transition"><i class="fas fa-arrow-left mr-1"></i> Kembali ke Beranda</a>
+                <a href="{{ route('beranda') }}" class="hover:text-indigo-500 transition"><i class="fas fa-arrow-left mr-1"></i> Kembali ke Beranda</a>
             </div>
         </div>
     </main>

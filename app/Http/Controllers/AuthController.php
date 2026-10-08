@@ -30,29 +30,6 @@ class AuthController extends Controller
      * sebagai password, jadi tidak ada form registrasi di sini. Setelah
      * berhasil, pengguna diarahkan ke dashboard sesuai role-nya.
      */
-    /**
-     * Halaman awal (route `home`).
-     *
-     * Halaman ini adalah pintu masuk, bukan beranda pengguna. Karena itu sesi
-     * yang masih hidup diakhiri lebih dulu, sehingga pengunjung apa pun, baik
-     * sudah masuk atau belum, melihat halaman yang sama persis: hanya tombol
-     * "Log In".
-     *
-     * Yang diakhiri hanya sesinya. Semua data yang sudah disimpan (siswa, guru,
-     * kelas, jadwal, absensi) tidak tersentuh sama sekali.
-     */
-    public function awal(Request $request): View
-    {
-        if ($request->user() !== null) {
-            Auth::logout();
-
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-        }
-
-        return view('halaman-awal');
-    }
-
     public function store(Request $request): RedirectResponse
     {
         $credentials = $request->validate([
@@ -110,7 +87,7 @@ class AuthController extends Controller
             'Admin', 'Operator' => route('cms.dashboard'),
             'Guru' => route('guru.dashboard'),
             'Siswa' => route('beranda'),
-            default => route('home'),
+            default => route('beranda'),
         };
     }
 }
