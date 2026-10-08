@@ -12,6 +12,7 @@
 --}}
 @php
     $terpilih = collect(old('teachers', $kelas?->guru->pluck('id')->all() ?? []))
+        ->reject(fn ($id) => $id === '' || $id === null)
         ->map(fn ($id) => (string) $id)
         ->all();
 @endphp
@@ -28,12 +29,13 @@
             sebelum menentukan pengampu kelas.
         </p>
     @else
-        <select id="teachers" name="teachers[]" multiple size="5"
+        <select id="teachers" name="teachers[]" multiple size="6"
             @class([
                 'w-full rounded-lg border px-3 py-2.5 text-sm text-gray-700 shadow-sm transition focus:outline-none focus:ring-2',
                 'border-red-500 bg-red-50/40 focus:border-red-500 focus:ring-red-500' => $errors->has('teachers'),
                 'border-gray-200 bg-white focus:border-indigo-500 focus:ring-indigo-500' => ! $errors->has('teachers'),
             ])>
+            <option value="" @selected($terpilih === [])>Belum ada pengampu</option>
             @foreach ($gurus as $guru)
                 <option value="{{ $guru->id }}" @selected(in_array((string) $guru->id, $terpilih, true))>
                     {{ $guru->user?->name ?? 'Guru tanpa akun' }}
@@ -48,6 +50,7 @@
     <p class="mt-1.5 text-xs text-gray-500">
         Tahan <kbd class="rounded border border-gray-200 bg-gray-50 px-1">Ctrl</kbd>
         (atau <kbd class="rounded border border-gray-200 bg-gray-50 px-1">Cmd</kbd>) untuk memilih lebih dari satu guru.
+        Pilih <span class="font-medium text-gray-600">Belum ada pengampu</span> bila kelas ini belum ditugaskan ke guru mana pun.
     </p>
 
     @error('teachers')

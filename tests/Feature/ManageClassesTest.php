@@ -2,6 +2,7 @@
 
 use App\Models\Guru;
 use App\Models\Kelas;
+use App\Models\MataPelajaran;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -118,6 +119,41 @@ test('kelas dapat diperbarui', function () {
         'ruang' => 'R. 204',
         'tahun_ajaran' => 2026,
         'status' => 'Arsip',
+    ]);
+});
+
+test('form kelas offers option belum ada pengampu', function () {
+    $this->get(route('cms.classes.create'))
+        ->assertOk()
+        ->assertSee('Belum ada pengampu');
+});
+
+test('opsi belum ada pengampu tidak dianggap guru pengampu', function () {
+    $class = Kelas::factory()->create();
+    $subject = MataPelajaran::create([
+        'kode_mata_pelajaran' => 'MP-1',
+        'nama_mata_pelajaran' => 'Matematika',
+    ]);
+    $teacher = Guru::create([
+        'user_id' => User::factory()->create()->id,
+        'nip' => '198203122011012006',
+        'mata_pelajaran_id' => $subject->id,
+    ]);
+    $class->guru()->attach($teacher->id);
+
+    $this->from(route('cms.classes.edit', $class))
+        ->put(route('cms.classes.update', $class), [
+            'name' => $class->nama_kelas,
+            'level' => $class->tingkat,
+            'tahun_ajaran' => $class->tahun_ajaran,
+            'teachers' => [''],
+        ])
+        ->assertRedirect(route('cms.classes'))
+        ->assertSessionHasNoErrors();
+
+    $this->assertDatabaseMissing('guru_kelas', [
+        'kelas_id' => $class->id,
+        'guru_id' => $teacher->id,
     ]);
 });
 

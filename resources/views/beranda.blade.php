@@ -70,17 +70,16 @@
                 <!-- Menu Desktop -->
                 <div class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
                     @if ($bisaAbsen)
-                        <a href="{{ route('absensi.index') }}" class="hover:text-indigo-600 transition">HALAMAN ABSENSI
+                        <a href="{{ route('absensi.index') }}" class="hover:text-indigo-600 transition">ABSENSI
                             SISWA</a>
                     @endif
                     @if ($bukaGuru)
-                        <a href="{{ route('guru.dashboard') }}" class="hover:text-indigo-600 transition">HALAMAN
-                            DASHBOARD GURU</a>
+                        <a href="{{ route('guru.dashboard') }}" class="hover:text-indigo-600 transition">DASHBOARD
+                            GURU</a>
                     @endif
                     @if ($bukaCms)
-                        <a href="{{ route('cms.dashboard') }}" class="hover:text-indigo-600 transition">HALAMAN
-                            DASHBOARD ADMIN</a>
-                        <a href="{{ route('cms.rekap') }}" class="hover:text-indigo-600 transition">Rekap</a>
+                        <a href="{{ route('cms.dashboard') }}" class="hover:text-indigo-600 transition">DASHBOARD
+                            ADMIN</a>
                     @endif
                 </div>
 

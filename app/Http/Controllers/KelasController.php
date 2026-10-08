@@ -30,6 +30,22 @@ class KelasController extends Controller
         ];
     }
 
+    /**
+     * Bersihkan daftar id guru pengampu sebelum divalidasi.
+     *
+     * Opsi "Belum ada pengampu" di form mengirim nilai kosong, jadi harus
+     * dibuang lebih dulu agar tidak gagal aturan `integer`/`exists`.
+     *
+     * @return array<int, string>
+     */
+    private function bersihkanGuruPengampu(?array $teachers): array
+    {
+        return array_values(array_filter(
+            $teachers ?? [],
+            fn ($id) => $id !== '' && $id !== null,
+        ));
+    }
+
     public function index(Request $request): View
     {
         $classes = Kelas::query()
@@ -81,6 +97,8 @@ class KelasController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        $request->merge(['teachers' => $this->bersihkanGuruPengampu($request->input('teachers'))]);
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:50', Rule::unique('kelas', 'nama_kelas')],
             'level' => ['required', Rule::in(['X', 'XI', 'XII'])],
@@ -139,6 +157,8 @@ class KelasController extends Controller
 
     public function update(Request $request, Kelas $kelas): RedirectResponse
     {
+        $request->merge(['teachers' => $this->bersihkanGuruPengampu($request->input('teachers'))]);
+
         $validated = $request->validate([
             'name' => [
                 'required',
