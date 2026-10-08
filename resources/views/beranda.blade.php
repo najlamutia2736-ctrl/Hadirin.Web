@@ -91,6 +91,57 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
 
+        /*
+         | Dekorasi banner. Semuanya murni CSS supaya tidak ada permintaan
+         | gambar tambahan dan tidak mengganggu halaman di koneksi lambat.
+         */
+        .banner-jala {
+            background-image:
+                linear-gradient(to right, rgba(255, 255, 255, .07) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, .07) 1px, transparent 1px);
+            background-size: 56px 56px;
+            mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, #000 40%, transparent 100%);
+            -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, #000 40%, transparent 100%);
+        }
+
+        .banner-glow {
+            position: absolute;
+            border-radius: 9999px;
+            filter: blur(70px);
+            pointer-events: none;
+        }
+
+        /* Kartu melayang di sisi banner. Bergerak sangat lambat supaya tidak
+         * menarik perhatian tapi tetap membuat halaman terasa hidup. */
+        @keyframes banner-melayang {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-12px);
+            }
+        }
+
+        .banner-melayang {
+            animation: banner-melayang 7s ease-in-out infinite;
+        }
+
+        .banner-melayang-lambat {
+            animation: banner-melayang 9s ease-in-out infinite;
+        }
+
+        /* Menghormati pengaturan reduced motion pengguna. */
+        @media (prefers-reduced-motion: reduce) {
+
+            .banner-melayang,
+            .banner-melayang-lambat {
+                animation: none;
+            }
+        }
+
         .card-hover:hover {
             transform: translateY(-8px);
             box-shadow: 0 20px 40px rgba(102, 126, 234, 0.2);
@@ -108,19 +159,77 @@
          halaman awal. Isinya sekarang sangat mirip dengan hero di bawahnya,
          jadi tetap dipertahankan karena masih berfungsi sebagai pengenalan
          singkat sebelum pengunjung sampai ke bagian yang bisa diklik. --}}
-    <section class="gradient-bg text-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 md:py-20 text-center">
+    <section class="gradient-bg relative isolate overflow-hidden text-white">
+        {{-- Lapisan dekoratif. Semua `aria-hidden` karena tidak membawa informasi. --}}
+        <div aria-hidden="true" class="banner-jala absolute inset-0 -z-10"></div>
+        <div aria-hidden="true" class="banner-glow -top-24 -left-16 h-72 w-72 bg-white/25"></div>
+        <div aria-hidden="true" class="banner-glow -bottom-32 right-0 h-80 w-80 bg-fuchsia-400/30"></div>
+
+        {{-- Kartu melayang hanya muncul di layar besar, supaya banner tetap
+             ringkas di HP. --}}
+        <div aria-hidden="true" class="hidden lg:flex absolute inset-y-0 left-0 w-1/3 items-center justify-center">
             <div
-                class="inline-block bg-white/20 backdrop-blur-sm px-4 py-1.5 rounded-full text-xs font-semibold mb-4">
-                <i class="fas fa-star mr-1"></i> Selamat Datang di Platform Absensi Digital
+                class="banner-melayang rounded-2xl border border-white/25 bg-white/10 px-4 py-3 shadow-2xl backdrop-blur-md -rotate-6">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 text-xl">
+                        <i class="fas fa-qrcode"></i>
+                    </span>
+                    <span class="text-left text-xs leading-tight">
+                        <span class="block text-[10px] uppercase tracking-wider text-white/70">Scan</span>
+                        <span class="block text-sm font-semibold">Kode QR</span>
+                    </span>
+                </div>
             </div>
-            <h2 class="text-3xl md:text-4xl lg:text-5xl font-extrabold mb-4 tracking-tight">
+        </div>
+
+        <div aria-hidden="true" class="hidden lg:flex absolute inset-y-0 right-0 w-1/3 items-center justify-center">
+            <div
+                class="banner-melayang-lambat rounded-2xl border border-white/25 bg-white/10 px-4 py-3 shadow-2xl backdrop-blur-md rotate-6">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 text-xl">
+                        <i class="fas fa-keyboard"></i>
+                    </span>
+                    <span class="text-left text-xs leading-tight">
+                        <span class="block text-[10px] uppercase tracking-wider text-white/70">Ketik</span>
+                        <span class="block text-sm font-semibold">Kode NIS</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 text-center">
+            <div
+                class="inline-flex items-center gap-2 bg-white/15 px-4 py-1.5 rounded-full border border-white/25 text-xs font-semibold mb-6 backdrop-blur-sm">
+                <i class="fas fa-star text-yellow-300"></i> Selamat Datang di Platform Absensi Digital
+            </div>
+
+            <h2 class="text-3xl md:text-4xl lg:text-5xl font-extrabold mb-5 tracking-tight">
                 ABSENSI SEKOLAH <span class="text-yellow-300">DIGITAL</span>
             </h2>
-            <p class="text-base md:text-lg text-white/90 max-w-3xl mx-auto">
+
+            {{-- Garis pemisah tipis membuat judul tidak langsung menempel ke paragraf. --}}
+            <div aria-hidden="true"
+                class="mx-auto mb-6 h-px w-20 bg-gradient-to-r from-transparent via-white/60 to-transparent"></div>
+
+            <p class="text-base md:text-lg text-white/90 max-w-2xl mx-auto mb-8 leading-relaxed">
                 Satu kartu, dua cara hadir: <span class="font-semibold text-yellow-200">scan</span> atau <span
                     class="font-semibold text-yellow-200">ketik</span>.
             </p>
+
+            <div class="flex flex-wrap items-center justify-center gap-3 text-xs">
+                <span
+                    class="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 backdrop-blur-sm">
+                    <i class="fas fa-bolt text-yellow-300"></i> Absen dalam hitungan detik
+                </span>
+                <span
+                    class="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 backdrop-blur-sm">
+                    <i class="fas fa-shield-halved text-emerald-300"></i> Data aman &amp; terenkripsi
+                </span>
+                <span
+                    class="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 backdrop-blur-sm">
+                    <i class="fas fa-chart-line text-sky-300"></i> Rekap real-time
+                </span>
+            </div>
         </div>
     </section>
 
@@ -175,7 +284,8 @@
                 <!-- Kanan: Ilustrasi Kartu -->
                 <div class="relative flex justify-center lg:justify-end">
                     <div class="w-full max-w-sm md:max-w-md lg:max-w-lg">
-                        <div class="bg-white rounded-3xl shadow-2xl shadow-indigo-100/50 border border-slate-200/60 p-6 md:p-8">
+                        <div
+                            class="bg-white rounded-3xl shadow-2xl shadow-indigo-100/50 border border-slate-200/60 p-6 md:p-8">
                             <div class="flex items-center justify-between mb-4">
                                 <div class="flex items-center gap-2">
                                     <div class="w-3 h-3 rounded-full bg-red-400"></div>
@@ -247,7 +357,8 @@
                     <div>
                         <h2 class="text-lg font-semibold text-slate-800 mb-2">Apa itu Hadirin.web?</h2>
                         <p class="text-sm text-slate-600 leading-relaxed max-w-4xl">
-                            Hadirin.web merupakan alternatif pengganti buku absensi kertas dengan pencatatan otomatis dan
+                            Hadirin.web merupakan alternatif pengganti buku absensi kertas dengan pencatatan otomatis
+                            dan
                             terpusat.
                             Siswa cukup memindai kode QR atau memasukkan ID unik miliknya.
                             <span class="text-indigo-600 font-medium">— guru dan wali murid langsung melihat status
@@ -278,7 +389,7 @@
                         <i class="fas fa-user-graduate text-3xl text-indigo-600"></i>
                     </div>
                     <h4 class="text-xl font-bold text-slate-800 mb-2">Siswa</h4>
-                    <p class="text-sm text-slate-500 mb-4">Absen mandiri lewat scan QRCode atau kode unik.</p>
+                    <p class="text-sm text-slate-500 mb-4">Absen mandiri lewat scan QRCode atau kode NIS.</p>
 
                     @if ($bisaAbsen)
                         <a href="{{ route('absensi.index') }}"
