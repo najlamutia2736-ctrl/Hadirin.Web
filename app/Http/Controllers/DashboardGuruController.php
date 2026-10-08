@@ -227,7 +227,7 @@ class DashboardGuruController extends Controller
             fputcsv($keluaran, [
                 'No',
                 'Nama Siswa',
-                'NIS',
+                'NISN',
                 'Kelas',
                 'Hadir',
                 'Izin',

@@ -616,7 +616,7 @@
                                 inisial + '</span>' +
                             '<span class="min-w-0">' +
                                 '<span class="block truncate text-sm font-semibold text-gray-800">' + (row.nama || '-') + '</span>' +
-                                '<span class="block text-xs text-gray-400">NIS ' + (row.nis || '-') + '</span>' +
+                                '<span class="block text-xs text-gray-400">NISN ' + (row.nis || '-') + '</span>' +
                             '</span>' +
                         '</div>' +
                     '</td>' +

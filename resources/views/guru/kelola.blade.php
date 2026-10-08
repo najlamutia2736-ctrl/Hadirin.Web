@@ -67,7 +67,7 @@
                     <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-400">
                         <i class="fas fa-search text-sm"></i>
                     </span>
-                    <input type="search" id="cariSiswa" placeholder="Cari nama atau NIS..."
+                    <input type="search" id="cariSiswa" placeholder="Cari nama atau NISN..."
                         class="w-full rounded-lg border border-gray-200 py-2 pl-9 pr-3 text-sm text-gray-700 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
                 </div>
                 <button type="button" id="tombolTambahSiswa" onclick="tambahSiswa()"
@@ -83,7 +83,7 @@
                 <thead class="bg-gray-50 text-[11px] uppercase tracking-wide text-gray-400">
                     <tr>
                         <th class="px-6 py-3 font-semibold">Siswa</th>
-                        <th class="px-4 py-3 font-semibold">NIS</th>
+                        <th class="px-4 py-3 font-semibold">NISN</th>
                         <th class="px-4 py-3 font-semibold">L/P</th>
                         <th class="px-4 py-3 font-semibold">Wali</th>
                         <th class="px-4 py-3 font-semibold">Kontak Wali</th>
@@ -136,7 +136,7 @@
 
                     <div>
                         <label for="siswaNis" class="mb-1.5 block text-sm font-semibold text-gray-700">
-                            NIS <span class="text-red-500">*</span>
+                            NISN <span class="text-red-500">*</span>
                         </label>
                         <input id="siswaNis" name="nis" type="text" inputmode="numeric" maxlength="8" required
                             pattern="[0-9]{8}"

@@ -75,7 +75,7 @@
 
                 <div>
                     <label for="nis" class="mb-2 block text-sm font-semibold text-gray-700">
-                        NIS <span class="text-red-500" aria-hidden="true">*</span>
+                        NISN <span class="text-red-500" aria-hidden="true">*</span>
                     </label>
                     <input id="nis" name="nis" type="text" value="{{ old('nis') }}" required inputmode="numeric"
                         maxlength="8" pattern="[0-9]{8}" placeholder="Contoh: 12345678"
@@ -177,7 +177,7 @@
 
         <div class="mt-5 flex gap-3 rounded-xl border border-indigo-100 bg-indigo-50 p-4 text-sm text-indigo-800">
             <i class="fas fa-info-circle mt-0.5 shrink-0"></i>
-            <p>Akun siswa dibuat otomatis dengan status aktif. Email dan kata sandi awal dibuat dari NIS.</p>
+            <p>Akun siswa dibuat otomatis dengan status aktif. Email dan kata sandi awal dibuat dari NISN.</p>
         </div>
     </div>
 @endsection

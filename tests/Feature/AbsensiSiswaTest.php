@@ -181,7 +181,7 @@ test('halaman metode menjelaskan keempat cara absen', function () {
         ->assertOk()
         ->assertSee('Metode Absensi')
         ->assertSee('Scan QR Code')
-        ->assertSee('ID Unik')
+        ->assertSee('Kode NISN')
         ->assertSee('Izin / Sakit')
         ->assertSee('Notifikasi')
         // Tiap metode harus punya tombol yang menuju halamannya.
@@ -266,7 +266,7 @@ test('halaman id unik menampilkan formulir dan kode kartu siswa', function () {
     $this->actingAs($siswa->user)
         ->get(route('absensi.id-unik'))
         ->assertOk()
-        ->assertSee('Absen ID Unik')
+        ->assertSee('Absen Kode NISN')
         ->assertSee('Masukkan Kode')
         ->assertSee('Kartu Absensi')
         ->assertSee('20240101')

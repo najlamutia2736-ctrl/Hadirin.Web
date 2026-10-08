@@ -240,7 +240,7 @@
                                 </div>
                             </div>
                             <p class="mt-3 text-xs leading-relaxed text-slate-500">
-                                Kalau kamu sebenarnya bisa hadir, lebih cepat memakai scan QR atau ID Unik.
+                                Kalau kamu sebenarnya bisa hadir, lebih cepat memakai scan QR atau Kode NISN.
                             </p>
                         @endif
                     </div>

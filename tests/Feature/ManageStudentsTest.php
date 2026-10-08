@@ -79,7 +79,7 @@ test('siswa baru dapat ditambahkan melalui modal tambah', function () {
     ]);
 });
 
-test('form tambah siswa menolak NIS yang sudah terdaftar', function () {
+test('form tambah siswa menolak NISN yang sudah terdaftar', function () {
     $siswa = Siswa::factory()->create(['nisn' => '20240101']);
     rombel('X.1');
 
@@ -376,7 +376,7 @@ test('siswa dapat diperbarui', function () {
         ->and($user->status)->toBe('Nonaktif');
 });
 
-test('form edit siswa menolak NIS milik siswa lain', function () {
+test('form edit siswa menolak NISN milik siswa lain', function () {
     rombel('X.1');
 
     $student = Siswa::factory()->create(['nisn' => '20240101']);

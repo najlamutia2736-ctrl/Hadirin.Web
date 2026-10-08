@@ -107,7 +107,7 @@ test('kartu peran siswa selalu tampil di beranda untuk semua pengunjung', functi
         ->assertSee('Admin / Kepsek')
         // Teks tombol kartu sudah diubah menjadi "Klik" untuk ketiga peran,
         // jadi yang dicek adalah isi kartu Siswanya sendiri, bukan label tombol.
-        ->assertSee('Absen mandiri lewat scan QRCode atau kode NIS.');
+        ->assertSee('Absen mandiri lewat scan QRCode atau kode NISN.');
 
     foreach (['Admin', 'Guru'] as $role) {
         $this->actingAs(User::factory()->create(['role' => $role]))
@@ -145,4 +145,62 @@ test('kartu peran siswa untuk siswa yang punya profil langsung ke halaman absens
         ->assertOk()
         ->assertSee(route('absensi.index'), false)
         ->assertSee('Absen Sekarang');
+});
+
+/*
+| Panduan cara absen di halaman depan. Isinya boleh tampil untuk semua orang,
+| karena cuma penjelasan cara absen — bukan halaman absennya. Yang tetap
+| dijaga: halaman depan tidak boleh memuat URL halaman absensi ke selain
+| akun siswa yang benar-benar punya profil.
+*/
+
+test('panduan cara absen tampil di halaman depan untuk semua pengunjung', function () {
+    $this->get('/')
+        ->assertOk()
+        ->assertSee('Panduan Cara Absen')
+        ->assertSee('Scan QR Code')
+        ->assertSee('Kode NISN')
+        ->assertSee('Izin / Sakit')
+        ->assertSee('Notifikasi');
+});
+
+test('panduan cara absen di halaman depan tidak membocorkan url halaman absensi', function () {
+    // Halaman depan terbuka untuk semua orang, termasuk guru dan admin yang
+    // tidak punya hak ke /absensi. Setiap kartu panduan karena itu berhenti
+    // pada penjelasannya, tanpa link ke halaman absen.
+    foreach ([null, 'Admin', 'Guru'] as $role) {
+        $request = $role === null
+            ? $this->get('/')
+            : $this->actingAs(User::factory()->create(['role' => $role]))->get('/');
+
+        $request->assertOk();
+
+        foreach (config('metode-absensi') as $metode) {
+            $request->assertDontSee(route($metode['route']), false);
+        }
+    }
+});
+
+test('tombol di bawah panduan mengarah sesuai sesi', function () {
+    $this->get('/')
+        ->assertOk()
+        ->assertSee('Login untuk Mulai Absen')
+        ->assertSee(route('login'), false);
+
+    // Sudah login tapi bukan siswa: tombolnya mati, bukan mengarah ke /absensi
+    // yang pasti menolak dengan 403.
+    $this->actingAs(User::factory()->create(['role' => 'Admin']))
+        ->get('/')
+        ->assertOk()
+        ->assertSee('Gunakan akun siswa untuk absen');
+
+    $user = User::factory()->create(['role' => 'Siswa']);
+
+    Siswa::factory()->create(['user_id' => $user->id]);
+
+    $this->actingAs($user->fresh())
+        ->get('/')
+        ->assertOk()
+        ->assertSee('Mulai Absen Sekarang')
+        ->assertSee(route('absensi.index'), false);
 });

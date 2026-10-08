@@ -1,6 +1,6 @@
 @extends('layouts.absensi')
 
-@section('title', 'ID Unik · Hadirin.web')
+@section('title', 'Kode NISN · Hadirin.web')
 
 @section('konten')
     <div class="min-h-screen">
@@ -41,7 +41,7 @@
                     Kembali ke absensi
                 </a>
                 <h1 class="mt-3 text-2xl font-bold tracking-tight text-slate-800 sm:text-3xl">
-                    Absen ID Unik
+                    Absen Kode NISN
                 </h1>
                 <p class="mt-1 max-w-2xl text-slate-600">
                     Ketik kode yang tertera di kartu absensi. Pakai cara ini kalau kamera HP sedang tidak bisa
@@ -155,7 +155,7 @@
                                 {{-- Input kode --}}
                                 <div>
                                     <label for="kode" class="block text-sm font-medium text-slate-700">
-                                        Kode ID Unik
+                                        Kode NISN
                                         <span class="text-red-500">*</span>
                                     </label>
                                     <input type="text" id="kode" name="kode" value="{{ old('kode') }}"
@@ -268,7 +268,7 @@
 @push('scripts')
     <script>
         // ============================================================
-        // ABSEN ID UNIK
+        // ABSEN KODE NISN
         // ============================================================
 
         const inputKode = document.getElementById('kode');

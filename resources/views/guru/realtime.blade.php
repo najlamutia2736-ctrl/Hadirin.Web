@@ -784,7 +784,7 @@
                             '<span class="min-w-0">' +
                                 '<span class="block max-w-[14rem] truncate text-sm font-semibold text-gray-800">' +
                                     (baris.nama || '-') + '</span>' +
-                                '<span class="block text-xs text-gray-400">NIS ' + (baris.nis || '-') + '</span>' +
+                                '<span class="block text-xs text-gray-400">NISN ' + (baris.nis || '-') + '</span>' +
                             '</span>' +
                         '</div>' +
                     '</td>' +

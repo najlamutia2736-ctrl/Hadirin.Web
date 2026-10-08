@@ -536,7 +536,7 @@
                             <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-400">
                                 <i class="fas fa-search text-sm"></i>
                             </span>
-                            <input type="search" id="laporanCariSiswa" placeholder="Cari nama, NIS, kelas..."
+                            <input type="search" id="laporanCariSiswa" placeholder="Cari nama, NISN, kelas..."
                                 class="w-full rounded-lg border border-gray-200 py-2 pl-9 pr-3 text-sm text-gray-700 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
                         </div>
                         <select id="laporanFilterSiswa"
@@ -583,7 +583,7 @@
                                                     {{ $baris['nama'] }}
                                                 </span>
                                                 <span class="block text-xs text-gray-400">
-                                                    NIS {{ $baris['nis'] }}
+                                                    NISN {{ $baris['nis'] }}
                                                 </span>
                                             </span>
                                         </div>

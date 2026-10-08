@@ -4,76 +4,10 @@
 
 @php
     /*
-    | Metode absensi yang bisa dipilih siswa, dirangkai dari route yang sama
-    | dengan menu di halaman absensi utama supaya tidak ada cara absen yang
-    | muncul di satu halaman tapi tidak di halaman lain.
+    | Daftar metode absensi diambil dari config supaya halaman ini dan halaman
+    | depan tidak pernah menampilkan cara absen yang berbeda.
     */
-    $metode = [
-        [
-            'label' => 'Scan QR Code',
-            'ringkasan' => 'Arahkan kamera ke QR code yang terpasang di kelas.',
-            'penjelasan' =>
-                'Cara paling cepat. Kamera HP membaca QR code di dinding, lalu kehadiranmu langsung tercatat tanpa perlu mengetik apa pun.',
-            'ikon' => 'fa-qrcode',
-            'warna' => 'bg-indigo-50 text-indigo-600',
-            'accent' => 'from-indigo-500 to-blue-500',
-            'rute' => route('absensi.scan-qr'),
-            'butuh' => 'Kamera + izin akses kamera',
-            'langkah' => [
-                'Buka halaman Scan QR Code dari daftar di atas.',
-                'Izinkan browser memakai kamera saat diminta.',
-                'Arahkan bingkai ke QR code sampai terbaca otomatis.',
-            ],
-        ],
-        [
-            'label' => 'ID Unik',
-            'ringkasan' => 'Ketik kode unik pribadi yang tertera di kartu.',
-            'penjelasan' =>
-                'Dipakai kalau kamera tidak bisa dipakai, misalnya HP tidak punya kamera atau sedang dipakai aplikasi lain.',
-            'ikon' => 'fa-keyboard',
-            'warna' => 'bg-emerald-50 text-emerald-600',
-            'accent' => 'from-emerald-500 to-teal-500',
-            'rute' => route('absensi.id-unik'),
-            'butuh' => 'Kode unik dari kartu siswa',
-            'langkah' => [
-                'Buka halaman ID Unik dari daftar di atas.',
-                'Ketik kode yang tertera di kartu absensi.',
-                'Kirim dan tunggu konfirmasi masuk.',
-            ],
-        ],
-        [
-            'label' => 'Izin / Sakit',
-            'ringkasan' => 'Kirim keterangan kalau tidak bisa hadir di sekolah.',
-            'penjelasan' =>
-                'Berbeda dari dua cara di atas, ini bukan kehadiran. Izin dan sakit dicatat supaya tidak dihitung sebagai alpa.',
-            'ikon' => 'fa-envelope-open-text',
-            'warna' => 'bg-amber-50 text-amber-600',
-            'accent' => 'from-amber-500 to-orange-500',
-            'rute' => route('absensi.izin-sakit'),
-            'butuh' => 'Alasan yang jelas',
-            'langkah' => [
-                'Buka halaman Izin / Sakit dari daftar di atas.',
-                'Pilih jenis pengajuan dan tulis alasannya.',
-                'Kirim pengajuan ke wali kelas.',
-            ],
-        ],
-        [
-            'label' => 'Notifikasi',
-            'ringkasan' => 'Lihat riwayat dan hasil absensi yang sudah dikirim.',
-            'penjelasan' =>
-                'Hanya untuk melihat. Di sini kamu bisa cek apakah absensi hari ini sudah tercatat atau masih diproses.',
-            'ikon' => 'fa-bell',
-            'warna' => 'bg-sky-50 text-sky-600',
-            'accent' => 'from-sky-500 to-cyan-500',
-            'rute' => route('absensi.notifikasi'),
-            'butuh' => 'Tidak ada',
-            'langkah' => [
-                'Buka halaman Notifikasi dari daftar di atas.',
-                'Lihat daftar kehadiran terbaru.',
-                'Cek status absensi hari ini.',
-            ],
-        ],
-    ];
+    $metodeAbsensi = config('metode-absensi');
 
     /*
     | Status hari ini menentukan banner di bawah. Nilainya sama dengan peta
@@ -200,12 +134,12 @@
             <section>
                 <h2 class="text-lg font-bold text-slate-800">Pilihan Cara Absen</h2>
                 <p class="mt-0.5 text-sm text-slate-500">
-                    Scan QR Code dan ID Unik sama-sama mencatat kehadiran. Izin / Sakit untuk pengajuan, dan
+                    Scan QR Code dan Kode NISN sama-sama mencatat kehadiran. Izin / Sakit untuk pengajuan, dan
                     Notifikasi hanya untuk melihat riwayat.
                 </p>
 
                 <div class="mt-4 space-y-4">
-                    @foreach ($metode as $nomor => $item)
+                    @foreach ($metodeAbsensi as $nomor => $item)
                         <div
                             class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow duration-200 hover:shadow-md">
                             {{-- Sorotan warna tiap metode --}}
@@ -258,7 +192,7 @@
                                             @endforeach
                                         </ol>
 
-                                        <a href="{{ $item['rute'] }}"
+                                        <a href="{{ route($item['route']) }}"
                                             class="mt-5 inline-flex items-center gap-2 rounded-xl bg-slate-800 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-900">
                                             Buka {{ $item['label'] }}
                                             <i class="fas fa-arrow-right text-xs"></i>
@@ -285,7 +219,7 @@
                         </li>
                         <li class="flex gap-2">
                             <i class="fas fa-circle-check mt-0.5 text-[10px] text-indigo-500"></i>
-                            Kamera bermasalah, pilih ID Unik.
+                            Kamera bermasalah, pilih Kode NISN.
                         </li>
                         <li class="flex gap-2">
                             <i class="fas fa-circle-check mt-0.5 text-[10px] text-indigo-500"></i>

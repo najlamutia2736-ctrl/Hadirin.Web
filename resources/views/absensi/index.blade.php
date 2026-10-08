@@ -59,8 +59,8 @@
             'rute' => route('absensi.scan-qr'),
         ],
         [
-            'label' => 'ID Unik',
-            'deskripsi' => 'Ketik kode unik pribadi yang tertera di kartu.',
+            'label' => 'Kode NISN',
+            'deskripsi' => 'Ketik NISN pribadi yang tertera di kartu.',
             'ikon' => 'fa-keyboard',
             'warna' => 'bg-emerald-50 text-emerald-600',
             'rute' => route('absensi.id-unik'),

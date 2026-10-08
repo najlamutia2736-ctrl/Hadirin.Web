@@ -214,7 +214,7 @@
                                     {{ $siswa->nisn }}
                                 </dd>
                                 <p class="mt-1 text-[11px] leading-relaxed text-slate-500">
-                                    Dipakai sebagai kode absen ID Unik. Salah ketik berarti absen manualmu gagal.
+                                    Selalu dipakai saat memilih Kode NISN. Salah ketik berarti absen manualmu gagal.
                                 </p>
                             </div>
 

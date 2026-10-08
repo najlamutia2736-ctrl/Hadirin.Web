@@ -8,6 +8,13 @@
     */
     $user = auth()->user();
 
+    /*
+    | Daftar cara absen untuk bagian panduan di bawah. Diambil dari config yang
+    | sama dengan halaman `absensi/metode` supaya keduanya tidak pernah
+    | menampilkan cara absen yang berbeda.
+    */
+    $metodeAbsensi = config('metode-absensi');
+
     // Menu & kartu "Absen Siswa" hanya untuk akun yang punya profil di tabel
     // `siswas`. Pemeriksaannya sama dengan AbsensiSiswaController.
     $bisaAbsen = $user?->siswa !== null;
@@ -165,18 +172,32 @@
         <div aria-hidden="true" class="banner-glow -top-24 -left-16 h-72 w-72 bg-white/25"></div>
         <div aria-hidden="true" class="banner-glow -bottom-32 right-0 h-80 w-80 bg-fuchsia-400/30"></div>
 
-        {{-- Kartu melayang hanya muncul di layar besar, supaya banner tetap
-             ringkas di HP. --}}
+        {{--
+        | Kartu melayang di sisi banner. Isinya dulu "Kode QR" dan "Kode NISN",
+        | tapi keduanya cuma mengulang cara absen yang sudah dijelaskan panjang
+        | di bagian Panduan Cara Absen di bawah, jadi tidak menambah informasi.
+        | Sekarang isinya keunggulan aplikasinya.
+        |
+        | Isinya kept static, bukan angka dari database: halaman ini terbuka untuk
+        | pengunjung umum, dan angka yang belum ada sumbernya pernah ditulis
+        | di sini lalu jadi klaim yang tidak bisa dipertanggungjawabkan.
+        |
+        | Kartu melayang hanya muncul di layar besar, supaya banner tetap ringkas
+        | di HP.
+        --}}
         <div aria-hidden="true" class="hidden lg:flex absolute inset-y-0 left-0 w-1/3 items-center justify-center">
             <div
-                class="banner-melayang rounded-2xl border border-white/25 bg-white/10 px-4 py-3 shadow-2xl backdrop-blur-md -rotate-6">
-                <div class="flex items-center gap-3">
-                    <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 text-xl">
-                        <i class="fas fa-qrcode"></i>
+                class="banner-melayang w-64 rounded-2xl border border-white/25 bg-white/10 px-4 py-3 shadow-2xl backdrop-blur-md -rotate-6">
+                <div class="flex items-start gap-3">
+                    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/20 text-xl">
+                        <i class="fas fa-book-open"></i>
                     </span>
                     <span class="text-left text-xs leading-tight">
-                        <span class="block text-[10px] uppercase tracking-wider text-white/70">Scan</span>
-                        <span class="block text-sm font-semibold">Kode QR</span>
+                        <span class="block text-[10px] uppercase tracking-wider text-white/70">Otomatis</span>
+                        <span class="block text-sm font-semibold">Tanpa Buku Kertas</span>
+                        <span class="mt-1 block text-[11px] leading-snug text-white/75">
+                            Kehadiran tercatat sendiri, tanpa perlu menulis di kertas.
+                        </span>
                     </span>
                 </div>
             </div>
@@ -184,14 +205,17 @@
 
         <div aria-hidden="true" class="hidden lg:flex absolute inset-y-0 right-0 w-1/3 items-center justify-center">
             <div
-                class="banner-melayang-lambat rounded-2xl border border-white/25 bg-white/10 px-4 py-3 shadow-2xl backdrop-blur-md rotate-6">
-                <div class="flex items-center gap-3">
-                    <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 text-xl">
-                        <i class="fas fa-keyboard"></i>
+                class="banner-melayang-lambat w-64 rounded-2xl border border-white/25 bg-white/10 px-4 py-3 shadow-2xl backdrop-blur-md rotate-6">
+                <div class="flex items-start gap-3">
+                    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/20 text-xl">
+                        <i class="fas fa-table-list"></i>
                     </span>
                     <span class="text-left text-xs leading-tight">
-                        <span class="block text-[10px] uppercase tracking-wider text-white/70">Ketik</span>
-                        <span class="block text-sm font-semibold">Kode NIS</span>
+                        <span class="block text-[10px] uppercase tracking-wider text-white/70">Mandiri</span>
+                        <span class="block text-sm font-semibold">Cek Riwayat Sendiri</span>
+                        <span class="mt-1 block text-[11px] leading-snug text-white/75">
+                            Siswa bisa melihat kehadiran sendiri kapan saja.
+                        </span>
                     </span>
                 </div>
             </div>
@@ -322,7 +346,7 @@
                                     <div class="text-3xl text-indigo-500 mb-2">
                                         <i class="fas fa-keyboard"></i>
                                     </div>
-                                    <p class="text-xs font-semibold text-slate-700">Ketik NIS</p>
+                                    <p class="text-xs font-semibold text-slate-700">Ketik NISN</p>
                                     <p class="text-[10px] text-slate-400">manual cepat</p>
                                     <div class="mt-2 flex justify-center">
                                         <div
@@ -360,7 +384,7 @@
                             Hadirin.web merupakan alternatif pengganti buku absensi kertas dengan pencatatan otomatis
                             dan
                             terpusat.
-                            Siswa cukup memindai kode QR atau memasukkan ID unik miliknya.
+                            Siswa cukup memindai kode QR atau memasukkan Kode NISN miliknya.
                             <span class="text-indigo-600 font-medium">— guru dan wali murid langsung melihat status
                                 kehadiran secara real-time.</span>
                         </p>
@@ -389,7 +413,7 @@
                         <i class="fas fa-user-graduate text-3xl text-indigo-600"></i>
                     </div>
                     <h4 class="text-xl font-bold text-slate-800 mb-2">Siswa</h4>
-                    <p class="text-sm text-slate-500 mb-4">Absen mandiri lewat scan QRCode atau kode NIS.</p>
+                    <p class="text-sm text-slate-500 mb-4">Absen mandiri lewat scan QRCode atau kode NISN.</p>
 
                     @if ($bisaAbsen)
                         <a href="{{ route('absensi.index') }}"
@@ -440,6 +464,97 @@
                         <i class="fas fa-right-to-bracket mr-1"></i> Klik
                     </a>
                 </div>
+            </div>
+        </div>
+
+        {{--
+        | Panduan cara absen. Daftar metodenya diambil dari config yang sama dengan
+        | halaman `absensi/metode`, jadi cara absen yang tampil di sini tidak
+        | mungkin berbeda dengan yang tampil di halaman resminya.
+        |
+        | Halaman ini terbuka untuk semua orang, jadi URL halaman absensi tidak
+        | boleh ikut dimuat: setiap kartu berhenti pada penjelasannya, dan yang
+        | jadi tujuan hanya satu tombol di bawah. Tujuan tombolnya mengikuti sesi
+        | seperti kartu peran di atas, supaya akun guru atau admin tidak pernah
+        | diarahkan ke halaman absensi.
+        --}}
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+            <div class="text-center mb-8">
+                <h3 class="text-2xl font-bold text-slate-800 mb-2">Panduan Cara Absen</h3>
+                <p class="text-sm text-slate-500">
+                    Scan QR Code dan Kode NISN sama-sama mencatat kehadiran. Izin / Sakit untuk pengajuan, dan
+                    Notifikasi hanya untuk melihat riwayat.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                @foreach ($metodeAbsensi as $nomor => $metode)
+                    <div
+                        class="flex flex-col overflow-hidden rounded-2xl bg-white border border-slate-200/60 shadow-sm card-hover transition-all duration-300">
+                        <div class="h-1.5 w-full bg-gradient-to-r {{ $metode['accent'] }}"></div>
+
+                        <div class="flex flex-1 flex-col p-5">
+                            <div class="flex items-center gap-3">
+                                <span
+                                    class="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-lg {{ $metode['warna'] }}">
+                                    <i class="fas {{ $metode['ikon'] }}"></i>
+                                </span>
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span
+                                            class="grid h-5 w-5 place-items-center rounded-full bg-slate-100 text-[10px] font-bold text-slate-500">
+                                            {{ $nomor + 1 }}
+                                        </span>
+                                        <h4 class="font-semibold text-slate-800">{{ $metode['label'] }}</h4>
+                                    </div>
+                                    <p class="mt-0.5 text-xs text-slate-500">{{ $metode['ringkasan'] }}</p>
+                                </div>
+                            </div>
+
+                            <ol class="mt-4 flex-1 space-y-2">
+                                @foreach ($metode['langkah'] as $urutan => $langkah)
+                                    <li class="flex gap-2.5 text-xs leading-relaxed text-slate-600">
+                                        <span
+                                            class="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-slate-100 text-[10px] font-bold text-slate-500">
+                                            {{ $urutan + 1 }}
+                                        </span>
+                                        <span>{{ $langkah }}</span>
+                                    </li>
+                                @endforeach
+                            </ol>
+
+                            <p
+                                class="mt-4 inline-flex items-start gap-1.5 rounded-lg bg-slate-50 px-2.5 py-1.5 text-[11px] leading-snug text-slate-600">
+                                <i class="fas fa-circle-info mt-0.5 shrink-0 text-[10px] text-slate-400"></i>
+                                {{ $metode['butuh'] }}
+                            </p>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+
+            <div class="mt-8 flex flex-col items-center gap-3 text-center">
+                @if ($bisaAbsen)
+                    <a href="{{ route('absensi.index') }}"
+                        class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 px-6 py-3 text-sm font-semibold text-white shadow-sm shadow-indigo-200/60 transition">
+                        <i class="fas fa-right-to-bracket"></i> Mulai Absen Sekarang
+                    </a>
+                @elseif ($user === null)
+                    <a href="{{ route('login') }}"
+                        class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 px-6 py-3 text-sm font-semibold text-white shadow-sm shadow-indigo-200/60 transition">
+                        <i class="fas fa-right-to-bracket"></i> Login untuk Mulai Absen
+                    </a>
+                @else
+                    <span
+                        class="inline-flex cursor-not-allowed items-center gap-2 rounded-xl border border-slate-200 bg-slate-100 px-6 py-3 text-sm font-medium text-slate-400"
+                        title="Gunakan akun siswa untuk absen.">
+                        <i class="fas fa-lock"></i> Gunakan akun siswa untuk absen
+                    </span>
+                @endif
+
+                <p class="text-xs text-slate-400">
+                    Scan QR Code dan Kode NISN sama-sama mencatat kehadiran hari ini. Hanya perlu absen sekali.
+                </p>
             </div>
         </div>
     </main>

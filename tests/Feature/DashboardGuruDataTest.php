@@ -482,7 +482,7 @@ test('kelas boleh disimpan ulang tanpa mengubah nama kelasnya', function () {
     expect($kelas->fresh()->ruang)->toBe('R. 999');
 });
 
-test('siswa boleh disimpan ulang tanpa mengubah nis nya', function () {
+test('siswa boleh disimpan ulang tanpa mengubah nisn nya', function () {
     loginAdmin();
     $siswa = Siswa::factory()->create(['nisn' => '12345678']);
     $kelas = Kelas::factory()->create(['nama_kelas' => 'X-A']);
@@ -911,7 +911,7 @@ test('pengunjung tanpa login tidak bisa menambah siswa', function () {
         ->assertUnauthorized();
 });
 
-test('penambahan siswa memvalidasi nis dan kelas', function () {
+test('penambahan siswa memvalidasi nisn dan kelas', function () {
     $guru = guruDenganAkun();
     $kelas = Kelas::factory()->create(['nama_kelas' => 'X-A', 'status' => 'Aktif']);
     $kelas->guru()->sync([$guru->id]);

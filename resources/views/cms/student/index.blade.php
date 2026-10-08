@@ -32,7 +32,7 @@
                 <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-400">
                     <i class="fas fa-search text-sm"></i>
                 </span>
-                <input type="search" name="q" value="{{ request('q') }}" placeholder="Cari nama atau NIS..."
+                <input type="search" name="q" value="{{ request('q') }}" placeholder="Cari nama atau NISN..."
                     class="w-full rounded-lg border border-gray-200 py-2 pl-9 pr-3 text-sm text-gray-700 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
             </div>
             <div class="flex flex-col gap-3 sm:flex-row">
@@ -69,7 +69,7 @@
                 <thead class="bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500">
                     <tr>
                         <th class="px-6 py-3">Siswa</th>
-                        <th class="px-6 py-3">NIS</th>
+                        <th class="px-6 py-3">NISN</th>
                         <th class="px-6 py-3">Kelas</th>
                         <th class="px-6 py-3">Jenis Kelamin</th>
                         <th class="px-6 py-3">Wali / Orang Tua</th>
@@ -217,8 +217,8 @@
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div class="mb-4">
-                        <label class="mb-1.5 block text-sm font-medium text-gray-700" for="nis">NIS</label>
-                        <input id="nis" name="nis" type="text" required placeholder="8 digit NIS"
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700" for="nis">NISN</label>
+                        <input id="nis" name="nis" type="text" required placeholder="8 digit NISN"
                             value="{{ old('nis') }}"
                             class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
                         @error('nis')
@@ -394,7 +394,7 @@
 
                 detailStudentInitial.textContent = studentName.charAt(0).toUpperCase();
                 detailStudentName.textContent = studentName;
-                detailStudentNis.textContent = 'NIS: ' + (trigger.dataset.studentNis || '-');
+                detailStudentNis.textContent = 'NISN: ' + (trigger.dataset.studentNis || '-');
                 detailStudentClass.textContent = trigger.dataset.studentClass || '-';
                 detailStudentGender.textContent = trigger.dataset.studentGender || '-';
                 detailStudentParent.textContent = trigger.dataset.studentParent || '-';

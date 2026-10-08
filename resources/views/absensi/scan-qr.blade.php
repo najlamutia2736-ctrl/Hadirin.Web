@@ -170,7 +170,7 @@
                     <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                         <h2 class="text-sm font-semibold text-slate-800">Kamera tidak tersedia?</h2>
                         <p class="mt-1 text-xs leading-relaxed text-slate-500">
-                            Izinkan akses kamera di pengaturan browser, atau pakai cara absen lewat ID unik.
+                            Izinkan akses kamera di pengaturan browser, atau pakai cara absen lewat Kode NISN.
                         </p>
 
                         <label for="kodeManual" class="mt-4 block text-xs font-medium text-slate-600">
@@ -186,7 +186,7 @@
                         <a href="{{ route('absensi.id-unik') }}"
                             class="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">
                             <i class="fas fa-keyboard text-xs"></i>
-                            Absen lewat ID Unik
+                            Absen lewat Kode NISN
                         </a>
                     </div>
 
@@ -215,7 +215,7 @@
                 <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
                     Halaman ini butuh JavaScript untuk menyalakan kamera. Aktifkan JavaScript di browsermu, atau
                     langsung buka halaman
-                    <a href="{{ route('absensi.id-unik') }}" class="font-semibold underline">Absen lewat ID Unik</a>.
+                    <a href="{{ route('absensi.id-unik') }}" class="font-semibold underline">Absen lewat Kode NISN</a>.
                 </div>
             </noscript>
         </main>
@@ -317,7 +317,7 @@
             },
             NotFoundError: {
                 judul: 'Kamera tidak ditemukan',
-                detail: 'Tidak ada kamera yang bisa dipakai di perangkat ini. Coba absen lewat ID Unik.',
+                detail: 'Tidak ada kamera yang bisa dipakai di perangkat ini. Coba absen lewat Kode NISN.',
             },
             NotReadableError: {
                 judul: 'Kamera sedang dipakai aplikasi lain',
@@ -325,7 +325,7 @@
             },
             OverconstrainedError: {
                 judul: 'Kamera tidak mendukung',
-                detail: 'Kamera yang diminta tidak tersedia. Coba ganti kamera atau gunakan ID Unik.',
+                detail: 'Kamera yang diminta tidak tersedia. Coba ganti kamera atau gunakan Kode NISN.',
             },
             SecurityError: {
                 judul: 'Kamera diblokir browser',
@@ -363,7 +363,7 @@
                 tampilkanStatus(
                     'fa-triangle-exclamation',
                     'Browser tidak mendukung kamera',
-                    'Gunakan Chrome, Edge, Firefox, atau Safari versi terbaru. Sementara itu kamu bisa absen lewat ID Unik.',
+                    'Gunakan Chrome, Edge, Firefox, atau Safari versi terbaru. Sementara itu kamu bisa absen lewat Kode NISN.',
                     true
                 );
                 return;
