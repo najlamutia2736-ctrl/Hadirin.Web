@@ -146,8 +146,10 @@
                                     <div class="flex items-center gap-3 rounded-xl bg-amber-50 p-3.5">
                                         <i class="fas fa-triangle-exclamation text-amber-600"></i>
                                         <p class="text-xs leading-relaxed text-amber-800">
-                                            Sekarang belum ada sesi absensi yang berjalan, jadi kode yang kamu masukkan
-                                            belum bisa disimpan. Hubungi guru kalau ini terasa janggal.
+                                            Sekarang di luar jam absensi
+                                            ({{ config('sesi-absensi.jam_buka') }} -
+                                            {{ config('sesi-absensi.jam_tutup') }} WIB), jadi kode yang kamu
+                                            masukkan belum bisa disimpan. Coba lagi saat jam absensi dibuka.
                                         </p>
                                     </div>
                                 @endif

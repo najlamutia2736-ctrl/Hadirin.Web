@@ -63,9 +63,13 @@ return [
     | will be used by the PHP date and date-time functions. The timezone
     | is set to "UTC" by default as it is suitable for most use cases.
     |
+    | Aplikasi ini dipakai sekolah di Indonesia dan semua jam yang ditampilkan
+    | (jam absen, jam sesi, tanggal hari ini) diberi label WIB, jadi defaultnya
+    | memakai Asia/Jakarta. Nilai ini bisa ditimpa lewat `APP_TIMEZONE` di .env.
+    |
     */
 
-    'timezone' => 'UTC',
+    'timezone' => env('APP_TIMEZONE', 'Asia/Jakarta'),
 
     /*
     |--------------------------------------------------------------------------

@@ -11,34 +11,51 @@
 
     /*
     | Palet warna kartu. Mengikuti dashboard admin (cms/dashboard) supaya
-    | kedua dashboard terasa satu sistem visual.
+    | kedua dashboard terasa satu sistem visual. `value` dipakai untuk warna
+    | angka, `bar` untuk sparkline, `chip` untuk kotak ikon, `accent` untuk
+    | garis atas kartu.
     */
     $tones = [
         'blue' => [
             'chip' => 'bg-gradient-to-br from-blue-500 to-sky-500 text-white shadow-md shadow-blue-500/30',
+            'value' => 'text-blue-600',
             'bar' => 'bg-blue-500',
             'accent' => 'from-blue-500 to-sky-400',
         ],
         'green' => [
             'chip' => 'bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-md shadow-emerald-500/30',
+            'value' => 'text-emerald-600',
             'bar' => 'bg-emerald-500',
             'accent' => 'from-emerald-500 to-teal-400',
         ],
         'amber' => [
             'chip' => 'bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/30',
+            'value' => 'text-amber-600',
             'bar' => 'bg-amber-500',
             'accent' => 'from-amber-500 to-orange-400',
         ],
         'red' => [
             'chip' => 'bg-gradient-to-br from-rose-500 to-red-500 text-white shadow-md shadow-rose-500/30',
+            'value' => 'text-rose-600',
             'bar' => 'bg-rose-500',
-            'accent' => 'from-rose-500 to-red-400',
+            'accent' => 'from-rose-500 to-rose-400',
+        ],
+        'slate' => [
+            'chip' => 'bg-gradient-to-br from-slate-500 to-slate-600 text-white shadow-md shadow-slate-500/30',
+            'value' => 'text-slate-600',
+            'bar' => 'bg-slate-400',
+            'accent' => 'from-slate-500 to-slate-400',
         ],
     ];
 
     /*
-    | Kartu statistik. Nilai angka & badge tren diisi oleh JS dari `presensiList`,
-    | jadi definisi label/ikon/warna tetap di Blade agar mudah disetel.
+    | Kartu statistik. Nilai angka, badge persentase, keterangan, dan sparkline
+    | semuanya diisi JS dari `presensiList`, jadi definisi label/ikon/warna
+    | tetap di Blade agar mudah disetel.
+    |
+    | `alpha` sengaja tetap jadi kartu sendiri walaupun isinya bisa 0. Guru
+    | butuh melihat angka nol itu secara eksplisit, bukan lewat tidak
+    | tampilnya kartu.
     */
     $statCards = [
         [
@@ -63,6 +80,13 @@
             'spark' => [60, 72, 66, 60, 64, 52, 48],
         ],
         [
+            'key' => 'belum',
+            'label' => 'Belum Absen',
+            'icon' => 'fas fa-hourglass-half',
+            'tone' => 'slate',
+            'spark' => [50, 46, 40, 52, 44, 38, 34],
+        ],
+        [
             'key' => 'alpha',
             'label' => 'Alpha',
             'icon' => 'fas fa-user-slash',
@@ -73,22 +97,20 @@
 
     /*
     | Ringkasan kehadiran pada donut. Nilai & persentasenya diisi JS.
-    | `Belum` mewakili siswa yang belum punya catatan absensi hari ini.
+    | `belum` mewakili siswa yang belum punya catatan absensi hari ini.
     */
     $rekapItems = [
         ['key' => 'hadir', 'label' => 'Hadir', 'dot' => 'bg-emerald-500', 'hex' => '#22c55e'],
         ['key' => 'izin', 'label' => 'Izin', 'dot' => 'bg-blue-500', 'hex' => '#3b82f6'],
         ['key' => 'sakit', 'label' => 'Sakit', 'dot' => 'bg-amber-500', 'hex' => '#f59e0b'],
-        ['key' => 'alpha', 'label' => 'Alpha', 'dot' => 'bg-red-500', 'hex' => '#ef4444'],
+        ['key' => 'alpha', 'label' => 'Alpa', 'dot' => 'bg-red-500', 'hex' => '#ef4444'],
         ['key' => 'belum', 'label' => 'Belum Absen', 'dot' => 'bg-slate-300', 'hex' => '#cbd5e1'],
     ];
 
     /*
     | Tren kehadiran 12 bulan, dikirim controller dari tabel `absensis`.
     |
-    | Dulu isinya placeholder di Blade (92, 95, 89, dst.), sehingga grafik
-    | selalu penuh walaupun belum ada satu pun catatan absensi. Sekarang
-    | angkanya dari database, jadi kalau belum ada absensi, `$trenBulanan`
+    | Angkanya dari database, jadi kalau belum ada absensi, `$trenBulanan`
     | berisi deret yang seluruhnya nol dan `total`-nya 0.
     */
     $tren = $trenBulanan['tren'] ?? [];
@@ -101,22 +123,39 @@
 
 @section('konten')
     @include('guru.partials.banner', [
-        'subtitle' => 'Ringkasan kehadiran kelas yang Anda ampu hari ini',
+        'subtitle' => 'Ringkasan dan pemantauan kehadiran kelas yang Anda ampu hari ini',
         'actions' => $actions,
     ])
 
-    {{-- pemilih kelas: semua kartu di bawah mengikuti kelas yang aktif --}}
-    <div class="mb-6 flex flex-col gap-3 rounded-xl border border-gray-100 bg-white px-5 py-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+    {{-- pemilih kelas + kendali penyegaran otomatis --}}
+    <div class="mb-6 flex flex-col gap-4 rounded-xl border border-gray-100 bg-white px-5 py-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
         <div class="flex items-center gap-3">
             <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-indigo-50 text-indigo-600">
                 <i class="fas fa-chalkboard"></i>
             </span>
             <div>
-                <h3 class="text-sm font-semibold text-gray-800">Kelas yang Diampu</h3>
-                <p class="text-xs text-gray-500">Pilih kelas untuk melihat rincian absensinya</p>
+                <h3 class="text-sm font-semibold text-gray-800">Kelas yang Dipantau</h3>
+                <p class="text-xs text-gray-500" data-kelasAktif>-</p>
             </div>
         </div>
-        <div id="kelasChips" class="-mx-1 flex flex-wrap gap-2 px-1"></div>
+
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div id="kelasChips" class="-mx-1 flex flex-wrap gap-2 px-1"></div>
+
+            <div class="flex items-center gap-2 border-t border-gray-100 pt-3 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0">
+                <button type="button" id="tombolRefresh"
+                    class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:bg-gray-50 hover:text-indigo-600"
+                    title="Segarkan sekarang">
+                    <i class="fas fa-rotate text-sm"></i>
+                </button>
+
+                <button type="button" id="tombolAutoRefresh"
+                    class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700">
+                    <i class="fas fa-pause"></i>
+                    <span data-labelAutoRefresh>Jeda</span>
+                </button>
+            </div>
+        </div>
     </div>
 
     {{-- muncul kalau guru ini belum punya kelas yang diampu --}}
@@ -127,7 +166,7 @@
             <div>
                 <p class="font-semibold">Belum ada kelas yang diampu.</p>
                 <p class="mt-0.5">
-                    Hubungkan kelas dengan akun guru ini di dashboard admin, menu
+                    Hubungkan kelas dengan akun Anda di dashboard admin, menu
                     <a href="{{ route('cms.classes') }}" class="font-semibold underline">Classes</a>,
                     kolom <span class="font-semibold">Guru Pengampu</span>. Siswa
                     kelas yang terhubung akan otomatis muncul di halaman ini.
@@ -137,7 +176,7 @@
     </div>
 
     {{-- kartu statistik --}}
-    <div class="mb-6 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="mb-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         @foreach ($statCards as $card)
             @php $tone = $tones[$card['tone']]; @endphp
             <div
@@ -149,20 +188,19 @@
                         class="flex h-11 w-11 items-center justify-center rounded-xl text-lg transition-transform duration-300 group-hover:scale-110 {{ $tone['chip'] }}">
                         <i class="{{ $card['icon'] }}"></i>
                     </div>
-                    <span data-stat-badge="{{ $card['key'] }}"
+                    <span data-persenStat="{{ $card['key'] }}"
                         class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-500">
-                        <i class="fas fa-minus text-[9px]"></i>
-                        <span>0%</span>
+                        0%
                     </span>
                 </div>
 
                 <div class="mt-4 flex items-end justify-between gap-3">
-                    <div>
-                        <p class="text-sm font-medium text-gray-500">{{ $card['label'] }}</p>
-                        <p class="mt-0.5 text-2xl font-bold tracking-tight text-gray-800"
-                            data-stat-value="{{ $card['key'] }}">0</p>
+                    <div class="min-w-0">
+                        <p class="truncate text-sm font-medium text-gray-500">{{ $card['label'] }}</p>
+                        <p class="mt-0.5 text-2xl font-bold tracking-tight {{ $tone['value'] }}"
+                            data-nilaiStat="{{ $card['key'] }}">0</p>
                     </div>
-                    <div class="flex h-9 items-end gap-[3px]" data-stat-spark="{{ $card['key'] }}" aria-hidden="true">
+                    <div class="flex h-9 shrink-0 items-end gap-[3px]" data-stat-spark="{{ $card['key'] }}" aria-hidden="true">
                         @foreach ($card['spark'] as $height)
                             <span
                                 class="w-1.5 rounded-t-sm opacity-60 transition-all duration-300 group-hover:opacity-100 {{ $tone['bar'] }}"
@@ -170,6 +208,8 @@
                         @endforeach
                     </div>
                 </div>
+
+                <p class="mt-1 truncate text-xs text-gray-400" data-keteranganStat="{{ $card['key'] }}">-</p>
             </div>
         @endforeach
     </div>
@@ -196,7 +236,7 @@
                     </div>
                     <div class="flex items-center gap-4 text-[11px] font-medium text-gray-500">
                         <span class="flex items-center gap-1.5">
-                            <span class="h-2.5 w-2.5 rounded-sm bg-gradient-to-t from-emerald-500 to-emerald-400"></span> Hadir
+                            <span class="h-2.5 w-2.5 rounded-sm bg-emerald-500"></span> Hadir
                         </span>
                         <span class="flex items-center gap-1.5">
                             <span class="h-2.5 w-2.5 rounded-sm bg-blue-500"></span> Izin
@@ -241,11 +281,11 @@
         </div>
 
         <div>
-            <div class="h-full rounded-xl border border-gray-100 bg-white shadow-sm">
+            <div class="flex h-full flex-col rounded-xl border border-gray-100 bg-white shadow-sm">
                 <div class="border-b border-gray-200 px-6 py-4">
                     <div class="flex items-center gap-3">
                         <span class="grid h-9 w-9 place-items-center rounded-lg bg-emerald-50 text-emerald-600">
-                            <i class="fas fa-calendar-check"></i>
+                            <i class="fas fa-gauge-high"></i>
                         </span>
                         <div>
                             <h3 class="font-semibold text-gray-800">Ringkasan Hari Ini</h3>
@@ -281,53 +321,38 @@
                 </div>
 
                 <div class="border-t border-gray-100 px-6 py-3 text-center text-xs text-gray-500">
-                    Total <span class="font-semibold text-gray-800" data-rekap-total>0</span> siswa terpantau hari ini
+                    <span data-terakhirSinkron>-</span>
                 </div>
             </div>
         </div>
     </div>
 
-    {{-- daftar absensi kelas aktif + progres per kelas --}}
+    {{-- feed absensi masuk + progres per kelas --}}
     <div class="mb-6 grid grid-cols-1 gap-5 lg:grid-cols-3">
         <div class="lg:col-span-2">
             <div class="flex h-full flex-col rounded-xl border border-gray-100 bg-white shadow-sm">
                 <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-6 py-4">
                     <div class="flex items-center gap-3">
-                        <span class="grid h-9 w-9 place-items-center rounded-lg bg-violet-50 text-violet-600">
-                            <i class="fas fa-list-check"></i>
+                        <span class="grid h-9 w-9 place-items-center rounded-lg bg-indigo-50 text-indigo-600">
+                            <i class="fas fa-bolt"></i>
                         </span>
                         <div>
-                            <h3 class="font-semibold text-gray-800">Daftar Absensi Siswa</h3>
-                            <p class="text-xs text-gray-500" data-tabelSubtitle>-</p>
+                            <h3 class="font-semibold text-gray-800">Absensi Masuk</h3>
+                            <p class="text-xs text-gray-500">Siswa terbaru yang tercatat hari ini</p>
                         </div>
                     </div>
-                    <span id="badgeAbsensiQr"
-                        class="hidden items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-600">
-                        <i class="fas fa-circle-check"></i>
-                        <span data-absensiQrCount>0</span> absensi QR masuk
+                    <span data-badgeSinkron
+                        class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-600">
+                        <span class="relative flex h-2 w-2">
+                            <span
+                                class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+                            <span class="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
+                        </span>
+                        <span data-teksSinkron>Live</span>
                     </span>
                 </div>
 
-                <div class="flex-1 overflow-x-auto">
-                    <table class="min-w-full text-left text-sm">
-                        <thead class="bg-gray-50 text-[11px] uppercase tracking-wide text-gray-400">
-                            <tr>
-                                <th class="px-6 py-3 font-semibold">Siswa</th>
-                                <th class="px-4 py-3 font-semibold">Waktu</th>
-                                <th class="px-4 py-3 font-semibold">Metode</th>
-                                <th class="px-4 py-3 text-right font-semibold">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabelAbsensi" class="divide-y divide-gray-100"></tbody>
-                    </table>
-                </div>
-
-                <div class="border-t border-gray-100 px-6 py-3 text-center">
-                    <a href="{{ route('guru.realtime') }}"
-                        class="text-xs font-semibold text-indigo-600 transition-colors hover:text-indigo-700">
-                        Lihat riwayat lengkap <i class="fas fa-arrow-right text-[10px]"></i>
-                    </a>
-                </div>
+                <div id="feedAbsensi" class="flex-1 divide-y divide-gray-100 overflow-y-auto"></div>
             </div>
         </div>
 
@@ -350,14 +375,75 @@
         </div>
     </div>
 
-    @endsection
+    {{-- daftar absensi kelas aktif --}}
+    <div class="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
+        <div class="flex flex-col gap-3 border-b border-gray-200 px-6 py-4 lg:flex-row lg:items-center lg:justify-between">
+            <div class="flex items-center gap-3">
+                <span class="grid h-9 w-9 place-items-center rounded-lg bg-violet-50 text-violet-600">
+                    <i class="fas fa-list-check"></i>
+                </span>
+                <div>
+                    <h3 class="font-semibold text-gray-800">Daftar Absensi Siswa</h3>
+                    <p class="text-xs text-gray-500" data-tabelSubtitle>-</p>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-3">
+                <span id="badgeAbsensiQr"
+                    class="hidden items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-600">
+                    <i class="fas fa-circle-check"></i>
+                    <span data-absensiQrCount>0</span> absensi masuk
+                </span>
+
+                <label for="filterStatus" class="sr-only">Saring status</label>
+                <select id="filterStatus"
+                    class="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                    <option value="semua">Semua status</option>
+                    <option value="Hadir">Hadir</option>
+                    <option value="Izin">Izin</option>
+                    <option value="Sakit">Sakit</option>
+                    <option value="Alpha">Alpa</option>
+                    <option value="Belum">Belum Absen</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="min-w-full text-left text-sm">
+                <thead class="bg-gray-50 text-[11px] uppercase tracking-wide text-gray-400">
+                    <tr>
+                        <th class="px-6 py-3 font-semibold">Siswa</th>
+                        <th class="px-4 py-3 font-semibold">Kelas</th>
+                        <th class="px-4 py-3 font-semibold">Waktu</th>
+                        <th class="px-4 py-3 font-semibold">Metode</th>
+                        <th class="px-4 py-3 text-right font-semibold">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelAbsensi" class="divide-y divide-gray-100"></tbody>
+            </table>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-6 py-3">
+            <span class="text-xs text-gray-500">
+                <span data-jumlahTampil>0</span> dari <span data-jumlahTotal>0</span> siswa ditampilkan
+            </span>
+            <a href="{{ route('guru.laporan') }}"
+                class="text-xs font-semibold text-indigo-600 transition-colors hover:text-indigo-700">
+                Laporan lengkap <i class="fas fa-arrow-right text-[10px]"></i>
+            </a>
+        </div>
+    </div>
+
+    {{-- wadah toast untuk absensi yang baru masuk --}}
+    <div id="toastAbsensi" class="pointer-events-none fixed right-5 top-5 z-50 flex w-80 flex-col gap-2"></div>
+@endsection
 
 @push('styles')
     @include('guru.partials.styles')
 
     <style>
         /* transisi halus saat nilai kartu statistik berubah */
-        [data-stat-value] {
+        [data-nilaiStat] {
             transition: color 0.3s ease;
         }
 
@@ -374,6 +460,28 @@
         .kelas-chip {
             transition: all 0.2s ease;
         }
+
+        /* baris feed yang baru masuk */
+        @keyframes feedMasuk {
+            from {
+                opacity: 0;
+                transform: translateY(-8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .feed-item {
+            animation: feedMasuk 0.3s ease;
+        }
+
+        /* toast absensi baru, memakai keyframe yang sudah ada di styles bersama */
+        .toast-item {
+            animation: slideInRight 0.3s ease;
+        }
     </style>
 @endpush
 
@@ -389,14 +497,29 @@
 
     <script>
         // ============================================================
-        // DASHBOARD GURU
+        // DASHBOARD GURU (RINGKASAN + PEMANTAUAN REAL-TIME)
         // ============================================================
-        // Semua angka di halaman ini diturunkan dari `presensiList`, yang
-        // datanya berasal dari database yang sama dengan dashboard admin.
+        // Halaman ini dulu terbagi dua: dashboard (ringkasan hari ini) dan
+        // real-time monitoring (pemantauan langsung). Keduanya membaca data
+        // yang sama, punya pemilih kelas yang sama, dan tabel siswa yang
+        // hampir identik, jadi sekarang digabung ke satu halaman.
+        //
+        // Semua angka diturunkan dari `presensiList`, yang datanya berasal dari
+        // database yang sama dengan dashboard admin dan disegarkan berkala
+        // lewat endpoint JSON halaman ini sendiri.
+        //
+        // Dua sumber data dipakai berdampingan:
+        //
+        // 1. **Server (database)** — `guru.dashboard` sebagai JSON, yang isinya
+        //    sama dengan `window.HADIRIN_GURU`. Dipakai sebagai sumber
+        //    kebenaran dan dimuat ulang tiap polling.
+        // 2. **localStorage** — `daftar_absen`/`siswa_absen` yang diisi halaman
+        //    absensi siswa. Langsung dipakai supaya catatan baru terlihat
+        //    seketika, sebelum round-trip ke database selesai.
 
-        let kelasAktif = null;
-        let daftarKelas = [];
-        let trenChart = null;
+        const ENDPOINT_REFRESH = @json(route('guru.dashboard'));
+        const INTERVAL_POLLING = 15000;
+        const BATAS_FEED = 12;
 
         const DATA_TREN_BULANAN = @json($tren);
 
@@ -421,6 +544,45 @@
             belum: '#cbd5e1'
         };
 
+        let kelasAktif = null;
+        let daftarKelas = [];
+        let filterStatus = 'semua';
+        let autoRefresh = true;
+        let timerPolling = null;
+        let trenChart = null;
+
+        // Kunci absensi yang sudah pernah ditampilkan, dipakai untuk
+        // membedakan "baris baru" dari sekadar hasil render ulang.
+        const absensiTerlihat = new Set();
+
+        // Menandai bahwa daftar awal sudah didaftarkan, sehingga render
+        // berikutnya benar-benar bisa membedakan absensi baru dari data lama
+        // yang baru pertama kali terlihat.
+        let sudahDaftarkanAwal = false;
+
+        // ============================================================
+        // BANTUAN
+        // ============================================================
+        function setTeks(selector, nilai) {
+            document.querySelectorAll(selector).forEach(function (el) {
+                el.textContent = nilai;
+            });
+        }
+
+        function persen(jumlah, total) {
+            if (!total) return 0;
+            return Math.round((jumlah / total) * 100);
+        }
+
+        function formatWaktu(value) {
+            if (!value) return '-';
+
+            const date = value instanceof Date ? value : new Date(value);
+            if (isNaN(date.getTime())) return '-';
+
+            return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+        }
+
         // ============================================================
         // SELECTOR KELAS
         // ============================================================
@@ -442,7 +604,8 @@
             if (daftarKelas.length === 0) return;
 
             daftarKelas.forEach(function (nama) {
-                const siswa = (globalData.siswaPerKelas || {})[nama] || [];
+                const kelas = dataKelasServer(nama);
+                const jumlah = kelas ? (kelas.siswa || []).length : 0;
                 const aktif = nama === kelasAktif;
 
                 const chip = document.createElement('button');
@@ -455,11 +618,17 @@
                 chip.innerHTML = '<span>' + nama + '</span>' +
                     '<span class="rounded-full px-1.5 py-0.5 text-[10px] ' +
                     (aktif ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500') + '">' +
-                    siswa.length + '</span>';
+                    jumlah + '</span>';
 
                 chip.addEventListener('click', function () {
                     kelasAktif = nama;
                     loadDataKelas(nama);
+
+                    // Absensi kelas yang baru dipilih bukan yang baru masuk,
+                    // jadi hanya didaftarkan tanpa diumumkan sebagai toast.
+                    absensiTerlihat.clear();
+                    daftarkanAwal(gabungkanAbsensi());
+
                     renderSeluruhHalaman();
                 });
 
@@ -470,10 +639,7 @@
         // ============================================================
         // KARTU STATISTIK
         // ============================================================
-        function setTeks(selector, nilai) {
-            const el = document.querySelector(selector);
-            if (el) el.textContent = nilai;
-        }
+        const POLA_GELOMBANG = [0.82, 0.95, 0.7, 1, 0.88, 0.98, 0.78];
 
         function renderStatistik(list) {
             const stat = hitungStatAbsensi(list);
@@ -484,35 +650,47 @@
                 total: total,
                 hadir: stat.hadir,
                 izinSakit: izinSakit,
+                belum: stat.belum,
                 alpha: stat.alpha
             };
 
+            const keterangan = {
+                total: kelasAktif === null ? '-' : 'siswa di ' + kelasAktif,
+                hadir: 'dari ' + total + ' siswa',
+                izinSakit: izinSakit === 0 ? 'tidak ada' : izinSakit + ' siswa tercatat',
+                belum: total > 0 ? Math.round((stat.belum / total) * 100) + '% belum absen' : '-',
+                alpha: total > 0 ? Math.round((stat.alpha / total) * 100) + '% dari total siswa' : '-'
+            };
+
             Object.keys(nilai).forEach(function (key) {
-                setTeks('[data-stat-value="' + key + '"]', nilai[key]);
+                setTeks('[data-nilaiStat="' + key + '"]', nilai[key]);
+                setTeks('[data-persenStat="' + key + '"]', persen(nilai[key], total) + '%');
+                setTeks('[data-keteranganStat="' + key + '"]', keterangan[key]);
             });
 
-            renderBadgeStatistik('total', total, 0, 'siswa');
+            renderBadgeStatistik('total', total);
             renderBadgeStatistik('hadir', stat.hadir, total);
             renderBadgeStatistik('izinSakit', izinSakit, total);
+            renderBadgeStatistik('belum', stat.belum, total);
             renderBadgeStatistik('alpha', stat.alpha, total);
 
-            // sparkline Mengecil mengikuti nilai masing-masing kartu
+            // Sparkline mengecil mengikuti nilai masing-masing kartu
             renderSpark('total', total > 0 ? 100 : 0);
             renderSpark('hadir', persen(stat.hadir, total));
             renderSpark('izinSakit', persen(izinSakit, total));
+            renderSpark('belum', persen(stat.belum, total));
             renderSpark('alpha', persen(stat.alpha, total));
         }
 
-        function renderBadgeStatistik(key, jumlah, total, teksBawaan) {
-            const badge = document.querySelector('[data-stat-badge="' + key + '"]');
+        function renderBadgeStatistik(key, jumlah, total) {
+            const badge = document.querySelector('[data-persenStat="' + key + '"]');
             if (!badge) return;
 
-            const icon = badge.querySelector('i');
-            const label = badge.querySelector('span');
-
-            if (teksBawaan !== undefined) {
+            // Kartu total siswa tidak punya rasio yang masuk akal, jadi
+            // menampilkan kata "siswa" sebagai gantinya.
+            if (total === undefined) {
                 badge.className = 'inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-600';
-                label.textContent = teksBawaan;
+                badge.textContent = 'siswa';
                 return;
             }
 
@@ -520,19 +698,14 @@
 
             if (nilai >= 75) {
                 badge.className = 'inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-[11px] font-semibold text-green-600';
-                icon.className = 'fas fa-arrow-up text-[9px]';
             } else if (nilai >= 40) {
                 badge.className = 'inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-600';
-                icon.className = 'fas fa-minus text-[9px]';
             } else {
                 badge.className = 'inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-semibold text-red-600';
-                icon.className = 'fas fa-arrow-down text-[9px]';
             }
 
-            label.textContent = nilai + '%';
+            badge.textContent = nilai + '%';
         }
-
-        const POLA_GELOMBANG = [0.82, 0.95, 0.7, 1, 0.88, 0.98, 0.78];
 
         function renderSpark(key, nilaiPersen) {
             const wrapper = document.querySelector('[data-stat-spark="' + key + '"]');
@@ -558,9 +731,10 @@
                 setTeks('[data-rekap-value="' + key + '"]', stat[key]);
             });
 
-            setTeks('[data-rekap-total]', total);
             setTeks('[data-donut-persen]', persen(stat.hadir, total) + '%');
-            setTeks('[data-ringkasanKelas]', kelasAktif ? kelasAktif + ' · hari ini' : 'Belum ada kelas');
+            setTeks('[data-ringkasanKelas]', kelasAktif === null
+                ? 'Belum ada kelas yang diampu'
+                : kelasAktif + ' · ' + stat.hadir + ' dari ' + total + ' sudah absen');
 
             if (!donut) return;
 
@@ -589,23 +763,48 @@
         // ============================================================
         function renderTabelAbsensi(list) {
             const tbody = document.getElementById('tabelAbsensi');
-            if (!tbody) return;
+            const visible = list.filter(function (baris) {
+                if (filterStatus === 'semua') return true;
+                if (filterStatus === 'Belum') return !baris.status;
 
-            setTeks('[data-tabelSubtitle]', kelasAktif
-                ? kelasAktif + ' · ' + list.length + ' siswa tercatat'
-                : 'Belum ada kelas yang diampu');
+                return baris.status === filterStatus;
+            });
+
+            setTeks('[data-tabelSubtitle]', kelasAktif === null
+                ? 'Pilih kelas terlebih dahulu'
+                : kelasAktif + ' · ' + visible.length + ' dari ' + list.length + ' siswa');
+
+            setTeks('[data-kelasAktif]', kelasAktif === null
+                ? 'Belum ada kelas yang diampu'
+                : 'Memantau ' + kelasAktif);
+
+            setTeks('[data-jumlahTampil]', visible.length);
+            setTeks('[data-jumlahTotal]', list.length);
+
+            renderBadgeAbsensiMasuk();
+
+            if (!tbody) return;
 
             tbody.innerHTML = '';
 
             if (list.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-10 text-center text-sm text-gray-400">' +
+                tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-10 text-center text-sm text-gray-400">' +
                     '<i class="fas fa-inbox mb-2 block text-2xl text-gray-300"></i>' +
-                    'Belum ada data absensi untuk kelas ini.</td></tr>';
+                    'Belum ada kelas yang bisa dipantau.</td></tr>';
                 return;
             }
 
-            list.forEach(function (row) {
-                const inisial = (row.nama || '?').charAt(0).toUpperCase();
+            if (visible.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-10 text-center text-sm text-gray-400">' +
+                    'Tidak ada siswa dengan status "' + filterStatus + '".</td></tr>';
+                return;
+            }
+
+            // Terlama masuk di atas supaya tabel ikut mengalir seiring absensi.
+            visible.slice().reverse().forEach(function (baris) {
+                const inisial = (baris.nama || '?').charAt(0).toUpperCase();
+                const badge = baris.status ? (BADGE_STATUS[baris.status] || 'badge-alpha') : 'badge-belum';
+                const metode = baris.metode ? (BADGE_METODE[baris.metode] || 'badge-id') : 'badge-belum';
 
                 const tr = document.createElement('tr');
                 tr.className = 'absensi-row';
@@ -615,24 +814,34 @@
                             '<span class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-indigo-50 text-xs font-semibold text-indigo-600">' +
                                 inisial + '</span>' +
                             '<span class="min-w-0">' +
-                                '<span class="block truncate text-sm font-semibold text-gray-800">' + (row.nama || '-') + '</span>' +
-                                '<span class="block text-xs text-gray-400">NISN ' + (row.nis || '-') + '</span>' +
+                                '<span class="block max-w-[14rem] truncate text-sm font-semibold text-gray-800">' + (baris.nama || '-') + '</span>' +
+                                '<span class="block text-xs text-gray-400">NISN ' + (baris.nis || '-') + '</span>' +
                             '</span>' +
                         '</div>' +
                     '</td>' +
-                    '<td class="px-4 py-3 text-sm text-gray-600">' + formatWaktu(row.waktu) + '</td>' +
-                    '<td class="px-4 py-3"><span class="' +
-                        (row.metode ? (BADGE_METODE[row.metode] || 'badge-id') : 'badge-belum') + '">' +
-                        (row.metode || 'Belum absen') + '</span></td>' +
-                    '<td class="px-4 py-3 text-right"><span class="' +
-                        (row.status ? (BADGE_STATUS[row.status] || 'badge-alpha') : 'badge-belum') + '">' +
-                        (row.status || 'Belum Absen') + '</span></td>';
+                    '<td class="px-4 py-3">' +
+                        '<span class="inline-block rounded-full bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-600">' +
+                            (baris.kelas || '-') + '</span>' +
+                    '</td>' +
+                    '<td class="px-4 py-3 text-sm text-gray-600">' + formatWaktu(baris.waktu) + '</td>' +
+                    '<td class="px-4 py-3"><span class="' + metode + '">' +
+                        (baris.metode || 'Belum absen') + '</span></td>' +
+                    '<td class="px-4 py-3 text-right"><span class="' + badge + '">' +
+                        (baris.status || 'Belum Absen') + '</span></td>';
 
                 tbody.appendChild(tr);
             });
         }
 
-        function renderBadgeAbsensiQr() {
+        /**
+         * Badge jumlah absensi yang masuk hari ini dari perangkat siswa.
+         *
+         * Dihitung dari localStorage, bukan dari database, karena tujuannya
+         * memberi tahu guru ada aktivitas absen dari perangkat siswa yang
+         * belum sempat tersimpan ke database. Catatan yang sudah tersimpan
+         * sudah terlihat dari angka pada kartu dan dari tabel di bawah.
+         */
+        function renderBadgeAbsensiMasuk() {
             const badge = document.getElementById('badgeAbsensiQr');
             if (!badge) return;
 
@@ -652,13 +861,48 @@
             setTeks('[data-absensiQrCount]', hariIni.length);
         }
 
-        function formatWaktu(value) {
-            if (!value) return '-';
+        // ============================================================
+        // FEED ABSENSI MASUK
+        // ============================================================
+        function renderFeed(gabungan) {
+            const container = document.getElementById('feedAbsensi');
 
-            const date = value instanceof Date ? value : new Date(value);
-            if (isNaN(date.getTime())) return '-';
+            if (!container) return;
 
-            return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+            container.innerHTML = '';
+
+            if (gabungan.length === 0) {
+                container.innerHTML =
+                    '<div class="flex h-full min-h-[16rem] flex-col items-center justify-center px-6 py-10 text-center">' +
+                    '<span class="mb-3 grid h-14 w-14 place-items-center rounded-full bg-gray-100 text-gray-400">' +
+                    '<i class="fas fa-inbox text-xl"></i></span>' +
+                    '<p class="text-sm font-semibold text-gray-700">Belum ada absensi masuk</p>' +
+                    '<p class="mt-1 max-w-xs text-xs leading-relaxed text-gray-500">' +
+                    'Siswa yang absen di kelas akan langsung muncul di sini tanpa perlu reload halaman.' +
+                    '</p></div>';
+                return;
+            }
+
+            gabungan.slice(0, BATAS_FEED).forEach(function (baris) {
+                const inisial = (baris.nama || '?').charAt(0).toUpperCase();
+                const badge = baris.status ? (BADGE_STATUS[baris.status] || 'badge-belum') : 'badge-belum';
+
+                const item = document.createElement('div');
+                item.className = 'feed-item flex items-center gap-3 px-6 py-3';
+                item.innerHTML =
+                    '<span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-indigo-50 text-xs font-semibold text-indigo-600">' +
+                        inisial + '</span>' +
+                    '<span class="min-w-0 flex-1">' +
+                        '<span class="block truncate text-sm font-semibold text-gray-800">' +
+                            (baris.nama || '-') + '</span>' +
+                        '<span class="block text-xs text-gray-400">' +
+                            (baris.kelas || '-') + ' · ' + formatWaktu(baris.waktu) +
+                            (baris.dariServer ? '' : ' · dari perangkat siswa') + '</span>' +
+                    '</span>' +
+                    '<span class="shrink-0 ' + badge + '">' + (baris.status || 'Belum Absen') + '</span>';
+
+                container.appendChild(item);
+            });
         }
 
         // ============================================================
@@ -699,6 +943,10 @@
                 baris.addEventListener('click', function () {
                     kelasAktif = nama;
                     loadDataKelas(nama);
+
+                    absensiTerlihat.clear();
+                    daftarkanAwal(gabungkanAbsensi());
+
                     renderSeluruhHalaman();
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                 });
@@ -711,14 +959,249 @@
             if (kelasAktif) loadDataKelas(kelasAktif);
         }
 
-// ============================================================
+        // ============================================================
+        // SUMBER DATA GABUNGAN
+        // ============================================================
+        function loadRealtimeFromStorage() {
+            return loadAllAbsensiSiswa().filter(function (catatan) {
+                if (!catatan || !catatan.nama) return false;
+                if (kelasAktif === null) return true;
+
+                // Catatan dari storage belum selalu membawa kelas, jadi
+                // yang tidak menyebut kelas tetap dianggap milik kelas aktif.
+                return !catatan.kelas || catatan.kelas === kelasAktif;
+            });
+        }
+
+        /**
+         * Gabungkan catatan server dengan catatan localStorage.
+         *
+         * Server menang kalau catatan yang sama sudah ada di database, karena
+         * database yang jadi sumber kebenaran. LocalStorage hanya menambah
+         * catatan yang belum sempat masuk ke server.
+         */
+        function gabungkanAbsensi() {
+            const server = presensiList
+                .filter(function (baris) {
+                    return baris.waktu !== null;
+                })
+                .map(function (baris) {
+                    return {
+                        nama: baris.nama,
+                        nis: baris.nis,
+                        kelas: baris.kelas,
+                        waktu: baris.waktu,
+                        metode: baris.metode,
+                        status: baris.status,
+                        dariServer: true
+                    };
+                });
+
+            const sudahAda = new Set(server.map(function (baris) {
+                return kunciAbsensi(baris);
+            }));
+
+            const tambahan = loadRealtimeFromStorage()
+                .filter(function (catatan) {
+                    return !sudahAda.has(kunciAbsensi(catatan));
+                })
+                .map(function (catatan) {
+                    return {
+                        nama: catatan.nama,
+                        nis: catatan.nis || '-',
+                        kelas: catatan.kelas || kelasAktif,
+                        waktu: new Date(catatan.timestamp || Date.now()),
+                        metode: catatan.metode || 'Scan QR',
+                        status: toLabelStatus(catatan.status) || 'Hadir',
+                        dariServer: false
+                    };
+                });
+
+            return server.concat(tambahan).sort(function (a, b) {
+                return new Date(b.waktu) - new Date(a.waktu);
+            });
+        }
+
+        /**
+         * Kunci unik satu catatan absensi.
+         *
+         * Catatan dari database selalu punya `waktu` presisi, sedangkan catatan
+         * dari storage bisa lebih kasar, jadi nama + kelas + waktu dipakai
+         * bersama agar keduanya bisa dibandingkan.
+         */
+        function kunciAbsensi(catatan) {
+            const waktu = catatan.waktu instanceof Date
+                ? catatan.waktu.getTime()
+                : new Date(catatan.waktu || catatan.timestamp || 0).getTime();
+
+            return (catatan.nama || '') + '|' + (catatan.kelas || '') + '|' + waktu;
+        }
+
+        // ============================================================
+        // POLLING DARI SERVER
+        // ============================================================
+        async function muatDataServer() {
+            try {
+                const response = await fetch(ENDPOINT_REFRESH, {
+                    headers: { Accept: 'application/json' }
+                });
+
+                if (!response.ok) return;
+
+                const hasil = await response.json();
+
+                if (Array.isArray(hasil.kelas)) {
+                    // `SERVER_DATA` dipakai ulang supaya `data-guru` ikut
+                    // membaca kelas terbaru pada render berikutnya.
+                    SERVER_DATA.kelas = hasil.kelas;
+                }
+
+                if (SERVER_DATA && hasil.guru) {
+                    SERVER_DATA.guru = hasil.guru;
+                }
+
+                daftarKelas = daftarKelasDiajarkan();
+
+                // Kelas yang dipantau mungkin sudah tidak diampu guru.
+                if (daftarKelas.indexOf(kelasAktif) === -1) {
+                    kelasAktif = daftarKelas[0] || null;
+                }
+
+                if (kelasAktif !== null) {
+                    loadDataKelas(kelasAktif);
+                }
+
+                renderSeluruhHalaman();
+            } catch (error) {
+                console.warn('Gagal menyegarkan data absensi:', error);
+                setTeks('[data-terakhirSinkron]', 'Sinkronisasi gagal, mencoba lagi...');
+            }
+        }
+
+        /**
+         * Nyalakan penyegaran berkala.
+         *
+         * Timer disimpan di `timerPolling` supaya bisa dihentikan lagi dari
+         * tombol Jeda tanpa meninggalkan interval ganda.
+         */
+        function startRealtimeAutoRefresh() {
+            stopRealtimeAutoRefresh();
+
+            if (!autoRefresh) return;
+
+            timerPolling = window.setInterval(muatDataServer, INTERVAL_POLLING);
+        }
+
+        function stopRealtimeAutoRefresh() {
+            if (timerPolling !== null) {
+                window.clearInterval(timerPolling);
+                timerPolling = null;
+            }
+        }
+
+        function toggleAutoRefresh() {
+            autoRefresh = !autoRefresh;
+
+            const tombol = document.getElementById('tombolAutoRefresh');
+            const label = tombol ? tombol.querySelector('[data-labelAutoRefresh]') : null;
+            const ikon = tombol ? tombol.querySelector('i') : null;
+
+            if (tombol) {
+                tombol.classList.toggle('bg-indigo-600', autoRefresh);
+                tombol.classList.toggle('hover:bg-indigo-700', autoRefresh);
+                tombol.classList.toggle('bg-gray-100', !autoRefresh);
+                tombol.classList.toggle('text-gray-600', !autoRefresh);
+                tombol.classList.toggle('hover:bg-gray-200', !autoRefresh);
+            }
+
+            if (label) label.textContent = autoRefresh ? 'Jeda' : 'Lanjut';
+            if (ikon) ikon.className = autoRefresh ? 'fas fa-pause' : 'fas fa-play';
+
+            setTeks('[data-teksSinkron]', autoRefresh ? 'Live' : 'Dijeda');
+
+            if (autoRefresh) {
+                startRealtimeAutoRefresh();
+                muatDataServer();
+            } else {
+                stopRealtimeAutoRefresh();
+            }
+        }
+
+        // ============================================================
+        // ABSENSI YANG BARU MASUK
+        // ============================================================
+        function tampilkanToast(baris) {
+            const wadah = document.getElementById('toastAbsensi');
+            if (!wadah) return;
+
+            const inisial = (baris.nama || '?').charAt(0).toUpperCase();
+
+            const toast = document.createElement('div');
+            toast.className = 'toast-item flex items-start gap-3 rounded-xl border border-emerald-200 bg-white p-4 shadow-lg';
+            toast.innerHTML =
+                '<span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-emerald-50 text-emerald-600">' +
+                    '<i class="fas fa-circle-check text-sm"></i></span>' +
+                '<span class="min-w-0 flex-1">' +
+                    '<span class="block truncate text-sm font-semibold text-gray-800">' +
+                        (baris.nama || 'Siswa') + ' sudah absen</span>' +
+                    '<span class="block text-xs text-gray-500">' +
+                        (baris.kelas || '-') + ' · ' + formatWaktu(baris.waktu) + '</span>' +
+                '</span>' +
+                '<span class="badge-hadir shrink-0">Hadir</span>';
+
+            wadah.appendChild(toast);
+
+            // Batasi jumlah toast yang menumpuk saat absensi brewerhalten.
+            while (wadah.children.length > 4) {
+                wadah.removeChild(wadah.firstChild);
+            }
+
+            window.setTimeout(function () {
+                toast.remove();
+            }, 6000);
+        }
+
+        function cekAbsensiBaru(gabungan) {
+            gabungan.forEach(function (baris) {
+                const kunci = kunciAbsensi(baris);
+
+                if (absensiTerlihat.has(kunci)) return;
+
+                absensiTerlihat.add(kunci);
+
+                // Seluruh daftar awal hanya didaftarkan, tidak diumumkan.
+                // Kalau tidak, membuka halaman atau ganti kelas akan
+                // memunculkan tumpukan toast untuk absensi yang sebenarnya
+                // sudah lama tercatat.
+                if (!sudahDaftarkanAwal) return;
+
+                tampilkanToast(baris);
+            });
+
+            sudahDaftarkanAwal = true;
+        }
+
+        /**
+         * Tandai seluruh daftar saat ini sebagai sudah pernah dilihat.
+         *
+         * Dipakai saat ganti kelas: absensi kelas yang baru dipilih bukan
+         * yang baru masuk, jadi tidak boleh ikut diumumkan sebagai toast.
+         */
+        function daftarkanAwal(gabungan) {
+            gabungan.forEach(function (baris) {
+                absensiTerlihat.add(kunciAbsensi(baris));
+            });
+
+            sudahDaftarkanAwal = true;
+        }
+
+        // ============================================================
         // TREN KEHADIRAN BULANAN
         // ============================================================
         // Data berasal dari server (tabel `absensis`), jadi yang digambar di
-        // sini hanya bentuk visualnya. Babel-bulan tanpa catatan sengaja
-        // dilewati supaya batang lompat tidak terjadi; halaman sudah
-        // menampilkan kondisi kosong lewat Blade kalau belum ada absensi sama
-        // sekali, jadi fungsi ini tidak perlu menggambar apa pun dalam kasus itu.
+        // sini hanya bentuk visualnya. Blade sudah menampilkan kondisi kosong
+        // kalau belum ada absensi sama sekali, jadi fungsi ini tidak perlu
+        // menggambar apa pun dalam kasus itu.
         function initTrenChart() {
             const canvas = document.getElementById('trenChart');
             if (!canvas || typeof Chart === 'undefined' || !DATA_TREN_BULANAN.length) return;
@@ -731,8 +1214,8 @@
 
             // Sumbu Y memakai persentase, jadi tiap batang dinormalkan ke 100%.
             // Angka aslinya tetap dipakai di tooltip supaya guru bisa melihat
-            // jumlahsiswa, bukan cuma rationya.
-            const persen = function (jumlah, bar) {
+            // jumlah siswa, bukan cuma rationya.
+            const persenBar = function (jumlah, bar) {
                 return bar.total > 0 ? (jumlah / bar.total) * 100 : 0;
             };
 
@@ -743,26 +1226,26 @@
                     datasets: [
                         {
                             label: 'Hadir',
-                            data: DATA_TREN_BULANAN.map(function (bar) { return persen(bar.hadir, bar); }),
+                            data: DATA_TREN_BULANAN.map(function (bar) { return persenBar(bar.hadir, bar); }),
                             backgroundColor: '#10b981',
                             borderRadius: { topLeft: 0, topRight: 0, bottomLeft: 6, bottomRight: 6 },
                             borderSkipped: false
                         },
                         {
                             label: 'Izin',
-                            data: DATA_TREN_BULANAN.map(function (bar) { return persen(bar.izin, bar); }),
+                            data: DATA_TREN_BULANAN.map(function (bar) { return persenBar(bar.izin, bar); }),
                             backgroundColor: '#3b82f6',
                             borderSkipped: false
                         },
                         {
                             label: 'Sakit',
-                            data: DATA_TREN_BULANAN.map(function (bar) { return persen(bar.sakit, bar); }),
+                            data: DATA_TREN_BULANAN.map(function (bar) { return persenBar(bar.sakit, bar); }),
                             backgroundColor: '#f59e0b',
                             borderSkipped: false
                         },
                         {
                             label: 'Alpa',
-                            data: DATA_TREN_BULANAN.map(function (bar) { return persen(bar.alpa, bar); }),
+                            data: DATA_TREN_BULANAN.map(function (bar) { return persenBar(bar.alpa, bar); }),
                             backgroundColor: '#f43f5e',
                             borderRadius: { topLeft: 6, topRight: 6, bottomLeft: 0, bottomRight: 0 },
                             borderSkipped: false
@@ -807,31 +1290,20 @@
         // ============================================================
         // RENDER SEBUAH HALAMAN
         // ============================================================
-        function persen(jumlah, total) {
-            if (!total) return 0;
-            return Math.round((jumlah / total) * 100);
-        }
-
         function renderSeluruhHalaman() {
+            const gabungan = gabungkanAbsensi();
+
             renderPemilihKelas();
             renderStatistik(presensiList);
             renderDonut(presensiList);
-            renderTabelAbsensi(presensiList);
-            renderBadgeAbsensiQr();
             renderProgresKelas();
-            renderTombolSesi();
-        }
+            renderFeed(gabungan);
+            renderTabelAbsensi(presensiList);
 
-        function renderTombolSesi() {
-            const tombol = document.getElementById('tombolMulaiSesi');
-            const label = document.getElementById('labelMulaiSesi');
+            cekAbsensiBaru(gabungan);
 
-            if (!tombol || !label) return;
-
-            const total = presensiList.length;
-            const sudah = hitungStatAbsensi(presensiList).hadir;
-
-            label.textContent = total > 0 ? 'Sesi Berjalan (' + sudah + '/' + total + ')' : 'Mulai Sesi Absen';
+            const jam = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+            setTeks('[data-terakhirSinkron]', 'Terakhir diperbarui pukul ' + jam);
         }
 
         initHalamanGuru(function () {
@@ -842,21 +1314,45 @@
                 ? identitasGuru.kelasLengkap
                 : (daftarKelas[0] || null);
 
-            if (kelasAktif) loadDataKelas(kelasAktif);
+            if (kelasAktif !== null) {
+                loadDataKelas(kelasAktif);
+            }
+
+            // Absensi dari storage ikut dibaca sejak awal supaya halaman
+            // tidak terlihat kosong walau database belum sempat terisi.
+            daftarkanAwal(gabungkanAbsensi());
 
             initTrenChart();
             renderSeluruhHalaman();
+            startRealtimeAutoRefresh();
 
-            const tombol = document.getElementById('tombolMulaiSesi');
-            if (tombol) {
-                // Sesi absensi belum butuh server, jadi tombol disembunyikan
-                // selama belum ada kelas yang diampu.
-                tombol.classList.toggle('hidden', kelasAktif === null);
+            const tombolRefresh = document.getElementById('tombolRefresh');
+            if (tombolRefresh) tombolRefresh.addEventListener('click', muatDataServer);
 
-                tombol.addEventListener('click', function () {
-                    alert('Pembukaan sesi absensi untuk ' + kelasAktif + ' belum diimplementasikan.');
+            const tombolAuto = document.getElementById('tombolAutoRefresh');
+            if (tombolAuto) tombolAuto.addEventListener('click', toggleAutoRefresh);
+
+            const filter = document.getElementById('filterStatus');
+            if (filter) {
+                filter.addEventListener('change', function () {
+                    filterStatus = filter.value;
+                    renderTabelAbsensi(presensiList);
                 });
             }
+
+            // Halaman lain di tab yang sama menulis ke storage, jadi
+            // perubahan di sana langsung terlihat tanpa menunggu polling.
+            window.addEventListener('storage', function (event) {
+                if (event.key !== STORAGE_KEY_DAFTAR_ABSEN && event.key !== STORAGE_KEY_SISWA_ABSEN) {
+                    return;
+                }
+
+                const gabungan = gabungkanAbsensi();
+
+                renderBadgeAbsensiMasuk();
+                renderFeed(gabungan);
+                cekAbsensiBaru(gabungan);
+            });
         });
     </script>
 @endpush

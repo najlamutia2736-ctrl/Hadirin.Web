@@ -66,15 +66,20 @@ class DashboardGuruController extends Controller
     private const PERIODE_BAWAAN = '30';
 
     /**
-     * Dashboard guru.
+     * Dashboard guru: ringkasan hari ini sekaligus pemantauan real-time.
+     *
+     * Dulu halaman ini terbagi dua, yaitu `dashboard` (ringkasan + tren) dan
+     * `realtime` (pemantauan langsung). Keduanya membaca tabel `absensis` yang
+     * sama, memakai pemilih kelas yang sama, dan punya tabel siswa yang hampir
+     * identik, jadi sekarang digabung ke sini. Pemantauan real-time tetap
+     * berjalan lewat polling ke endpoint JSON halaman ini sendiri.
      *
      * Seluruh angka halaman ini berasal dari database yang sama dengan
      * dashboard admin, jadi siswa atau kelas yang baru ditambahkan dari
      * dashboard CMS langsung muncul di sini tanpa langkah tambahan.
      *
      * Saat diminta JSON, halaman ini mengembalikan payload-nya apa adanya
-     * tanpa Blade. Ini yang dipakai polling untuk halaman real-time monitoring
-     * tanpa perlu endpoint baru.
+     * tanpa Blade, jadi polling tidak perlu endpoint baru.
      */
     public function dashboard(Request $request): View|JsonResponse
     {
@@ -270,28 +275,6 @@ class DashboardGuruController extends Controller
         }, $namaBerkas, [
             'Content-Type' => 'text/csv; charset=UTF-8',
             'Cache-Control' => 'no-store, no-cache',
-        ]);
-    }
-
-    /**
-     * Pemantauan absensi real-time.
-     *
-     * Halaman ini menampilkan kondisi hari ini yang sama dengan dashboard,
-     * tapi disegarkan berkala dari browser lewat endpoint JSON `guru.dashboard`
-     * supaya guru tidak perlu reload manual setiap ada siswa yang memindai QR.
-     * Karena itu data yang dikirim di sini sama dengan payload dashboard, bukan
-     * agregasi terpisah.
-     */
-    public function realtime(Request $request): View|JsonResponse
-    {
-        $guruData = $this->dataGuru($request);
-
-        if ($request->wantsJson()) {
-            return response()->json($guruData);
-        }
-
-        return view('guru.realtime', [
-            'guruData' => $guruData,
         ]);
     }
 

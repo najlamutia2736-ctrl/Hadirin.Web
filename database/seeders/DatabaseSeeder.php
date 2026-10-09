@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use App\Services\SesiAbsensiService;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -12,6 +13,10 @@ class DatabaseSeeder extends Seeder
 
     /**
      * Seed the application's database.
+     *
+     * Sesi absensi hari ikut dibuat di sini supaya instalasi baru langsung bisa
+     * dipakai absen tanpa menunggu scheduler berjalan. Pada server sebenarnya
+     * sesi dibuat otomatis oleh command `sesi:absensi` setiap hari.
      */
     public function run(): void
     {
@@ -21,5 +26,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
+
+        app(SesiAbsensiService::class)->buatSesiHarian(today());
     }
 }

@@ -39,7 +39,7 @@ function halamanCms(): array
  */
 function halamanGuru(): array
 {
-    return ['guru.dashboard', 'guru.kelola', 'guru.laporan', 'guru.realtime'];
+    return ['guru.dashboard', 'guru.kelola', 'guru.laporan'];
 }
 
 /*

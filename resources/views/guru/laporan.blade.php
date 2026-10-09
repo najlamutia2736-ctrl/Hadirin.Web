@@ -249,7 +249,7 @@
                     Laporan ini dihitung dari tabel absensi yang sama dengan dashboard.
                     {{ $total['siswa'] }} siswa tetap terdaftar di bawah, tetapi semua kolom
                     kehadiran masih kosong sampai absensi dicatat di halaman
-                    <a href="{{ route('guru.realtime') }}" class="font-semibold underline">Real-Time Monitoring</a>.
+                    <a href="{{ route('guru.dashboard') }}" class="font-semibold underline">Dashboard Guru</a>.
                 </p>
             </div>
         </div>

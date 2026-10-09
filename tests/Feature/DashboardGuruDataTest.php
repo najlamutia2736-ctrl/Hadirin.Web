@@ -1330,12 +1330,13 @@ test('ekspor csv tetap memakai periode bulanan meski dari tab progres', function
 });
 
 /*
-| Real-Time Monitoring. Kondisinya hari ini, sama seperti dashboard, tapi
-| halaman ini menyegarkan dirinya sendiri lewat endpoint JSON `guru.dashboard`
-| supaya guru tidak perlu reload tiap ada siswa yang memindai QR.
+| Pemantauan real-time sudah jadi bagian dari dashboard guru. Kondisinya hari
+| ini sama seperti ringkasan, tapi halaman ini menyegarkan dirinya sendiri lewat
+| endpoint JSON `guru.dashboard` supaya guru tidak perlu reload tiap ada siswa
+| yang absen.
 */
 
-test('real-time monitoring memakai json saat diminta untuk polling', function () {
+test('dashboard guru memakai json saat diminta untuk polling', function () {
     $guru = guruDenganAkun();
     $kelas = Kelas::factory()->create(['nama_kelas' => 'X-A', 'status' => 'Aktif']);
     $kelas->guru()->sync([$guru->id]);
@@ -1357,7 +1358,7 @@ test('real-time monitoring memakai json saat diminta untuk polling', function ()
     ]);
 
     $payload = $this->actingAs($guru->user)
-        ->getJson(route('guru.realtime'))
+        ->getJson(route('guru.dashboard'))
         ->assertOk()
         ->json();
 
@@ -1368,7 +1369,7 @@ test('real-time monitoring memakai json saat diminta untuk polling', function ()
         ->and($payload['kelas'][0]['siswa'][0]['waktu'])->not->toBeNull();
 });
 
-test('real-time monitoring hanya mengirim kelas yang diampu guru', function () {
+test('dashboard guru hanya mengirim kelas yang diampu guru', function () {
     $guru = guruDenganAkun();
     $kelasMilik = Kelas::factory()->create(['nama_kelas' => 'X-A', 'status' => 'Aktif']);
     $kelasLain = Kelas::factory()->create(['nama_kelas' => 'X-B', 'status' => 'Aktif']);
@@ -1378,49 +1379,54 @@ test('real-time monitoring hanya mengirim kelas yang diampu guru', function () {
     siswaDiKelas($kelasLain, 'Siswa Milik Orang Lain');
 
     $this->actingAs($guru->user)
-        ->get(route('guru.realtime'))
+        ->get(route('guru.dashboard'))
         ->assertOk()
         ->assertDontSee('Siswa Milik Orang Lain')
         ->assertDontSee('X-B');
 
     $payload = $this->actingAs($guru->user)
-        ->getJson(route('guru.realtime'))
+        ->getJson(route('guru.dashboard'))
         ->assertOk()
         ->json();
 
     expect(array_column($payload['kelas'], 'nama'))->toBe(['X-A']);
 });
 
-test('halaman real-time monitoring punya kendali polling dan feed absensi', function () {
+test('dashboard guru punya kendali polling dan feed absensi', function () {
     $guru = guruDenganAkun();
     $kelas = Kelas::factory()->create(['nama_kelas' => 'X-A', 'status' => 'Aktif']);
     $kelas->guru()->sync([$guru->id]);
 
     $this->actingAs($guru->user)
-        ->get(route('guru.realtime'))
+        ->get(route('guru.dashboard'))
         ->assertOk()
-        ->assertSee('Real-Time Monitoring')
-        ->assertSee('Progres Sesi')
+        // Ringkasan dari halaman dashboard lama.
+        ->assertSee('Tren Kehadiran Bulanan')
+        ->assertSee('Ringkasan Hari Ini')
+        ->assertSee('Progres per Kelas')
+        ->assertSee('Daftar Absensi Siswa')
+        // Pemantauan dari halaman real-time monitoring yang sudah digabung.
         ->assertSee('Absensi Masuk')
-        ->assertSee('Daftar Siswa')
         // Poll dan tombol kendalinya harus ada, kalau tidak halaman diam saja.
         ->assertSee('loadRealtimeFromStorage', false)
         ->assertSee('startRealtimeAutoRefresh', false)
         ->assertSee('tombolAutoRefresh', false)
-        ->assertSee('feedRealtime', false)
-        ->assertSee('tabelRealtime', false)
-        // Polling ditembak ke endpoint JSON dashboard, bukan endpoint baru.
+        ->assertSee('tombolRefresh', false)
+        ->assertSee('feedAbsensi', false)
+        ->assertSee('tabelAbsensi', false)
+        ->assertSee('toastAbsensi', false)
+        // Polling ditembak ke endpoint JSON halaman ini sendiri.
         ->assertSee(route('guru.dashboard'), false);
 });
 
-test('halaman real-time monitoring menangani guru tanpa kelas', function () {
+test('dashboard guru menangani guru tanpa kelas', function () {
     $guru = guruDenganAkun();
 
     $this->actingAs($guru->user)
-        ->get(route('guru.realtime'))
+        ->get(route('guru.dashboard'))
         ->assertOk()
         ->assertSee('Belum ada kelas yang diampu', false)
-        ->assertSee('realtimeKosongKelas', false);
+        ->assertSee('kosongKelas', false);
 });
 
 /*

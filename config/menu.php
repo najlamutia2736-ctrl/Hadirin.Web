@@ -65,7 +65,6 @@ return [
             'label' => 'Laporan',
             'items' => [
                 ['label' => 'Laporan Bulanan', 'route' => 'guru.laporan', 'icon' => 'fas fa-file-alt'],
-                ['label' => 'Real-Time Monitoring', 'route' => 'guru.realtime', 'icon' => 'fas fa-clock'],
             ],
         ],
         [

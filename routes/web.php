@@ -114,10 +114,18 @@ Route::prefix('dashboard/guru')
 
         Route::get('/laporan/export', 'exportLaporan')
             ->name('laporan.export');
-
-        Route::get('/realtime', 'realtime')
-            ->name('realtime');
     });
+
+/*
+ * `/dashboard/guru/realtime` dulu jadi halaman tersendiri untuk memantau
+ * absensi yang masuk. Isinya sekarang bagian dari dashboard guru, jadi alamat
+ * lama hanya mengalihkan supaya bookmark dan tautan yang sudah tersebar tidak
+ * ikut rusak. Ditulis di luar group di atas karena group itu mengikat
+ * controller, sedangkan rute ini memang tidak memanggil method apa pun.
+ */
+Route::get('/dashboard/guru/realtime', fn () => redirect()->route('guru.dashboard'))
+    ->middleware(['auth', 'role:Guru'])
+    ->name('guru.realtime.lama');
 
 // Dashboard CMS dan seluruh halaman lainnya. Wajib login dan hanya untuk akun
 // admin. Operator diperlakukan sama karena perannya juga mengelola data sekolah.

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Absensi;
 use App\Models\SesiAbsensi;
 use App\Models\Siswa;
+use App\Services\SesiAbsensiService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,6 +16,12 @@ use Illuminate\View\View;
 
 class AbsensiSiswaController extends Controller
 {
+    /**
+     * Sesi absensi dipakai hampir di setiap halaman, jadi diuru di constructor
+     * supaya tidak di-resolve ulang setiap kali butuh.
+     */
+    public function __construct(protected SesiAbsensiService $sesiAbsensi) {}
+
     /**
      * Halaman awal absensi siswa.
      *
@@ -350,16 +357,13 @@ class AbsensiSiswaController extends Controller
     /**
      * Sesi absensi yang sedang berjalan, atau null kalau belum ada.
      *
-     * Sesi dicari dari rentang waktunya, bukan hanya dari kolom status, karena
-     * sesi yang sudah lewat masih berstatus `aktif` kalau guru belum menutupnya.
+     * Pencariannya dipindah ke `SesiAbsensiService` supaya controller ini
+     * tidak perlu tahu detail rentang waktunya. Sesi dibuat otomatis oleh
+     * command `sesi:absensi` yang dijadwalkan di `routes/console.php`.
      */
     protected function sesiBerjalan(): ?SesiAbsensi
     {
-        return SesiAbsensi::query()
-            ->where('waktu_mulai', '<=', now())
-            ->where('waktu_selesai', '>=', now())
-            ->orderBy('waktu_mulai')
-            ->first();
+        return $this->sesiAbsensi->sesiBerjalan();
     }
 
     /**

@@ -4,14 +4,14 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-test('empat halaman dashboard guru dapat diakses dan memakai layout sidebar', function () {
-    // Rekap bulanan dan progres absensi sudah digabung, jadi halaman guru
-    // tinggal empat: dashboard, kelola, laporan, dan real-time.
+test('tiga halaman dashboard guru dapat diakses dan memakai layout sidebar', function () {
+    // Rekap bulanan dan progres absensi sudah digabung, lalu real-time
+    // monitoring menyusul ke halaman dashboard. Sisa halaman guru: dashboard,
+    // kelola, dan laporan.
     $halaman = [
         'guru.dashboard' => 'Dashboard',
         'guru.kelola' => 'Kelola Data Kelas',
         'guru.laporan' => 'Laporan Bulanan',
-        'guru.realtime' => 'Real-Time Monitoring',
     ];
 
     loginGuru();
@@ -32,7 +32,6 @@ test('sidebar guru menampilkan menu area guru dan menandai halaman aktif', funct
     $this->get(route('guru.laporan'))
         ->assertOk()
         ->assertSee(route('guru.dashboard'), false)
-        ->assertSee(route('guru.realtime'), false)
         ->assertSee('Kembali ke Beranda')
         // Menu CMS tidak boleh bocor ke halaman guru
         ->assertDontSee(route('cms.users'), false);
@@ -72,13 +71,12 @@ test('semua halaman cms punya link kembali ke beranda', function () {
 test('halaman guru memuat data layer dan script yang dibutuhkan', function () {
     loginGuru();
 
+    // Dashboard sudah absorbing fitur real-time monitoring, jadi polling dan
+    // data layer keduanya harus ada di satu halaman ini.
     $this->get(route('guru.dashboard'))
         ->assertOk()
         ->assertSee('cdn.jsdelivr.net/npm/chart.js', false)
-        ->assertSee('initHalamanGuru', false);
-
-    $this->get(route('guru.realtime'))
-        ->assertOk()
+        ->assertSee('initHalamanGuru', false)
         ->assertSee('loadRealtimeFromStorage', false)
         ->assertSee('startRealtimeAutoRefresh', false);
 });
@@ -87,7 +85,7 @@ test('halaman guru tidak mengarahkan ke form identitas guru', function () {
     // Identitas guru dibaca dari database lewat `window.HADIRIN_GURU`. Kalau
     // guru belum punya kelas, halaman harus tetap tampil dengan kondisi
     // kosong, bukan dialihkan ke form identitas.
-    $halaman = ['guru.dashboard', 'guru.kelola', 'guru.laporan', 'guru.realtime'];
+    $halaman = ['guru.dashboard', 'guru.kelola', 'guru.laporan'];
 
     loginGuru();
 
@@ -107,4 +105,11 @@ test('layout sidebar menyediakan stack styles dan scripts', function () {
         ->assertSee('.stat-card', false)
         ->assertSee('tambahSiswa', false)
         ->assertSee('hapusSiswa', false);
+});
+
+test('alamat lama real-time monitoring mengarah ke dashboard guru', function () {
+    loginGuru();
+
+    $this->get('/dashboard/guru/realtime')
+        ->assertRedirect(route('guru.dashboard'));
 });
