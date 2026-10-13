@@ -403,6 +403,20 @@
             <!-- Cards Peran -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
 
+                <!-- Card Guru / Wali Kelas -->
+                <div
+                    class="bg-white rounded-2xl shadow-md border border-slate-200/60 p-6 text-center card-hover transition-all duration-300">
+                    <div class="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-chalkboard-teacher text-3xl text-emerald-600"></i>
+                    </div>
+                    <h4 class="text-xl font-bold text-slate-800 mb-2">Guru / Dosen</h4>
+                    <p class="text-sm text-slate-500 mb-4">Memantau kehadiran Real-Time dan unduh rekap bulanan.</p>
+                    <a href="{{ route('guru.dashboard') }}"
+                        class="inline-block bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 py-2.5 rounded-xl transition shadow-md shadow-emerald-200/60">
+                        <i class="fas fa-right-to-bracket mr-1"></i> Klik
+                    </a>
+                </div>
+
                 <!-- Card Siswa -->
                 {{-- Kartu ini tidak pernah disembunyikan: pilih peran harus bisa
                      dilakukan sebelum login. Yang dijaga hanya link tujuan, agar
@@ -412,7 +426,7 @@
                     <div class="w-20 h-20 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
                         <i class="fas fa-user-graduate text-3xl text-indigo-600"></i>
                     </div>
-                    <h4 class="text-xl font-bold text-slate-800 mb-2">Siswa</h4>
+                    <h4 class="text-xl font-bold text-slate-800 mb-2">Mahasiswa</h4>
                     <p class="text-sm text-slate-500 mb-4">Absen mandiri lewat scan QRCode atau kode NISN.</p>
 
                     @if ($bisaAbsen)
@@ -437,27 +451,13 @@
                     @endif
                 </div>
 
-                <!-- Card Guru / Wali Kelas -->
-                <div
-                    class="bg-white rounded-2xl shadow-md border border-slate-200/60 p-6 text-center card-hover transition-all duration-300 md:scale-105 md:shadow-lg">
-                    <div class="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-chalkboard-teacher text-3xl text-emerald-600"></i>
-                    </div>
-                    <h4 class="text-xl font-bold text-slate-800 mb-2">Guru / Wali Kelas</h4>
-                    <p class="text-sm text-slate-500 mb-4">Memantau kehadiran Real-Time dan unduh rekap bulanan.</p>
-                    <a href="{{ route('guru.dashboard') }}"
-                        class="inline-block bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 py-2.5 rounded-xl transition shadow-md shadow-emerald-200/60">
-                        <i class="fas fa-right-to-bracket mr-1"></i> Klik
-                    </a>
-                </div>
-
                 <!-- Card Admin / Kepsek -->
                 <div
                     class="bg-white rounded-2xl shadow-md border border-slate-200/60 p-6 text-center card-hover transition-all duration-300">
                     <div class="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
                         <i class="fas fa-user-shield text-3xl text-purple-600"></i>
                     </div>
-                    <h4 class="text-xl font-bold text-slate-800 mb-2">Admin / Kepsek</h4>
+                    <h4 class="text-xl font-bold text-slate-800 mb-2">Admin</h4>
                     <p class="text-sm text-slate-500 mb-4">Kelola data seluruh siswa dan lihat laporan menyeluruh.</p>
                     <a href="{{ route('cms.dashboard') }}"
                         class="inline-block bg-purple-600 hover:bg-purple-700 text-white font-medium px-6 py-2.5 rounded-xl transition shadow-md shadow-purple-200/60">
@@ -553,7 +553,8 @@
                 @endif
 
                 <p class="text-xs text-slate-400">
-                    Scan QR Code dan Kode NISN sama-sama mencatat kehadiran hari ini. Hanya perlu absen sekali.
+                    Scan QR Code dan Kode NISN sama-sama mencatat kehadiran hari ini. Kamu perlu absen disetiap
+                    mata kuliah yang kamu ikuti.
                 </p>
             </div>
         </div>

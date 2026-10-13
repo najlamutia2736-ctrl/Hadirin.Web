@@ -123,8 +123,8 @@
                                     Nama Lengkap
                                     <span class="text-red-500">*</span>
                                 </label>
-                                <input type="text" id="name" name="name" value="{{ old('name', $siswa->user->name) }}"
-                                    required maxlength="255"
+                                <input type="text" id="name" name="name"
+                                    value="{{ old('name', $siswa->user->name) }}" required maxlength="255"
                                     class="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-200">
                                 @error('name')
                                     <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
@@ -157,8 +157,9 @@
                                 <label for="parent" class="block text-sm font-medium text-slate-700">
                                     Nama Wali
                                 </label>
-                                <input type="text" id="parent" name="parent" value="{{ old('parent', $siswa->wali) }}"
-                                    maxlength="255" placeholder="Contoh: Budi Santoso"
+                                <input type="text" id="parent" name="parent"
+                                    value="{{ old('parent', $siswa->wali) }}" maxlength="255"
+                                    placeholder="Contoh: Budi Santoso"
                                     class="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-indigo-300 focus:ring-2 focus:ring-indigo-200">
                                 <p class="mt-1.5 text-xs text-slate-500">
                                     Dipakai guru saat ada hal yang perlu dikonfirmasi.
@@ -254,7 +255,8 @@
                         </div>
 
                         <div class="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-100">
-                            <div class="h-full rounded-full bg-indigo-500" style="width: {{ $rekap['persentase'] }}%"></div>
+                            <div class="h-full rounded-full bg-indigo-500" style="width: {{ $rekap['persentase'] }}%">
+                            </div>
                         </div>
 
                         <a href="{{ route('absensi.notifikasi') }}"

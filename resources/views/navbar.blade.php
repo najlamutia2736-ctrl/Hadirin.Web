@@ -37,14 +37,21 @@
             <!-- Menu Desktop -->
             <div class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
                 @if ($bisaAbsen)
-                    <a href="{{ route('absensi.index') }}" class="hover:text-indigo-600 transition {{ request()->routeIs('absensi.*') ? 'text-indigo-600 font-semibold' : '' }}">Absen Siswa</a>
+                    <a href="{{ route('absensi.index') }}"
+                        class="hover:text-indigo-600 transition {{ request()->routeIs('absensi.*') ? 'text-indigo-600 font-semibold' : '' }}">Absen
+                        Siswa</a>
                 @endif
                 @if ($bukaGuru)
-                    <a href="{{ route('guru.dashboard') }}" class="hover:text-indigo-600 transition {{ request()->routeIs('guru.dashboard') ? 'text-indigo-600 font-semibold' : '' }}">Dashboard Guru</a>
+                    <a href="{{ route('guru.dashboard') }}"
+                        class="hover:text-indigo-600 transition {{ request()->routeIs('guru.dashboard') ? 'text-indigo-600 font-semibold' : '' }}">Dashboard
+                        Guru</a>
                 @endif
                 @if ($bukaCms)
-                    <a href="{{ route('cms.dashboard') }}" class="hover:text-indigo-600 transition {{ request()->routeIs('cms.dashboard') ? 'text-indigo-600 font-semibold' : '' }}">Dashboard Admin</a>
-                    <a href="{{ route('cms.rekap') }}" class="hover:text-indigo-600 transition {{ request()->routeIs('cms.rekap') ? 'text-indigo-600 font-semibold' : '' }}">Rekap</a>
+                    <a href="{{ route('cms.dashboard') }}"
+                        class="hover:text-indigo-600 transition {{ request()->routeIs('cms.dashboard') ? 'text-indigo-600 font-semibold' : '' }}">Dashboard
+                        Admin</a>
+                    <a href="{{ route('cms.rekap') }}"
+                        class="hover:text-indigo-600 transition {{ request()->routeIs('cms.rekap') ? 'text-indigo-600 font-semibold' : '' }}">Rekap</a>
                 @endif
             </div>
 
@@ -64,7 +71,8 @@
                         </form>
                     </div>
                 @else
-                    <a href="{{ route('login') }}" class="inline-flex items-center gap-2 bg-indigo-600 text-white text-sm font-medium px-5 py-2.5 rounded-full shadow-md shadow-indigo-200 transition hover:bg-indigo-700">
+                    <a href="{{ route('login') }}"
+                        class="inline-flex items-center gap-2 bg-indigo-600 text-white text-sm font-medium px-5 py-2.5 rounded-full shadow-md shadow-indigo-200 transition hover:bg-indigo-700">
                         <i class="fas fa-arrow-right-to-bracket text-xs"></i> Log In
                     </a>
                 @endif
@@ -75,7 +83,8 @@
                 @if ($user)
                     <span class="text-sm font-medium text-slate-600">{{ $user->name }}</span>
                 @else
-                    <a href="{{ route('login') }}" class="text-sm font-medium text-indigo-600 bg-indigo-50 px-4 py-2 rounded-full">Log In</a>
+                    <a href="{{ route('login') }}"
+                        class="text-sm font-medium text-indigo-600 bg-indigo-50 px-4 py-2 rounded-full">Log In</a>
                 @endif
                 <button class="text-slate-500 hover:text-indigo-600 transition" onclick="toggleMobileNav()">
                     <i class="fas fa-bars text-xl" id="mobileNavIcon"></i>
@@ -88,21 +97,21 @@
     <div id="mobileNavDropdown" class="hidden md:hidden border-t border-slate-200/60 bg-white/95 backdrop-blur-sm">
         <div class="px-4 py-3 space-y-1">
             @if ($bisaAbsen)
-                <a href="{{ route('absensi.index') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
-                    <i class="fas fa-user-graduate w-5"></i> Absen Siswa
+                <a href="{{ route('absensi.index') }}"
+                    class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
+                    <i class="fas fa-user-graduate w-5"></i> HALAMAN ABSENSI SISWA
                 </a>
             @endif
             @if ($bukaGuru)
-                <a href="{{ route('guru.dashboard') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
-                    <i class="fas fa-chalkboard-teacher w-5"></i> Dashboard Guru
+                <a href="{{ route('guru.dashboard') }}"
+                    class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
+                    <i class="fas fa-chalkboard-teacher w-5"></i> HALAMAN DASHBOARD GURU / DOSEN
                 </a>
             @endif
             @if ($bukaCms)
-                <a href="{{ route('cms.dashboard') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
-                    <i class="fas fa-user-shield w-5"></i> Dashboard Admin
-                </a>
-                <a href="{{ route('cms.rekap') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
-                    <i class="fas fa-file-alt w-5"></i> Rekap
+                <a href="{{ route('cms.dashboard') }}"
+                    class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
+                    <i class="fas fa-user-shield w-5"></i> HALAMAN DASHBOARD ADMIN
                 </a>
             @endif
         </div>
@@ -110,14 +119,14 @@
 </header>
 
 <script>
-function toggleMobileNav() {
-    const menu = document.getElementById('mobileNavDropdown');
-    const icon = document.getElementById('mobileNavIcon');
-    if (!menu) return;
-    menu.classList.toggle('hidden');
-    if (icon) {
-        icon.classList.toggle('fa-bars');
-        icon.classList.toggle('fa-times');
+    function toggleMobileNav() {
+        const menu = document.getElementById('mobileNavDropdown');
+        const icon = document.getElementById('mobileNavIcon');
+        if (!menu) return;
+        menu.classList.toggle('hidden');
+        if (icon) {
+            icon.classList.toggle('fa-bars');
+            icon.classList.toggle('fa-times');
+        }
     }
-}
 </script>

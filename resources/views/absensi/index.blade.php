@@ -252,7 +252,7 @@
 
             {{-- Identitas singkat --}}
             <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 class="text-lg font-bold text-slate-800">Identitas Siswa</h2>
+                <h2 class="text-lg font-bold text-slate-800">Identitas Mahasiswa</h2>
 
                 <dl class="mt-4 grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
                     <div>
@@ -264,7 +264,7 @@
                         <dd class="mt-1 font-semibold text-slate-800">{{ $siswa->kelas }}</dd>
                     </div>
                     <div>
-                        <dt class="text-xs uppercase tracking-wide text-slate-400">Mata Pelajaran</dt>
+                        <dt class="text-xs uppercase tracking-wide text-slate-400">Mata Kuliah</dt>
                         <dd class="mt-1 font-semibold text-slate-800">{{ $siswa->mata_pelajaran ?? '-' }}</dd>
                     </div>
                     <div>
