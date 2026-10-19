@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Models\Guru;
+use App\Models\Dosen;
 use App\Models\Jadwal;
 use App\Models\Kelas;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -38,8 +38,8 @@ class JadwalFactory extends Factory
 
         return [
             'kelas_id' => Kelas::factory(),
-            'guru_id' => Guru::factory(),
-            'mata_pelajaran' => fake()->randomElement([
+            'dosen_id' => Dosen::factory(),
+            'mata_kuliah' => fake()->randomElement([
                 'Matematika',
                 'Bahasa Indonesia',
                 'Fisika',
@@ -50,7 +50,7 @@ class JadwalFactory extends Factory
             'jam_mulai' => $slot[0],
             'jam_selesai' => $slot[1],
             'ruang' => 'R. '.fake()->numberBetween(101, 999),
-            'tahun_ajaran' => now()->year,
+            'tahun_akademik' => now()->year,
             'status' => 'Aktif',
         ];
     }

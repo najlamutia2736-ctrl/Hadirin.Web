@@ -1,10 +1,10 @@
 @extends('layouts.absensi')
 
-@section('title', 'Presensi Siswa · Hadirin.web')
+@section('title', 'Presensi Mahasiswa · Hadirin.web')
 
 @php
     // Peta status dari kolom enum `absensis.status` ke tampilan. Nilai `null`
-    // berarti siswa belum melakukan absensi hari ini.
+    // berarti mahasiswa belum melakukan absensi hari ini.
     $petakanStatus = [
         'hadir' => [
             'label' => 'Hadir',
@@ -59,15 +59,15 @@
             'rute' => route('absensi.scan-qr'),
         ],
         [
-            'label' => 'Kode NISN',
-            'deskripsi' => 'Ketik NISN pribadi yang tertera di kartu.',
+            'label' => 'Kode NIM',
+            'deskripsi' => 'Ketik NIM pribadi yang tertera di kartu.',
             'ikon' => 'fa-keyboard',
             'warna' => 'bg-emerald-50 text-emerald-600',
             'rute' => route('absensi.id-unik'),
         ],
         [
             'label' => 'Izin / Sakit',
-            'deskripsi' => 'Kirim keterangan kalau tidak bisa hadir di sekolah.',
+            'deskripsi' => 'Kirim keterangan kalau tidak bisa hadir di kampus.',
             'ikon' => 'fa-envelope-open-text',
             'warna' => 'bg-amber-50 text-amber-600',
             'rute' => route('absensi.izin-sakit'),
@@ -94,7 +94,7 @@
                 <div class="flex items-center gap-3">
                     <div class="hidden text-right sm:block">
                         <p class="text-sm font-semibold text-slate-800">{{ auth()->user()?->name }}</p>
-                        <p class="text-xs text-slate-500">{{ $siswa->kelas }}</p>
+                        <p class="text-xs text-slate-500">{{ $mahasiswa->kelas }}</p>
                     </div>
                     <span
                         class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-indigo-100 text-sm font-semibold text-indigo-700">
@@ -256,21 +256,17 @@
 
                 <dl class="mt-4 grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
                     <div>
-                        <dt class="text-xs uppercase tracking-wide text-slate-400">NISN</dt>
-                        <dd class="mt-1 font-semibold text-slate-800">{{ $siswa->nisn }}</dd>
+                        <dt class="text-xs uppercase tracking-wide text-slate-400">NIM</dt>
+                        <dd class="mt-1 font-semibold text-slate-800">{{ $mahasiswa->nim }}</dd>
                     </div>
                     <div>
                         <dt class="text-xs uppercase tracking-wide text-slate-400">Kelas</dt>
-                        <dd class="mt-1 font-semibold text-slate-800">{{ $siswa->kelas }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-xs uppercase tracking-wide text-slate-400">Mata Kuliah</dt>
-                        <dd class="mt-1 font-semibold text-slate-800">{{ $siswa->mata_pelajaran ?? '-' }}</dd>
+                        <dd class="mt-1 font-semibold text-slate-800">{{ $mahasiswa->kelas }}</dd>
                     </div>
                     <div>
                         <dt class="text-xs uppercase tracking-wide text-slate-400">Jenis Kelamin</dt>
                         <dd class="mt-1 font-semibold text-slate-800">
-                            {{ $siswa->jenis_kelamin === 'P' ? 'Perempuan' : ($siswa->jenis_kelamin === 'L' ? 'Laki-laki' : '-') }}
+                            {{ $mahasiswa->jenis_kelamin === 'P' ? 'Perempuan' : ($mahasiswa->jenis_kelamin === 'L' ? 'Laki-laki' : '-') }}
                         </dd>
                     </div>
                 </dl>

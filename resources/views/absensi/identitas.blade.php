@@ -13,12 +13,12 @@
 
                 <div class="flex items-center gap-3">
                     <div class="hidden text-right sm:block">
-                        <p class="text-sm font-semibold text-slate-800">{{ $siswa->user->name }}</p>
-                        <p class="text-xs text-slate-500">{{ $siswa->kelas }}</p>
+                        <p class="text-sm font-semibold text-slate-800">{{ $mahasiswa->user->name }}</p>
+                        <p class="text-xs text-slate-500">{{ $mahasiswa->kelas }}</p>
                     </div>
                     <span
                         class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-indigo-100 text-sm font-semibold text-indigo-700">
-                        {{ strtoupper(substr($siswa->user->name, 0, 1)) }}
+                        {{ strtoupper(substr($mahasiswa->user->name, 0, 1)) }}
                     </span>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
@@ -41,10 +41,10 @@
                     Kembali ke presensi
                 </a>
                 <h1 class="mt-3 text-2xl font-bold tracking-tight text-slate-800 sm:text-3xl">
-                    Identitas Siswa
+                    Identitas Mahasiswa
                 </h1>
                 <p class="mt-1 max-w-2xl text-slate-600">
-                    Data yang dipakai untuk presensi harian. Pastikan nama dan kontak wali selalu benar.
+                    Data yang dipakai untuk presensi harian. Pastikan nama dan kontak orang tua selalu benar.
                 </p>
             </section>
 
@@ -65,30 +65,27 @@
                             <div class="flex flex-wrap items-center gap-5">
                                 <span
                                     class="grid h-20 w-20 shrink-0 place-items-center rounded-2xl bg-indigo-100 text-3xl font-bold text-indigo-700">
-                                    {{ strtoupper(substr($siswa->user->name, 0, 1)) }}
+                                    {{ strtoupper(substr($mahasiswa->user->name, 0, 1)) }}
                                 </span>
 
                                 <div class="min-w-0 flex-1">
                                     <h2 class="truncate text-xl font-bold text-slate-800">
-                                        {{ $siswa->user->name }}
+                                        {{ $mahasiswa->user->name }}
                                     </h2>
                                     <p class="mt-0.5 text-sm text-slate-500">
-                                        {{ $siswa->kelas }}
-                                        @if ($siswa->mata_pelajaran)
-                                            &middot; {{ $siswa->mata_pelajaran }}
-                                        @endif
+                                        {{ $mahasiswa->kelas }}
                                     </p>
                                     <span
-                                        class="mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold {{ $siswa->status === 'Aktif' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-700' }}">
+                                        class="mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold {{ $mahasiswa->status === 'Aktif' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-700' }}">
                                         <i class="fas fa-circle text-[6px]"></i>
-                                        {{ $siswa->status }}
+                                        {{ $mahasiswa->status }}
                                     </span>
                                 </div>
                             </div>
                         </div>
                     </section>
 
-                    {{-- Formulir yang boleh diubah siswa sendiri --}}
+                    {{-- Formulir yang boleh diubah mahasiswa sendiri --}}
                     <form method="POST" action="{{ route('absensi.identitas.update') }}"
                         class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                         @csrf
@@ -124,7 +121,7 @@
                                     <span class="text-red-500">*</span>
                                 </label>
                                 <input type="text" id="name" name="name"
-                                    value="{{ old('name', $siswa->user->name) }}" required maxlength="255"
+                                    value="{{ old('name', $mahasiswa->user->name) }}" required maxlength="255"
                                     class="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-200">
                                 @error('name')
                                     <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
@@ -140,10 +137,10 @@
                                 <select id="gender" name="gender" required
                                     class="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-200">
                                     <option value="">Pilih Jenis Kelamin</option>
-                                    <option value="L" @selected(old('gender', $siswa->jenis_kelamin) === 'L')>
+                                    <option value="L" @selected(old('gender', $mahasiswa->jenis_kelamin) === 'L')>
                                         Laki-laki
                                     </option>
-                                    <option value="P" @selected(old('gender', $siswa->jenis_kelamin) === 'P')>
+                                    <option value="P" @selected(old('gender', $mahasiswa->jenis_kelamin) === 'P')>
                                         Perempuan
                                     </option>
                                 </select>
@@ -152,30 +149,30 @@
                                 @enderror
                             </div>
 
-                            {{-- Nama wali --}}
+                            {{-- Nama orang tua / wali --}}
                             <div>
                                 <label for="parent" class="block text-sm font-medium text-slate-700">
-                                    Nama Wali
+                                    Nama Orang Tua / Wali
                                 </label>
                                 <input type="text" id="parent" name="parent"
-                                    value="{{ old('parent', $siswa->wali) }}" maxlength="255"
+                                    value="{{ old('parent', $mahasiswa->wali) }}" maxlength="255"
                                     placeholder="Contoh: Budi Santoso"
                                     class="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-indigo-300 focus:ring-2 focus:ring-indigo-200">
                                 <p class="mt-1.5 text-xs text-slate-500">
-                                    Dipakai guru saat ada hal yang perlu dikonfirmasi.
+                                    Dipakai dosen saat ada hal yang perlu dikonfirmasi.
                                 </p>
                                 @error('parent')
                                     <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
                                 @enderror
                             </div>
 
-                            {{-- Telepon wali --}}
+                            {{-- Telepon orang tua --}}
                             <div>
                                 <label for="phone" class="block text-sm font-medium text-slate-700">
-                                    Telepon / WhatsApp Wali
+                                    Telepon / WhatsApp Orang Tua
                                 </label>
                                 <input type="text" id="phone" name="phone" inputmode="tel"
-                                    value="{{ old('phone', $siswa->telepon_wali) }}" maxlength="20"
+                                    value="{{ old('phone', $mahasiswa->telepon_wali) }}" maxlength="20"
                                     placeholder="Contoh: 08123456789"
                                     class="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-indigo-300 focus:ring-2 focus:ring-indigo-200">
                                 @error('phone')
@@ -210,34 +207,34 @@
 
                         <dl class="mt-4 space-y-3">
                             <div class="rounded-xl bg-slate-50 p-3">
-                                <dt class="text-xs text-slate-500">NISN</dt>
+                                <dt class="text-xs text-slate-500">NIM</dt>
                                 <dd class="mt-0.5 font-mono text-lg font-bold tracking-wide text-slate-800">
-                                    {{ $siswa->nisn }}
+                                    {{ $mahasiswa->nim }}
                                 </dd>
                                 <p class="mt-1 text-[11px] leading-relaxed text-slate-500">
-                                    Selalu dipakai saat memilih Kode NISN. Salah ketik berarti presen manualmu gagal.
+                                    Selalu dipakai saat memilih Kode NIM. Salah ketik berarti presen manualmu gagal.
                                 </p>
                             </div>
 
                             <div class="rounded-xl bg-slate-50 p-3">
                                 <dt class="text-xs text-slate-500">Kelas</dt>
-                                <dd class="mt-0.5 text-sm font-semibold text-slate-800">{{ $siswa->kelas }}</dd>
+                                <dd class="mt-0.5 text-sm font-semibold text-slate-800">{{ $mahasiswa->kelas }}</dd>
                                 <p class="mt-1 text-[11px] leading-relaxed text-slate-500">
-                                    Dipakai guru untuk memfilter siswa yang dia ampu.
+                                    Dipakai dosen untuk memfilter mahasiswa yang dia ampu.
                                 </p>
                             </div>
 
                             <div class="rounded-xl bg-slate-50 p-3">
                                 <dt class="text-xs text-slate-500">Email Akun</dt>
                                 <dd class="mt-0.5 break-all text-xs font-medium text-slate-700">
-                                    {{ $siswa->user->email }}
+                                    {{ $mahasiswa->user->email }}
                                 </dd>
                             </div>
                         </dl>
 
                         <p class="mt-3 flex gap-2 text-[11px] leading-relaxed text-slate-500">
                             <i class="fas fa-circle-info mt-0.5 text-[10px] text-slate-400"></i>
-                            NISN, kelas, dan email sudah terdaftar di sekolah. Salah satu salah, hubungi wali kelas
+                            NIM, kelas, dan email sudah terdaftar di kampus. Salah satu salah, hubungi pembimbing akademik
                             supaya diperbaiki dari sisi admin.
                         </p>
                     </div>
@@ -266,14 +263,14 @@
                         </a>
                     </div>
 
-                    {{-- Kontak wali --}}
+                    {{-- Kontak orang tua --}}
                     <div class="rounded-2xl border border-indigo-100 bg-indigo-50/60 p-5">
                         <h2 class="text-sm font-semibold text-indigo-900">
                             <i class="fas fa-circle-info mr-1.5 text-indigo-500"></i>
                             Kenapa dibatasi
                         </h2>
                         <p class="mt-2 text-xs leading-relaxed text-indigo-800/80">
-                            Kalau semua data bisa diubah sendiri, presensinya bisa dimanipulasi. NISN
+                            Kalau semua data bisa diubah sendiri, presensinya bisa dimanipulasi. NIM
                             menentukan kepresenan, dan kelas menentukan siapa yang melihat presensimu.
                         </p>
                     </div>

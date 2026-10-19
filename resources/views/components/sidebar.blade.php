@@ -1,7 +1,7 @@
 @php
     // $menuGroups & $menuUser dikirim oleh View Composer di AppServiceProvider,
-    // dipilih dari prefix nama route (cms.* / guru.*). Lihat config/menu.php.
-    $brandSubtitle = $menuBrandSubtitle ?? 'School Management';
+    // dipilih dari prefix nama route (cms.* / dosen.*). Lihat config/menu.php.
+    $brandSubtitle = $menuBrandSubtitle ?? 'Manajemen Kampus';
 @endphp
 
 <aside

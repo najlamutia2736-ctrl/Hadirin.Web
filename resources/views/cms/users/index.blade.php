@@ -32,8 +32,8 @@
     @php
         $roleClasses = [
             'Admin' => 'bg-amber-50 text-amber-600',
-            'Guru' => 'bg-blue-50 text-blue-600',
-            'Siswa' => 'bg-green-50 text-green-600',
+            'Dosen' => 'bg-blue-50 text-blue-600',
+            'Mahasiswa' => 'bg-green-50 text-green-600',
             'Operator' => 'bg-purple-50 text-purple-600',
         ];
     @endphp
@@ -42,7 +42,7 @@
     <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
             <h2 class="text-2xl font-bold text-gray-800">Manajemen Pengguna</h2>
-            <p class="mt-1 text-gray-600">Kelola akun, peran, dan status pengguna sekolah.</p>
+            <p class="mt-1 text-gray-600">Kelola akun, peran, dan status pengguna kampus.</p>
         </div>
         <button type="button" data-modal-open="modal-tambah"
             class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700">
@@ -119,7 +119,7 @@
                                 </div>
                             </td>
                             <td class="px-6 py-4 text-gray-500">
-                                {{ $user->siswa?->jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan' }}
+                                {{ $user->mahasiswa?->jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan' }}
                             </td>
                             <td class="px-6 py-4">
                                 <span
@@ -225,7 +225,7 @@
                 </div>
                 <div class="mb-4">
                     <label class="mb-1.5 block text-sm font-medium text-gray-700" for="email">Email</label>
-                    <input id="email" name="email" type="email" required placeholder="nama@sekolah.sch.id"
+                    <input id="email" name="email" type="email" required placeholder="nama@kampus.ac.id"
                         value="{{ old('email') }}"
                         class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
                     @error('email')

@@ -1,12 +1,12 @@
 <?php
 
 use App\Models\Kelas;
-use App\Models\Siswa;
+use App\Models\Mahasiswa;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 /*
-| Halaman kerja (CMS, dashboard guru, absensi) hanya boleh dibuka setelah login
+| Halaman kerja (CMS, dashboard dosen, absensi) hanya boleh dibuka setelah login
 | berhasil, dan tiap role hanya boleh masuk ke arealanya sendiri. Test di file
 | ini mengunci kedua aturan itu supaya tidak ada area yang terbuka lagi.
 */
@@ -22,10 +22,10 @@ function halamanCms(): array
 {
     return [
         ['cms.dashboard', 'Dashboard'],
-        ['cms.student', 'Manajemen Siswa'],
-        ['cms.teachers', 'Manajemen Guru'],
-        ['cms.classes', 'Manajemen Kelas'],
-        ['cms.mata-pelajaran', 'Manajemen Mata Pelajaran'],
+        ['cms.mahasiswa', 'Manajemen Mahasiswa'],
+        ['cms.dosens', 'Manajemen Dosen'],
+        ['cms.kelas', 'Manajemen Kelas'],
+        ['cms.mata-kuliah', 'Manajemen Mata Kuliah'],
         ['cms.jadwal', 'Jadwal Mengajar'],
         ['cms.users', 'Manajemen Pengguna'],
         ['cms.rekap', 'Rekap Kehadiran'],
@@ -33,13 +33,13 @@ function halamanCms(): array
 }
 
 /**
- * Route dashboard guru yang harus selalu tertutup untuk tamu.
+ * Route dashboard dosen yang harus selalu tertutup untuk tamu.
  *
  * @return list<string>
  */
-function halamanGuru(): array
+function halamanDosen(): array
 {
-    return ['guru.dashboard', 'guru.kelola', 'guru.laporan'];
+    return ['dosen.dashboard', 'dosen.kelola', 'dosen.laporan'];
 }
 
 /*
@@ -51,60 +51,60 @@ test('tamu diarahkan ke halaman login saat membuka halaman cms', function (strin
         ->assertRedirect(route('login'));
 })->with(halamanCms());
 
-test('tamu diarahkan ke halaman login saat membuka dashboard guru', function (string $route) {
+test('tamu diarahkan ke halaman login saat membuka dashboard dosen', function (string $route) {
     $this->get(route($route))
         ->assertRedirect(route('login'));
-})->with(halamanGuru());
+})->with(halamanDosen());
 
 test('tamu tidak bisa mengirim request tulis ke halaman cms', function () {
     loginAdmin();
-    $kelas = Kelas::factory()->create(['nama_kelas' => 'X.9']);
+    $kelas = Kelas::factory()->create(['nama_kelas' => 'Kelas Z']);
 
     // Logout dulu supaya benar-benar jadi tamu, lalu coba request tulis.
     $this->post(route('logout'));
 
-    $this->post(route('cms.classes.store'), [
+    $this->post(route('cms.kelas.store'), [
         'name' => 'Kelas Gelap',
         'level' => 'X',
-        'tahun_ajaran' => now()->year,
+        'tahun_akademik' => now()->year,
     ])->assertRedirect(route('login'));
 
     $this->assertDatabaseMissing('kelas', ['nama_kelas' => 'Kelas Gelap']);
     expect($kelas->fresh())->not->toBeNull();
 });
 
-test('endpoint json dashboard guru menolak tamu dengan 401', function () {
-    $this->getJson(route('guru.dashboard'))->assertUnauthorized();
-    $this->postJson(route('guru.kelola.siswa.store'), [])->assertUnauthorized();
+test('endpoint json dashboard dosen menolak tamu dengan 401', function () {
+    $this->getJson(route('dosen.dashboard'))->assertUnauthorized();
+    $this->postJson(route('dosen.kelola.mahasiswa.store'), [])->assertUnauthorized();
 });
 
 /*
 | Sudah login, tapi role-nya harus cocok dengan area yang dibuka.
 */
 
-test('siswa yang sudah login tidak bisa membuka halaman cms', function (string $route) {
-    $this->actingAs(User::factory()->create(['role' => 'Siswa']))
+test('mahasiswa yang sudah login tidak bisa membuka halaman cms', function (string $route) {
+    $this->actingAs(User::factory()->create(['role' => 'Mahasiswa']))
         ->get(route($route))
         ->assertForbidden();
 })->with(halamanCms());
 
-test('siswa yang sudah login tidak bisa membuka dashboard guru', function (string $route) {
-    $this->actingAs(User::factory()->create(['role' => 'Siswa']))
+test('mahasiswa yang sudah login tidak bisa membuka dashboard dosen', function (string $route) {
+    $this->actingAs(User::factory()->create(['role' => 'Mahasiswa']))
         ->get(route($route))
         ->assertForbidden();
-})->with(halamanGuru());
+})->with(halamanDosen());
 
-test('guru yang sudah login tidak bisa membuka halaman cms', function (string $route) {
-    loginGuru();
+test('dosen yang sudah login tidak bisa membuka halaman cms', function (string $route) {
+    loginDosen();
 
     $this->get(route($route))->assertForbidden();
 })->with(halamanCms());
 
-test('admin yang sudah login tidak bisa membuka dashboard guru', function (string $route) {
+test('admin yang sudah login tidak bisa membuka dashboard dosen', function (string $route) {
     loginAdmin();
 
     $this->get(route($route))->assertForbidden();
-})->with(halamanGuru());
+})->with(halamanDosen());
 
 test('admin dan operator tetap bisa membuka seluruh halaman cms', function (string $role) {
     loginAdmin($role);
@@ -116,10 +116,10 @@ test('admin dan operator tetap bisa membuka seluruh halaman cms', function (stri
     }
 })->with(['Admin', 'Operator']);
 
-test('guru tetap bisa membuka seluruh halaman dashboard guru', function () {
-    loginGuru();
+test('dosen tetap bisa membuka seluruh halaman dashboard dosen', function () {
+    loginDosen();
 
-    foreach (halamanGuru() as $route) {
+    foreach (halamanDosen() as $route) {
         $this->get(route($route))->assertOk();
     }
 });
@@ -147,45 +147,45 @@ test('logout mengembalikan akun ke status tamu', function () {
 
 test('navbar tamu tidak menampilkan link dashboard', function () {
     // Yang dicek adalah label link di navbar, bukan URL-nya: kartu peran di
-    // beranda memang memuat tautan ke dashboard guru dan admin karena tugasnya
+    // beranda memang memuat tautan ke dashboard dosen dan admin karena tugasnya
     // justru menawarkan pilihan peran. Yang tidak boleh bocor ke tamu adalah
     // menu navigasi, karena keduanya dilindungi middleware `role`.
     foreach (['beranda', 'login'] as $route) {
         $this->get(route($route))
             ->assertOk()
             ->assertSee(route('login'), false)
-            ->assertDontSee('>Dashboard Guru<', false)
+            ->assertDontSee('>Dashboard Dosen<', false)
             ->assertDontSee('>Dashboard Admin<', false)
             ->assertDontSee('>Rekap<', false);
     }
 });
 
-test('navbar admin tidak menampilkan link dashboard guru', function () {
+test('navbar admin tidak menampilkan link dashboard dosen', function () {
     loginAdmin();
 
     $this->get(route('cms.dashboard'))
         ->assertOk()
         ->assertSee(route('cms.dashboard'), false)
-        ->assertDontSee(route('guru.dashboard'), false);
+        ->assertDontSee(route('dosen.dashboard'), false);
 });
 
-test('navbar guru tidak menampilkan link area cms', function () {
-    loginGuru();
+test('navbar dosen tidak menampilkan link area cms', function () {
+    loginDosen();
 
-    $this->get(route('guru.dashboard'))
+    $this->get(route('dosen.dashboard'))
         ->assertOk()
-        ->assertSee(route('guru.dashboard'), false)
+        ->assertSee(route('dosen.dashboard'), false)
         ->assertDontSee('>Dashboard Admin<', false)
         ->assertDontSee(route('cms.rekap'), false);
 });
 
 /*
-| Absensi tetap milik siswa. Siswanya sendiri harus bisa masuk, akun lain tidak.
+| Absensi tetap milik mahasiswa. Mahasiswanya sendiri harus bisa masuk, akun lain tidak.
 */
 
-test('siswa yang punya profil tetap bisa membuka halaman absensi', function () {
-    $user = User::factory()->create(['role' => 'Siswa', 'status' => 'Aktif']);
-    Siswa::factory()->create(['user_id' => $user->id]);
+test('mahasiswa yang punya profil tetap bisa membuka halaman absensi', function () {
+    $user = User::factory()->create(['role' => 'Mahasiswa', 'status' => 'Aktif']);
+    Mahasiswa::factory()->create(['user_id' => $user->id]);
 
     $this->actingAs($user)
         ->get(route('absensi.index'))

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Absensi;
-use App\Models\Siswa;
+use App\Models\Mahasiswa;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\View\View;
@@ -51,7 +51,7 @@ class RekapController extends Controller
      */
     private const JUDUL_KOLOM = [
         'kelas' => 'Kelas',
-        'students' => 'Jumlah Siswa',
+        'mahasiswa' => 'Jumlah Mahasiswa',
         'hadir' => 'Hadir',
         'izin' => 'Izin',
         'sakit' => 'Sakit',
@@ -94,8 +94,8 @@ class RekapController extends Controller
 
             fwrite($keluaran, "\xEF\xBB\xBF");
 
-            fputcsv($keluaran, ['REKAP KEHADIRAN SISWA'], ';');
-            fputcsv($keluaran, ['Sekolah', config('app.name')], ';');
+            fputcsv($keluaran, ['REKAP KEHADIRAN MAHASISWA'], ';');
+            fputcsv($keluaran, ['Kampus', config('app.name')], ';');
             fputcsv($keluaran, ['Periode', $periode['label']], ';');
             fputcsv($keluaran, ['Kelas', $periode['kelas'] ?? 'Semua Kelas'], ';');
             fputcsv($keluaran, ['Dicetak', $periode['dicetak']], ';');
@@ -106,7 +106,7 @@ class RekapController extends Controller
             foreach ($rekap as $baris) {
                 fputcsv($keluaran, [
                     $baris['kelas'],
-                    $baris['students'],
+                    $baris['mahasiswa'],
                     $baris['hadir'],
                     $baris['izin'],
                     $baris['sakit'],
@@ -118,7 +118,7 @@ class RekapController extends Controller
 
             fputcsv($keluaran, [
                 'TOTAL',
-                $total['students'],
+                $total['mahasiswa'],
                 $total['hadir'],
                 $total['izin'],
                 $total['sakit'],
@@ -206,11 +206,11 @@ class RekapController extends Controller
      * Agregasi rekap kehadiran per kelas untuk periode tertentu.
      *
      * @param  array{bulan:?string,kelas:?string,q:?string,dari:Carbon,sampai:Carbon,label:string,kunci:string,dicetak:string}  $periode
-     * @return list<array{kelas:string,students:int,hadir:int,izin:int,sakit:int,alpa:int,total:int,persentase:int}>
+     * @return list<array{kelas:string,mahasiswa:int,hadir:int,izin:int,sakit:int,alpa:int,total:int,persentase:int}>
      */
     private function barisRekap(array $periode): array
     {
-        $jumlahSiswa = Siswa::query()
+        $jumlahMahasiswa = Mahasiswa::query()
             ->when($periode['kelas'] !== null, fn ($query) => $query->where('kelas', $periode['kelas']))
             ->when($periode['q'] !== null, fn ($query) => $query->where('kelas', 'like', '%'.$periode['q'].'%'))
             ->selectRaw('kelas, count(*) as total')
@@ -218,17 +218,17 @@ class RekapController extends Controller
             ->pluck('total', 'kelas');
 
         $catatanAbsensi = Absensi::query()
-            ->join('siswas', 'absensis.siswa_id', '=', 'siswas.id')
+            ->join('mahasiswa', 'absensis.mahasiswa_id', '=', 'mahasiswa.id')
             ->whereBetween('absensis.waktu_absen', [$periode['dari'], $periode['sampai']])
-            ->when($periode['kelas'] !== null, fn ($query) => $query->where('siswas.kelas', $periode['kelas']))
-            ->when($periode['q'] !== null, fn ($query) => $query->where('siswas.kelas', 'like', '%'.$periode['q'].'%'))
-            ->selectRaw('siswas.kelas as kelas, absensis.status as status, count(*) as total')
-            ->groupBy('siswas.kelas', 'absensis.status')
+            ->when($periode['kelas'] !== null, fn ($query) => $query->where('mahasiswa.kelas', $periode['kelas']))
+            ->when($periode['q'] !== null, fn ($query) => $query->where('mahasiswa.kelas', 'like', '%'.$periode['q'].'%'))
+            ->selectRaw('mahasiswa.kelas as kelas, absensis.status as status, count(*) as total')
+            ->groupBy('mahasiswa.kelas', 'absensis.status')
             ->get();
 
-        $kosong = fn (string $kelas, int $students): array => [
+        $kosong = fn (string $kelas, int $mahasiswa): array => [
             'kelas' => $kelas,
-            'students' => $students,
+            'mahasiswa' => $mahasiswa,
             'hadir' => 0,
             'izin' => 0,
             'sakit' => 0,
@@ -237,7 +237,7 @@ class RekapController extends Controller
             'persentase' => 0,
         ];
 
-        $baris = $jumlahSiswa
+        $baris = $jumlahMahasiswa
             ->mapWithKeys(fn ($total, $kelas) => [$kelas => $kosong((string) $kelas, (int) $total)])
             ->all();
 
@@ -270,12 +270,12 @@ class RekapController extends Controller
     /**
      * Jumlah keseluruhan seluruh baris rekap, dipakai untuk baris TOTAL pada export.
      *
-     * @param  list<array{kelas:string,students:int,hadir:int,izin:int,sakit:int,alpa:int,total:int,persentase:int}>  $rekap
-     * @return array{students:int,hadir:int,izin:int,sakit:int,alpa:int,total:int,persentase:int}
+     * @param  list<array{kelas:string,mahasiswa:int,hadir:int,izin:int,sakit:int,alpa:int,total:int,persentase:int}>  $rekap
+     * @return array{mahasiswa:int,hadir:int,izin:int,sakit:int,alpa:int,total:int,persentase:int}
      */
     private function ringkasan(array $rekap): array
     {
-        $total = ['students' => 0, 'hadir' => 0, 'izin' => 0, 'sakit' => 0, 'alpa' => 0, 'total' => 0, 'persentase' => 0];
+        $total = ['mahasiswa' => 0, 'hadir' => 0, 'izin' => 0, 'sakit' => 0, 'alpa' => 0, 'total' => 0, 'persentase' => 0];
 
         foreach ($rekap as $baris) {
             foreach (array_keys($total) as $kolom) {
@@ -316,13 +316,13 @@ class RekapController extends Controller
     }
 
     /**
-     * Daftar kelas yang pernah ada siswanya, untuk dropdown filter kelas.
+     * Daftar kelas yang pernah ada mahasiswanya, untuk dropdown filter kelas.
      *
      * @return list<string>
      */
     private function pilihanKelas(): array
     {
-        $daftar = Siswa::query()
+        $daftar = Mahasiswa::query()
             ->whereNotNull('kelas')
             ->distinct()
             ->pluck('kelas')

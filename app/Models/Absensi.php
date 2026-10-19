@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;  // ← Pakai BelongsTo (2
 class Absensi extends Model
 {
     protected $fillable = [
-        'siswa_id',
+        'mahasiswa_id',
         'sesi_absensi_id',
         'waktu_absen',
         'status',
@@ -24,11 +24,11 @@ class Absensi extends Model
 
     // ===== RELASI =====
 
-    // Absensi milik 1 Siswa (BelongsTo)
-    // Karena absensi punya foreign key 'siswa_id'
-    public function siswa(): BelongsTo
+    // Absensi milik 1 Mahasiswa (BelongsTo)
+    // Karena absensi punya foreign key 'mahasiswa_id'
+    public function mahasiswa(): BelongsTo
     {
-        return $this->belongsTo(Siswa::class, 'siswa_id');
+        return $this->belongsTo(Mahasiswa::class, 'mahasiswa_id');
     }
 
     // Absensi milik 1 SesiAbsensi (BelongsTo)

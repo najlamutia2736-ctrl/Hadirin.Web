@@ -3,7 +3,7 @@
 
     Dipanggil dengan:
       - $jadwal : model yang sedang diedit, atau `null` saat tambah
-      - $kelasList, $guruList, $daftarHari, $daftarStatus : pilihan dropdown
+      - $kelasList, $dosenList, $daftarHari, $daftarStatus : pilihan dropdown
 
     Nilai `old()` diutamakan supaya isian yang gagal validasi tidak hilang,
     dan nilai model dipakai sebagai cadangannya.
@@ -14,18 +14,18 @@
     $nilai = fn (string $kolom, $cadangan = null) => old($kolom, $cadangan);
 
     $kelasError = $errors->has('kelas_id');
-    $guruError = $errors->has('guru_id');
+    $dosenError = $errors->has('dosen_id');
     $hariError = $errors->has('hari');
     $jamMulaiError = $errors->has('jam_mulai');
     $jamSelesaiError = $errors->has('jam_selesai');
-    $tahunError = $errors->has('tahun_ajaran');
+    $tahunError = $errors->has('tahun_akademik');
     $statusError = $errors->has('status');
 
     // Kelas bawaan untuk form tambah: kelas aktif pertama.
     $kelasDefault = $nilai('kelas_id', $item?->kelas_id ?? $kelasList->first()?->id);
     $hariDefault = $nilai('hari', $item?->hari ?? $daftarHari[0]);
     $statusDefault = $nilai('status', $item?->status ?? $daftarStatus[0]);
-    $tahunDefault = $nilai('tahun_ajaran', $item?->tahun_ajaran ?? now()->year);
+    $tahunDefault = $nilai('tahun_akademik', $item?->tahun_akademik ?? now()->year);
 @endphp
 
 <div class="grid gap-5 p-6 sm:grid-cols-2">
@@ -51,41 +51,41 @@
     </div>
 
     <div>
-        <label for="guru_id" class="mb-2 block text-sm font-semibold text-gray-700">
-            Guru Pengajar <span class="text-red-500" aria-hidden="true">*</span>
+        <label for="dosen_id" class="mb-2 block text-sm font-semibold text-gray-700">
+            Dosen Pengajar <span class="text-red-500" aria-hidden="true">*</span>
         </label>
-        <select id="guru_id" name="guru_id" required @class([
+        <select id="dosen_id" name="dosen_id" required @class([
             'w-full rounded-lg border px-3 py-2.5 text-sm text-gray-700 shadow-sm transition focus:outline-none focus:ring-2',
-            'border-red-500 bg-red-50/40 focus:border-red-500 focus:ring-red-500' => $guruError,
-            'border-gray-200 bg-white focus:border-indigo-500 focus:ring-indigo-500' => ! $guruError,
+            'border-red-500 bg-red-50/40 focus:border-red-500 focus:ring-red-500' => $dosenError,
+            'border-gray-200 bg-white focus:border-indigo-500 focus:ring-indigo-500' => ! $dosenError,
         ])>
-            <option value="" disabled @selected((string) $nilai('guru_id', $item?->guru_id) === '')>Pilih guru</option>
-            @foreach ($guruList as $guru)
-                <option value="{{ $guru->id }}" @selected((string) $nilai('guru_id', $item?->guru_id) === (string) $guru->id)>
-                    {{ $guru->user?->name ?? 'Guru tanpa akun' }}
+            <option value="" disabled @selected((string) $nilai('dosen_id', $item?->dosen_id) === '')>Pilih dosen</option>
+            @foreach ($dosenList as $dosen)
+                <option value="{{ $dosen->id }}" @selected((string) $nilai('dosen_id', $item?->dosen_id) === (string) $dosen->id)>
+                    {{ $dosen->user?->name ?? 'Dosen tanpa akun' }}
                 </option>
             @endforeach
         </select>
-        @error('guru_id')
+        @error('dosen_id')
             <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
         @enderror
     </div>
 
     <div class="sm:col-span-2">
-        <label for="mata_pelajaran" class="mb-2 block text-sm font-semibold text-gray-700">
-            Mata Pelajaran <span class="text-red-500" aria-hidden="true">*</span>
+        <label for="mata_kuliah" class="mb-2 block text-sm font-semibold text-gray-700">
+            Mata Kuliah <span class="text-red-500" aria-hidden="true">*</span>
         </label>
-        <input id="mata_pelajaran" name="mata_pelajaran" type="text" required maxlength="100"
-            value="{{ $nilai('mata_pelajaran', $item?->mata_pelajaran) }}"
+        <input id="mata_kuliah" name="mata_kuliah" type="text" required maxlength="100"
+            value="{{ $nilai('mata_kuliah', $item?->mata_kuliah) }}"
             placeholder="Contoh: Informatika" autocomplete="off"
             @class([
                 'w-full rounded-lg border px-3 py-2.5 text-sm text-gray-700 shadow-sm transition placeholder:text-gray-400 focus:outline-none focus:ring-2',
                 'border-red-500 bg-red-50/40 focus:border-red-500 focus:ring-red-500' => $errors->has(
-                    'mata_pelajaran'),
+                    'mata_kuliah'),
                 'border-gray-200 bg-white focus:border-indigo-500 focus:ring-indigo-500' => ! $errors->has(
-                    'mata_pelajaran'),
+                    'mata_kuliah'),
             ])>
-        @error('mata_pelajaran')
+        @error('mata_kuliah')
             <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
         @enderror
     </div>
@@ -109,17 +109,17 @@
     </div>
 
     <div>
-        <label for="tahun_ajaran" class="mb-2 block text-sm font-semibold text-gray-700">
-            Tahun Ajaran <span class="text-red-500" aria-hidden="true">*</span>
+        <label for="tahun_akademik" class="mb-2 block text-sm font-semibold text-gray-700">
+            Tahun Akademik <span class="text-red-500" aria-hidden="true">*</span>
         </label>
-        <input id="tahun_ajaran" name="tahun_ajaran" type="number" required
+        <input id="tahun_akademik" name="tahun_akademik" type="number" required
             min="2000" max="{{ now()->year + 2 }}" value="{{ $tahunDefault }}"
             @class([
                 'w-full rounded-lg border px-3 py-2.5 text-sm text-gray-700 shadow-sm transition focus:outline-none focus:ring-2',
                 'border-red-500 bg-red-50/40 focus:border-red-500 focus:ring-red-500' => $tahunError,
                 'border-gray-200 bg-white focus:border-indigo-500 focus:ring-indigo-500' => ! $tahunError,
             ])>
-        @error('tahun_ajaran')
+        @error('tahun_akademik')
             <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
         @enderror
     </div>

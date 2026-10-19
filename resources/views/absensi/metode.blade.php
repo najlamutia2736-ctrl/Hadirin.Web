@@ -12,7 +12,7 @@
     /*
     | Status hari ini menentukan banner di bawah. Nilainya sama dengan peta
     | status di halaman absensi utama, supaya dua halaman tidak pernah
-    | berbeda pendapat tentang kehadiran siswa yang sama.
+    | berbeda pendapat tentang kehadiran mahasiswa yang sama.
     */
     $statusHariIni = match ($hariIni?->status) {
         'hadir' => [
@@ -54,12 +54,12 @@
 
                 <div class="flex items-center gap-3">
                     <div class="hidden text-right sm:block">
-                        <p class="text-sm font-semibold text-slate-800">{{ $siswa->user->name }}</p>
-                        <p class="text-xs text-slate-500">{{ $siswa->kelas }}</p>
+                        <p class="text-sm font-semibold text-slate-800">{{ $mahasiswa->user->name }}</p>
+                        <p class="text-xs text-slate-500">{{ $mahasiswa->kelas }}</p>
                     </div>
                     <span
                         class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-indigo-100 text-sm font-semibold text-indigo-700">
-                        {{ strtoupper(substr($siswa->user->name, 0, 1)) }}
+                        {{ strtoupper(substr($mahasiswa->user->name, 0, 1)) }}
                     </span>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
@@ -86,7 +86,7 @@
                 </h1>
                 <p class="mt-1 max-w-2xl text-slate-600">
                     Ada beberapa cara untuk mencatat kehadiran. Pilih yang paling sesuai dengan situasimu
-                    di sekolah.
+                    di kampus.
                 </p>
             </section>
 
@@ -134,7 +134,7 @@
             <section>
                 <h2 class="text-lg font-bold text-slate-800">Pilihan Cara Presen</h2>
                 <p class="mt-0.5 text-sm text-slate-500">
-                    Scan QR Code dan Kode NISN sama-sama mencatat kehadiran. Izin / Sakit untuk pengajuan, dan
+                    Scan QR Code dan Kode NIM sama-sama mencatat kehadiran. Izin / Sakit untuk pengajuan, dan
                     Notifikasi hanya untuk melihat riwayat.
                 </p>
 
@@ -219,7 +219,7 @@
                         </li>
                         <li class="flex gap-2">
                             <i class="fas fa-circle-check mt-0.5 text-[10px] text-indigo-500"></i>
-                            Kamera bermasalah, pilih Kode NISN.
+                            Kamera bermasalah, pilih Kode NIM.
                         </li>
                         <li class="flex gap-2">
                             <i class="fas fa-circle-check mt-0.5 text-[10px] text-indigo-500"></i>
@@ -240,11 +240,11 @@
                         </li>
                         <li class="flex gap-2">
                             <i class="fas fa-circle-check mt-0.5 text-[10px] text-slate-400"></i>
-                            Kehadiran yang tercatat langsung terlihat oleh guru.
+                            Kehadiran yang tercatat langsung terlihat oleh dosen.
                         </li>
                         <li class="flex gap-2">
                             <i class="fas fa-circle-check mt-0.5 text-[10px] text-slate-400"></i>
-                            Salah presen? Hubungi wali kelas supaya bisa diperbaiki.
+                            Salah presen? Hubungi pembimbing akademik supaya bisa diperbaiki.
                         </li>
                     </ul>
                 </div>

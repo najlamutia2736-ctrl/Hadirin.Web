@@ -80,7 +80,7 @@
                         Email <span class="text-red-500" aria-hidden="true">*</span>
                     </label>
                     <input id="email" name="email" type="email" value="{{ old('email') }}" required maxlength="255"
-                        autocomplete="email" placeholder="nama@sekolah.sch.id"
+                        autocomplete="email" placeholder="nama@kampus.ac.id"
                         aria-invalid="{{ $errors->has('email') ? 'true' : 'false' }}" @class([
                             'w-full rounded-lg border px-3 py-2.5 text-sm text-gray-700 shadow-sm transition placeholder:text-gray-400 focus:outline-none focus:ring-2',
                             'border-red-500 bg-red-50/40 focus:border-red-500 focus:ring-red-500' => $errors->has(
@@ -107,8 +107,8 @@
                         ])>
                         <option value="" @selected(old('role') === '') disabled>Pilih peran</option>
                         <option value="Admin" @selected(old('role') === 'Admin')>Admin</option>
-                        <option value="Guru" @selected(old('role') === 'Guru')>Guru</option>
-                        <option value="Siswa" @selected(old('role') === 'Siswa')>Siswa</option>
+                        <option value="Dosen" @selected(old('role') === 'Dosen')>Dosen</option>
+                        <option value="Mahasiswa" @selected(old('role') === 'Mahasiswa')>Mahasiswa</option>
                         <option value="Operator" @selected(old('role') === 'Operator')>Operator</option>
                     </select>
                     @error('role')

@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Guru;
+use App\Models\Dosen;
 use App\Models\Kelas;
-use App\Models\MataPelajaran;
+use App\Models\MataKuliah;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -14,150 +14,150 @@ use Illuminate\View\View;
 class KelasController extends Controller
 {
     /**
-     * Validasi guru pengampu kelas.
+     * Validasi dosen pengampu kelas.
      *
      * Dipakai bersama oleh form tambah dan ubah kelas. Daftar ini mengisi
-     * tabel penghubung `guru_kelas`, yang dibaca `Guru::kelasDiampu()` untuk
-     * membatasi kelas mana saja yang tampil di dashboard guru.
+     * tabel penghubung `dosen_kelas`, yang dibaca `Dosen::kelasDiampu()` untuk
+     * membatasi kelas mana saja yang tampil di dashboard dosen.
      *
      * @return array<string, array<int, string>>
      */
-    private function aturanGuruPengampu(): array
+    private function aturanDosenPengampu(): array
     {
         return [
-            'teachers' => ['nullable', 'array'],
-            'teachers.*' => ['integer', 'exists:gurus,id'],
+            'dosens' => ['nullable', 'array'],
+            'dosens.*' => ['integer', 'exists:dosens,id'],
         ];
     }
 
     /**
-     * Bersihkan daftar id guru pengampu sebelum divalidasi.
+     * Bersihkan daftar id dosen pengampu sebelum divalidasi.
      *
      * Opsi "Belum ada pengampu" di form mengirim nilai kosong, jadi harus
      * dibuang lebih dulu agar tidak gagal aturan `integer`/`exists`.
      *
      * @return array<int, string>
      */
-    private function bersihkanGuruPengampu(?array $teachers): array
+    private function bersihkanDosenPengampu(?array $dosens): array
     {
         return array_values(array_filter(
-            $teachers ?? [],
+            $dosens ?? [],
             fn ($id) => $id !== '' && $id !== null,
         ));
     }
 
     public function index(Request $request): View
     {
-        $classes = Kelas::query()
-            ->with('waliKelas.user')
-            ->with('mataPelajaran:id,kode_mata_pelajaran,nama_mata_pelajaran')
-            ->with('guru.user:id,name')
-            ->withCount('siswa')
+        $kelas = Kelas::query()
+            ->with('pembimbingAkademik.user')
+            ->with('mataKuliah:id,kode_mata_kuliah,nama_mata_kuliah')
+            ->with('dosen.user:id,name')
+            ->withCount('mahasiswa')
             ->when($request->filled('q'), function ($query) use ($request) {
                 $keyword = '%'.$request->string('q').'%';
                 $query->where(function ($inner) use ($keyword) {
                     $inner->where('nama_kelas', 'like', $keyword)
                         ->orWhere('tingkat', 'like', $keyword)
-                        ->orWhereHas('waliKelas.user', fn ($teacherQuery) => $teacherQuery->where('name', 'like', $keyword));
+                        ->orWhereHas('pembimbingAkademik.user', fn ($teacherQuery) => $teacherQuery->where('name', 'like', $keyword));
                 });
             })
             ->when($request->filled('level'), fn ($query) => $query->where('tingkat', $request->string('level')))
-            ->when($request->filled('mata_pelajaran'), fn ($query) => $query->whereHas('mataPelajaran', fn ($inner) => $inner->where('kode_mata_pelajaran', $request->string('mata_pelajaran'))))
+            ->when($request->filled('mata_kuliah'), fn ($query) => $query->whereHas('mataKuliah', fn ($inner) => $inner->where('kode_mata_kuliah', $request->string('mata_kuliah'))))
             ->when($request->filled('status'), fn ($query) => $query->where('status', $request->string('status')))
             ->latest('id')
             ->paginate(10)
             ->withQueryString();
 
-        $gurus = Guru::query()
+        $dosens = Dosen::query()
             ->with('user:id,name')
             ->orderBy('id')
             ->get();
 
-        return view('cms.classes.index', [
-            'classes' => $classes,
-            'gurus' => $gurus,
-            'mataPelajaran' => $this->daftarMataPelajaran(),
+        return view('cms.kelas.index', [
+            'kelas' => $kelas,
+            'dosens' => $dosens,
+            'mataKuliah' => $this->daftarMataKuliah(),
         ]);
     }
 
     /**
-     * Daftar mata pelajaran untuk form kelas dan filter di halaman index.
+     * Daftar mata kuliah untuk form kelas dan filter di halaman index.
      *
      * Diambil dalam satu query supaya form tambah, form ubah, dan filter
      * memakai sumber yang sama.
      *
-     * @return Collection<int, MataPelajaran>
+     * @return Collection<int, MataKuliah>
      */
-    protected function daftarMataPelajaran(): Collection
+    protected function daftarMataKuliah(): Collection
     {
-        return MataPelajaran::query()
-            ->orderBy('nama_mata_pelajaran')
-            ->get(['id', 'kode_mata_pelajaran', 'nama_mata_pelajaran']);
+        return MataKuliah::query()
+            ->orderBy('nama_mata_kuliah')
+            ->get(['id', 'kode_mata_kuliah', 'nama_mata_kuliah']);
     }
 
     public function store(Request $request): RedirectResponse
     {
-        $request->merge(['teachers' => $this->bersihkanGuruPengampu($request->input('teachers'))]);
+        $request->merge(['dosens' => $this->bersihkanDosenPengampu($request->input('dosens'))]);
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:50', Rule::unique('kelas', 'nama_kelas')],
-            'level' => ['required', Rule::in(['X', 'XI', 'XII'])],
-            'mata_pelajaran' => ['nullable', 'integer', 'exists:mata_pelajaran,id'],
-            'homeroom' => ['nullable', 'integer', 'exists:gurus,id'],
+            'level' => ['required', Rule::in(Kelas::TINGKAT_TERSEDIA)],
+            'mata_kuliah' => ['nullable', 'integer', 'exists:mata_kuliah,id'],
+            'homeroom' => ['nullable', 'integer', 'exists:dosens,id'],
             'room' => ['nullable', 'string', 'max:50'],
-            'tahun_ajaran' => ['nullable', 'integer', 'min:2000', 'max:'.(now()->year + 1)],
-            ...$this->aturanGuruPengampu(),
+            'tahun_akademik' => ['nullable', 'integer', 'min:2000', 'max:'.(now()->year + 1)],
+            ...$this->aturanDosenPengampu(),
         ]);
 
         $kelas = Kelas::create([
             'nama_kelas' => $validated['name'],
             'tingkat' => $validated['level'],
-            'mata_pelajaran_id' => $validated['mata_pelajaran'] ?? null,
-            'wali_kelas_id' => $validated['homeroom'] ?? null,
+            'mata_kuliah_id' => $validated['mata_kuliah'] ?? null,
+            'pembimbing_akademik_id' => $validated['homeroom'] ?? null,
             'ruang' => $validated['room'] ?? null,
-            'tahun_ajaran' => $validated['tahun_ajaran'] ?? now()->year,
+            'tahun_akademik' => $validated['tahun_akademik'] ?? now()->year,
             'status' => 'Aktif',
         ]);
 
-        $kelas->guru()->sync($validated['teachers'] ?? []);
+        $kelas->dosen()->sync($validated['dosens'] ?? []);
 
         return redirect()
-            ->route('cms.classes')
+            ->route('cms.kelas')
             ->with('success', 'Kelas berhasil ditambahkan.');
     }
 
     public function tambahkelas(): View
     {
-        $gurus = Guru::query()
+        $dosens = Dosen::query()
             ->with('user:id,name')
             ->orderBy('id')
             ->get();
 
-        return view('cms.classes.create', [
-            'gurus' => $gurus,
-            'mataPelajaran' => $this->daftarMataPelajaran(),
+        return view('cms.kelas.create', [
+            'dosens' => $dosens,
+            'mataKuliah' => $this->daftarMataKuliah(),
         ]);
     }
 
     public function edit(Kelas $kelas): View
     {
-        $kelas->load('guru');
+        $kelas->load('dosen');
 
-        $gurus = Guru::query()
+        $dosens = Dosen::query()
             ->with('user:id,name')
             ->orderBy('id')
             ->get();
 
-        return view('cms.classes.edit', [
+        return view('cms.kelas.edit', [
             'kelas' => $kelas,
-            'gurus' => $gurus,
-            'mataPelajaran' => $this->daftarMataPelajaran(),
+            'dosens' => $dosens,
+            'mataKuliah' => $this->daftarMataKuliah(),
         ]);
     }
 
     public function update(Request $request, Kelas $kelas): RedirectResponse
     {
-        $request->merge(['teachers' => $this->bersihkanGuruPengampu($request->input('teachers'))]);
+        $request->merge(['dosens' => $this->bersihkanDosenPengampu($request->input('dosens'))]);
 
         $validated = $request->validate([
             'name' => [
@@ -168,29 +168,29 @@ class KelasController extends Controller
                 // divalidasi (`nama_kelas`), bukan primary key.
                 Rule::unique('kelas', 'nama_kelas')->ignore($kelas->id, 'id'),
             ],
-            'level' => ['required', Rule::in(['X', 'XI', 'XII'])],
-            'mata_pelajaran' => ['nullable', 'integer', 'exists:mata_pelajaran,id'],
-            'homeroom' => ['nullable', 'integer', 'exists:gurus,id'],
+            'level' => ['required', Rule::in(Kelas::TINGKAT_TERSEDIA)],
+            'mata_kuliah' => ['nullable', 'integer', 'exists:mata_kuliah,id'],
+            'homeroom' => ['nullable', 'integer', 'exists:dosens,id'],
             'room' => ['nullable', 'string', 'max:50'],
-            'tahun_ajaran' => ['nullable', 'integer', 'min:2000', 'max:'.(now()->year + 1)],
+            'tahun_akademik' => ['nullable', 'integer', 'min:2000', 'max:'.(now()->year + 1)],
             'status' => ['sometimes', Rule::in(['Aktif', 'Arsip'])],
-            ...$this->aturanGuruPengampu(),
+            ...$this->aturanDosenPengampu(),
         ]);
 
         $kelas->update([
             'nama_kelas' => $validated['name'],
             'tingkat' => $validated['level'],
-            'mata_pelajaran_id' => $validated['mata_pelajaran'] ?? null,
-            'wali_kelas_id' => $validated['homeroom'] ?? null,
+            'mata_kuliah_id' => $validated['mata_kuliah'] ?? null,
+            'pembimbing_akademik_id' => $validated['homeroom'] ?? null,
             'ruang' => $validated['room'] ?? null,
-            'tahun_ajaran' => $validated['tahun_ajaran'] ?? $kelas->tahun_ajaran,
+            'tahun_akademik' => $validated['tahun_akademik'] ?? $kelas->tahun_akademik,
             'status' => $validated['status'] ?? $kelas->status,
         ]);
 
-        $kelas->guru()->sync($validated['teachers'] ?? []);
+        $kelas->dosen()->sync($validated['dosens'] ?? []);
 
         return redirect()
-            ->route('cms.classes')
+            ->route('cms.kelas')
             ->with('success', 'Kelas berhasil diperbarui.');
     }
 
@@ -199,7 +199,7 @@ class KelasController extends Controller
         $kelas->delete();
 
         return redirect()
-            ->route('cms.classes')
+            ->route('cms.kelas')
             ->with('success', 'Kelas berhasil dihapus.');
     }
 }

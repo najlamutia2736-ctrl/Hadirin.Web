@@ -5,7 +5,7 @@
 @php
     /*
     | Dua jenis pengajuan yang bisa dipilih. Bedanya cuma di warna dan
-    | penjelasan, tapi dipisah supaya siswa tidak salah pilih di tengah
+    | penjelasan, tapi dipisah supaya mahasiswa tidak salah pilih di tengah
     | pengisian formulir.
     */
     $jenis = [
@@ -16,7 +16,7 @@
             'warna' => 'border-blue-200 bg-blue-50',
             'teks' => 'text-blue-700',
             'ikonWarna' => 'text-blue-500',
-            'placeholder' => 'Contoh: Ada acara nikah vina di luar kota, izin tidak masuk sekolah hari ini.',
+            'placeholder' => 'Contoh: Ada acara nikah vina di luar kota, izin tidak masuk kampus hari ini.',
         ],
         'sakit' => [
             'label' => 'Sakit',
@@ -43,12 +43,12 @@
 
                 <div class="flex items-center gap-3">
                     <div class="hidden text-right sm:block">
-                        <p class="text-sm font-semibold text-slate-800">{{ $siswa->user->name }}</p>
-                        <p class="text-xs text-slate-500">{{ $siswa->kelas }}</p>
+                        <p class="text-sm font-semibold text-slate-800">{{ $mahasiswa->user->name }}</p>
+                        <p class="text-xs text-slate-500">{{ $mahasiswa->kelas }}</p>
                     </div>
                     <span
                         class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-indigo-100 text-sm font-semibold text-indigo-700">
-                        {{ strtoupper(substr($siswa->user->name, 0, 1)) }}
+                        {{ strtoupper(substr($mahasiswa->user->name, 0, 1)) }}
                     </span>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
@@ -240,7 +240,7 @@
                                 </div>
                             </div>
                             <p class="mt-3 text-xs leading-relaxed text-slate-500">
-                                Kalau kamu sebenarnya bisa hadir, lebih cepat memakai scan QR atau Kode NISN.
+                                Kalau kamu sebenarnya bisa hadir, lebih cepat memakai scan QR atau Kode NIM.
                             </p>
                         @endif
                     </div>
@@ -293,7 +293,7 @@
                             </li>
                             <li class="flex gap-2">
                                 <i class="fas fa-circle-check mt-0.5 text-[10px] text-amber-500"></i>
-                                Salah kirim? Hubungi wali kelas supaya bisa diperbaiki.
+                                Salah kirim? Hubungi pembimbing akademik supaya bisa diperbaiki.
                             </li>
                         </ul>
                     </div>
@@ -312,7 +312,7 @@
         const alasan = document.getElementById('alasan');
         const hitungAlasan = document.getElementById('hitungAlasan');
 
-        // Placeholder ikut berubah mengikuti jenis yang dipilih, supaya siswa
+        // Placeholder ikut berubah mengikuti jenis yang dipilih, supaya mahasiswa
         // langsung tahu contoh yang diharapkan.
         const placeholderIzin = @json($jenis['izin']['placeholder']);
         const placeholderSakit = @json($jenis['sakit']['placeholder']);

@@ -17,8 +17,8 @@ beforeEach(function () {
 test('halaman edit menampilkan data pengguna', function () {
     $user = User::factory()->create([
         'name' => 'Ahmad Fauzi',
-        'email' => 'ahmad.fauzi@sekolah.sch.id',
-        'role' => 'Guru',
+        'email' => 'ahmad.fauzi@kampus.ac.id',
+        'role' => 'Dosen',
         'status' => 'Aktif',
     ]);
 
@@ -38,14 +38,14 @@ test('halaman edit menampilkan data pengguna', function () {
 test('pengguna dapat diperbarui tanpa mengubah password', function () {
     $user = User::factory()->create([
         'name' => 'Ahmad Fauzi',
-        'email' => 'ahmad.fauzi@sekolah.sch.id',
-        'role' => 'Guru',
+        'email' => 'ahmad.fauzi@kampus.ac.id',
+        'role' => 'Dosen',
         'status' => 'Aktif',
     ]);
 
     $response = $this->from(route('cms.users.edit', $user))->put(route('cms.users.update', $user), [
         'name' => 'Ahmad Fauzi_updated',
-        'email' => 'ahmad.fauzi.updated@sekolah.sch.id',
+        'email' => 'ahmad.fauzi.updated@kampus.ac.id',
         'role' => 'Admin',
         'status' => 'Nonaktif',
         'password' => '',
@@ -58,7 +58,7 @@ test('pengguna dapat diperbarui tanpa mengubah password', function () {
     $this->assertDatabaseHas('users', [
         'id' => $user->id,
         'name' => 'Ahmad Fauzi_updated',
-        'email' => 'ahmad.fauzi.updated@sekolah.sch.id',
+        'email' => 'ahmad.fauzi.updated@kampus.ac.id',
         'role' => 'Admin',
         'status' => 'Nonaktif',
     ]);
@@ -81,7 +81,7 @@ test('pengguna dapat dihapus', function () {
 test('email pengguna tidak dapat digunakan pengguna lain', function () {
     $user = User::factory()->create();
     $otherUser = User::factory()->create([
-        'email' => 'email.terpakai@sekolah.sch.id',
+        'email' => 'email.terpakai@kampus.ac.id',
     ]);
 
     $this->from(route('cms.users.edit', $user))
@@ -98,22 +98,22 @@ test('pengguna boleh menyimpan emailnya sendiri tanpa perubahan', function () {
     // `unique` harus dikecualikan untuk baris yang sedang diedit, kalau tidak
     // pengguna tidak akan bisa menyimpan tanpa mengubah email.
     $user = User::factory()->create([
-        'email' => 'ahmad.fauzi@sekolah.sch.id',
+        'email' => 'ahmad.fauzi@kampus.ac.id',
         'status' => 'Aktif',
     ]);
 
     $this->from(route('cms.users.edit', $user))
         ->put(route('cms.users.update', $user), [
             'name' => 'Ahmad Fauzi',
-            'email' => 'ahmad.fauzi@sekolah.sch.id',
-            'role' => 'Guru',
+            'email' => 'ahmad.fauzi@kampus.ac.id',
+            'role' => 'Dosen',
             'status' => 'Nonaktif',
         ])
         ->assertSessionHas('success', 'Pengguna berhasil diperbarui.');
 
     $this->assertDatabaseHas('users', [
         'id' => $user->id,
-        'email' => 'ahmad.fauzi@sekolah.sch.id',
+        'email' => 'ahmad.fauzi@kampus.ac.id',
         'status' => 'Nonaktif',
     ]);
 });

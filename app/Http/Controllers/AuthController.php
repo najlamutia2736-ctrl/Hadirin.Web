@@ -26,7 +26,7 @@ class AuthController extends Controller
     /**
      * Proses login.
      *
-     * Akun dibuat dari sisi admin (dashboard CMS) memakai email dan NIP/NISN
+     * Akun dibuat dari sisi admin (dashboard CMS) memakai email dan NIDN/NIM
      * sebagai password, jadi tidak ada form registrasi di sini. Setelah
      * berhasil, pengguna diarahkan ke dashboard sesuai role-nya.
      */
@@ -77,13 +77,13 @@ class AuthController extends Controller
     /**
      * Halaman tujuan setelah login, tiap role.
      *
-     * Guru diarahkan ke dashboard guru, admin dan operator ke dashboard CMS.
-     * Siswa langsung ke halaman absensi karena halaman itu memang tempat
+     * Dosen diarahkan ke dashboard dosen, admin dan operator ke dashboard CMS.
+     * Mahasiswa langsung ke halaman absensi karena halaman itu memang tempat
      * kegiatannya, sama seperti admin yang langsung masuk ke dashboard CMS.
-     * Dengan begitu halaman depan tidak muncul lagi setelah siswa berhasil
+     * Dengan begitu halaman depan tidak muncul lagi setelah mahasiswa berhasil
      * masuk.
      *
-     * Siswa yang belum punya baris di tabel `siswas` tetap dikirim ke halaman
+     * Mahasiswa yang belum punya baris di tabel `mahasiswa` tetap dikirim ke halaman
      * depan. Halaman absensi menolak akun tanpa profil dengan 403, jadi
      * mengirimnya ke sana hanya akan menghasilkan halaman error.
      */
@@ -91,8 +91,8 @@ class AuthController extends Controller
     {
         return match ($user?->role) {
             'Admin', 'Operator' => route('cms.dashboard'),
-            'Guru' => route('guru.dashboard'),
-            'Siswa' => $user->siswa !== null ? route('absensi.index') : route('beranda'),
+            'Dosen' => route('dosen.dashboard'),
+            'Mahasiswa' => $user->mahasiswa !== null ? route('absensi.index') : route('beranda'),
             default => route('beranda'),
         };
     }

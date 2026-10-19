@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\Siswa;
+use App\Models\Mahasiswa;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -17,7 +17,7 @@ beforeEach(function () {
 test('halaman manajemen pengguna menampilkan data dari database', function () {
     $user = User::factory()->create(['name' => 'Ahmad Fauzi']);
 
-    Siswa::factory()->create([
+    Mahasiswa::factory()->create([
         'user_id' => $user->id,
         'jenis_kelamin' => 'P',
     ]);
@@ -33,8 +33,8 @@ test('halaman manajemen pengguna menampilkan data dari database', function () {
 test('pengguna baru dapat ditambahkan melalui modal tambah', function () {
     $response = $this->post(route('cms.users.store'), [
         'name' => 'Dewi Lestari',
-        'email' => 'dewi.lestari@sekolah.sch.id',
-        'role' => 'Guru',
+        'email' => 'dewi.lestari@kampus.ac.id',
+        'role' => 'Dosen',
         'status' => 'Aktif',
         'password' => 'rahasia123',
         'password_confirmation' => 'rahasia123',
@@ -45,19 +45,19 @@ test('pengguna baru dapat ditambahkan melalui modal tambah', function () {
         ->assertSessionHas('success', 'Pengguna berhasil ditambahkan.');
 
     $this->assertDatabaseHas('users', [
-        'email' => 'dewi.lestari@sekolah.sch.id',
-        'role' => 'Guru',
+        'email' => 'dewi.lestari@kampus.ac.id',
+        'role' => 'Dosen',
         'status' => 'Aktif',
         'name' => 'Dewi Lestari',
     ]);
 });
 
 test('form tambah pengguna menolak email yang sudah terdaftar', function () {
-    User::factory()->create(['email' => 'ahmad.fauzi@sekolah.sch.id']);
+    User::factory()->create(['email' => 'ahmad.fauzi@kampus.ac.id']);
 
     $response = $this->from(route('cms.users'))->post(route('cms.users.store'), [
         'name' => 'Ahmad Fauzi Lain',
-        'email' => 'ahmad.fauzi@sekolah.sch.id',
+        'email' => 'ahmad.fauzi@kampus.ac.id',
         'role' => 'Admin',
         'password' => 'rahasia123',
     ]);
@@ -68,7 +68,7 @@ test('form tambah pengguna menolak email yang sudah terdaftar', function () {
 
     // Akun admin dari `loginAdmin()` ikut ada, jadi yang dicek email yang
     // bentrok itu tetap cuma satu baris dan tidak jadi dua.
-    expect(User::query()->where('email', 'ahmad.fauzi@sekolah.sch.id')->count())->toBe(1);
+    expect(User::query()->where('email', 'ahmad.fauzi@kampus.ac.id')->count())->toBe(1);
 });
 
 test('form tambah pengguna memvalidasi input wajib dan panjang password', function () {
@@ -93,41 +93,41 @@ test('form tambah pengguna mewajibkan status sesuai kolom di tabel', function ()
     $this->from(route('cms.users'))
         ->post(route('cms.users.store'), [
             'name' => 'Dewi Lestari',
-            'email' => 'dewi@sekolah.sch.id',
-            'role' => 'Guru',
+            'email' => 'dewi@kampus.ac.id',
+            'role' => 'Dosen',
             'password' => 'rahasia123',
             'password_confirmation' => 'rahasia123',
         ])
         ->assertSessionHasErrors('status');
 
-    $this->assertDatabaseMissing('users', ['email' => 'dewi@sekolah.sch.id']);
+    $this->assertDatabaseMissing('users', ['email' => 'dewi@kampus.ac.id']);
 
     $this->from(route('cms.users'))
         ->post(route('cms.users.store'), [
             'name' => 'Dewi Lestari',
-            'email' => 'dewi@sekolah.sch.id',
-            'role' => 'Guru',
+            'email' => 'dewi@kampus.ac.id',
+            'role' => 'Dosen',
             'status' => 'Dibekukan',
             'password' => 'rahasia123',
             'password_confirmation' => 'rahasia123',
         ])
         ->assertSessionHasErrors('status');
 
-    $this->assertDatabaseMissing('users', ['email' => 'dewi@sekolah.sch.id']);
+    $this->assertDatabaseMissing('users', ['email' => 'dewi@kampus.ac.id']);
 });
 
 test('form tambah pengguna bisa menyimpan status nonaktif', function () {
     $this->post(route('cms.users.store'), [
         'name' => 'Dewi Lestari',
-        'email' => 'dewi@sekolah.sch.id',
-        'role' => 'Guru',
+        'email' => 'dewi@kampus.ac.id',
+        'role' => 'Dosen',
         'status' => 'Nonaktif',
         'password' => 'rahasia123',
         'password_confirmation' => 'rahasia123',
     ])->assertSessionHas('success');
 
     $this->assertDatabaseHas('users', [
-        'email' => 'dewi@sekolah.sch.id',
+        'email' => 'dewi@kampus.ac.id',
         'status' => 'Nonaktif',
     ]);
 });
@@ -136,36 +136,36 @@ test('password harus sama dengan kolom konfirmasi', function () {
     $this->from(route('cms.users'))
         ->post(route('cms.users.store'), [
             'name' => 'Dewi Lestari',
-            'email' => 'dewi@sekolah.sch.id',
-            'role' => 'Guru',
+            'email' => 'dewi@kampus.ac.id',
+            'role' => 'Dosen',
             'status' => 'Aktif',
             'password' => 'rahasia123',
             'password_confirmation' => 'rahasia456',
         ])
         ->assertSessionHasErrors('password');
 
-    $this->assertDatabaseMissing('users', ['email' => 'dewi@sekolah.sch.id']);
+    $this->assertDatabaseMissing('users', ['email' => 'dewi@kampus.ac.id']);
 
     $this->from(route('cms.users'))
         ->post(route('cms.users.store'), [
             'name' => 'Dewi Lestari',
-            'email' => 'dewi@sekolah.sch.id',
-            'role' => 'Guru',
+            'email' => 'dewi@kampus.ac.id',
+            'role' => 'Dosen',
             'status' => 'Aktif',
             'password' => 'rahasia123',
         ])
         ->assertSessionHasErrors('password');
 
-    $this->assertDatabaseMissing('users', ['email' => 'dewi@sekolah.sch.id']);
+    $this->assertDatabaseMissing('users', ['email' => 'dewi@kampus.ac.id']);
 });
 
 test('email dan nama dirapikan sebelum disimpan', function () {
     // Spasi pinggir dan huruf besar pada email tidak boleh ikut tersimpan,
-    // kalau tidak `Budi@Sekolah.ID` dan `budi@sekolah.id` jadi dua akun.
+    // kalau tidak `Budi@Kampus.ac.id` dan `budi@kampus.ac.id` jadi dua akun.
     $this->post(route('cms.users.store'), [
         'name' => '  Budi Santoso  ',
-        'email' => '  BUDI.Santoso@Sekolah.ID  ',
-        'role' => 'Guru',
+        'email' => '  BUDI.Santoso@Kampus.ac.id  ',
+        'role' => 'Dosen',
         'status' => 'Aktif',
         'password' => 'rahasia123',
         'password_confirmation' => 'rahasia123',
@@ -173,18 +173,18 @@ test('email dan nama dirapikan sebelum disimpan', function () {
 
     $this->assertDatabaseHas('users', [
         'name' => 'Budi Santoso',
-        'email' => 'budi.santoso@sekolah.id',
+        'email' => 'budi.santoso@kampus.ac.id',
     ]);
 });
 
 test('email yang berbeda huruf besar dianggap sudah terdaftar', function () {
-    User::factory()->create(['email' => 'budi.santoso@sekolah.id']);
+    User::factory()->create(['email' => 'budi.santoso@kampus.ac.id']);
 
     $this->from(route('cms.users'))
         ->post(route('cms.users.store'), [
             'name' => 'Budi Santoso',
-            'email' => 'BUDI.Santoso@Sekolah.ID',
-            'role' => 'Guru',
+            'email' => 'BUDI.Santoso@Kampus.ac.id',
+            'role' => 'Dosen',
             'status' => 'Aktif',
             'password' => 'rahasia123',
             'password_confirmation' => 'rahasia123',
@@ -193,23 +193,23 @@ test('email yang berbeda huruf besar dianggap sudah terdaftar', function () {
 
     // Email yang bentrok tidak boleh membuat akun kedua. Email uppercase-nya
     // sendiri tidak pernah tersimpan karena selalu dirapikan jadi huruf kecil.
-    expect(User::query()->where('email', 'budi.santoso@sekolah.id')->count())->toBe(1)
-        ->and(User::query()->where('email', 'BUDI.Santoso@Sekolah.ID')->exists())->toBeFalse();
+    expect(User::query()->where('email', 'budi.santoso@kampus.ac.id')->count())->toBe(1)
+        ->and(User::query()->where('email', 'BUDI.Santoso@Kampus.ac.id')->exists())->toBeFalse();
 });
 
 test('nama harus minimal dua karakter', function () {
     $this->from(route('cms.users'))
         ->post(route('cms.users.store'), [
             'name' => 'A',
-            'email' => 'a@sekolah.sch.id',
-            'role' => 'Guru',
+            'email' => 'a@kampus.ac.id',
+            'role' => 'Dosen',
             'status' => 'Aktif',
             'password' => 'rahasia123',
             'password_confirmation' => 'rahasia123',
         ])
         ->assertSessionHasErrors('name');
 
-    $this->assertDatabaseMissing('users', ['email' => 'a@sekolah.sch.id']);
+    $this->assertDatabaseMissing('users', ['email' => 'a@kampus.ac.id']);
 });
 
 test('form tambah pengguna memuat field status dan konfirmasi password', function () {
@@ -222,10 +222,10 @@ test('form tambah pengguna memuat field status dan konfirmasi password', functio
 
 test('filter peran pada halaman pengguna', function () {
     User::factory()->create(['name' => 'Ahmad Fauzi', 'role' => 'Admin']);
-    User::factory()->create(['name' => 'Siti Nurhaliza', 'role' => 'Guru']);
-    User::factory()->create(['name' => 'Rina Wijaya', 'role' => 'Siswa']);
+    User::factory()->create(['name' => 'Siti Nurhaliza', 'role' => 'Dosen']);
+    User::factory()->create(['name' => 'Rina Wijaya', 'role' => 'Mahasiswa']);
 
-    $this->get(route('cms.users', ['role' => 'Guru']))
+    $this->get(route('cms.users', ['role' => 'Dosen']))
         ->assertOk()
         ->assertSee('Siti Nurhaliza')
         ->assertDontSee('Ahmad Fauzi')
@@ -259,27 +259,27 @@ test('filter status pada halaman pengguna', function () {
 });
 
 test('filter peran dan status bisa digabung', function () {
-    User::factory()->create(['name' => 'Guru Aktif Satu', 'role' => 'Guru', 'status' => 'Aktif']);
+    User::factory()->create(['name' => 'Dosen Aktif Satu', 'role' => 'Dosen', 'status' => 'Aktif']);
     User::factory()->create(['name' => 'Admin Aktif Dua', 'role' => 'Admin', 'status' => 'Aktif']);
-    User::factory()->create(['name' => 'Guru Nonaktif Tiga', 'role' => 'Guru', 'status' => 'Nonaktif']);
+    User::factory()->create(['name' => 'Dosen Nonaktif Tiga', 'role' => 'Dosen', 'status' => 'Nonaktif']);
 
-    $this->get(route('cms.users', ['role' => 'Guru', 'status' => 'Aktif']))
+    $this->get(route('cms.users', ['role' => 'Dosen', 'status' => 'Aktif']))
         ->assertOk()
-        ->assertSee('Guru Aktif Satu')
+        ->assertSee('Dosen Aktif Satu')
         ->assertDontSee('Admin Aktif Dua')
-        ->assertDontSee('Guru Nonaktif Tiga');
+        ->assertDontSee('Dosen Nonaktif Tiga');
 });
 
 test('pencarian pada halaman pengguna tetap bisa digabung dengan filter', function () {
-    User::factory()->create(['name' => 'Rina Wijaya', 'email' => 'rina@sekolah.sch.id', 'role' => 'Siswa']);
-    User::factory()->create(['name' => 'Budi Santoso', 'email' => 'budi@sekolah.sch.id', 'role' => 'Guru']);
+    User::factory()->create(['name' => 'Rina Wijaya', 'email' => 'rina@kampus.ac.id', 'role' => 'Mahasiswa']);
+    User::factory()->create(['name' => 'Budi Santoso', 'email' => 'budi@kampus.ac.id', 'role' => 'Dosen']);
 
-    $this->get(route('cms.users', ['q' => 'Rina', 'role' => 'Siswa', 'status' => 'Aktif']))
+    $this->get(route('cms.users', ['q' => 'Rina', 'role' => 'Mahasiswa', 'status' => 'Aktif']))
         ->assertOk()
         ->assertSee('Rina Wijaya')
         ->assertDontSee('Budi Santoso');
 
-    $this->get(route('cms.users', ['q' => 'rina@sekolah.sch.id', 'role' => 'Guru']))
+    $this->get(route('cms.users', ['q' => 'rina@kampus.ac.id', 'role' => 'Dosen']))
         ->assertOk()
         ->assertSee('Tidak ada pengguna yang cocok dengan filter.');
 });
@@ -303,12 +303,12 @@ test('filter yang tidak dikenal diabaikan, bukan menghasilkan halaman kosong', f
 });
 
 test('halaman pengguna menampilkan badge filter aktif dan tautan reset', function () {
-    User::factory()->create(['role' => 'Guru', 'status' => 'Aktif']);
+    User::factory()->create(['role' => 'Dosen', 'status' => 'Aktif']);
 
-    $this->get(route('cms.users', ['role' => 'Guru', 'status' => 'Aktif']))
+    $this->get(route('cms.users', ['role' => 'Dosen', 'status' => 'Aktif']))
         ->assertOk()
         ->assertSee('Filter aktif:')
-        ->assertSee('Peran Guru')
+        ->assertSee('Peran Dosen')
         ->assertSee('Status Aktif')
         ->assertSee(route('cms.users'), false);
 });
@@ -331,7 +331,7 @@ test('form filter pengguna hanya tersubmit lewat tombol terapkan', function () {
 
 test('pilihan dropdown baru berlaku setelah tombol terapkan ditekan', function () {
     User::factory()->create(['name' => 'Ahmad Fauzi', 'role' => 'Admin']);
-    User::factory()->create(['name' => 'Siti Nurhaliza', 'role' => 'Guru']);
+    User::factory()->create(['name' => 'Siti Nurhaliza', 'role' => 'Dosen']);
 
     // Tanpa parameter filter, halaman menampilkan seluruh pengguna.
     $this->get(route('cms.users'))
@@ -341,7 +341,7 @@ test('pilihan dropdown baru berlaku setelah tombol terapkan ditekan', function (
         ->assertDontSee('Filter aktif:');
 
     // Setelah "Terapkan" dikirim sebagai query string, baris tersaring.
-    $this->get(route('cms.users', ['role' => 'Guru']))
+    $this->get(route('cms.users', ['role' => 'Dosen']))
         ->assertOk()
         ->assertSee('Siti Nurhaliza')
         ->assertDontSee('Ahmad Fauzi')
@@ -401,8 +401,8 @@ test('data yang dikirim form modal bisa disimpan tanpa error validasi', function
     // backend tidak luput dari view.
     $this->post(route('cms.users.store'), [
         'name' => 'Dewi Lestari',
-        'email' => 'dewi.lestari@sekolah.sch.id',
-        'role' => 'Guru',
+        'email' => 'dewi.lestari@kampus.ac.id',
+        'role' => 'Dosen',
         'status' => 'Aktif',
         'password' => 'rahasia123',
         'password_confirmation' => 'rahasia123',
@@ -411,26 +411,26 @@ test('data yang dikirim form modal bisa disimpan tanpa error validasi', function
         ->assertSessionHas('success', 'Pengguna berhasil ditambahkan.');
 
     $this->assertDatabaseHas('users', [
-        'email' => 'dewi.lestari@sekolah.sch.id',
+        'email' => 'dewi.lestari@kampus.ac.id',
         'status' => 'Aktif',
     ]);
 });
 
 test('pagination pengguna mempertahankan filter yang aktif', function () {
-    User::factory()->count(12)->create(['role' => 'Guru', 'status' => 'Aktif']);
-    User::factory()->count(3)->create(['role' => 'Siswa', 'status' => 'Aktif']);
+    User::factory()->count(12)->create(['role' => 'Dosen', 'status' => 'Aktif']);
+    User::factory()->count(3)->create(['role' => 'Mahasiswa', 'status' => 'Aktif']);
 
-    $this->get(route('cms.users', ['role' => 'Guru', 'status' => 'Aktif']))
+    $this->get(route('cms.users', ['role' => 'Dosen', 'status' => 'Aktif']))
         ->assertOk()
-        ->assertSee('role=Guru', false)
+        ->assertSee('role=Dosen', false)
         ->assertSee('status=Aktif', false);
 });
 
 test('pengguna yang baru ditambahkan muncul di tabel setelah redirect', function () {
     $this->post(route('cms.users.store'), [
         'name' => 'Rina Wijaya',
-        'email' => 'rina.wijaya@sekolah.sch.id',
-        'role' => 'Siswa',
+        'email' => 'rina.wijaya@kampus.ac.id',
+        'role' => 'Mahasiswa',
         'status' => 'Aktif',
         'password' => 'rahasia123',
         'password_confirmation' => 'rahasia123',
@@ -439,6 +439,6 @@ test('pengguna yang baru ditambahkan muncul di tabel setelah redirect', function
     $this->get(route('cms.users'))
         ->assertOk()
         ->assertSee('Rina Wijaya')
-        ->assertSee('rina.wijaya@sekolah.sch.id')
+        ->assertSee('rina.wijaya@kampus.ac.id')
         ->assertSee('Pengguna berhasil ditambahkan.');
 });

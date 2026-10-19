@@ -21,7 +21,7 @@
             <div>
                 <h1 class="text-2xl font-bold text-gray-800">Tambah Jadwal</h1>
                 <p class="mt-1 text-sm text-gray-600">
-                    Satu slot jadwal = satu mata pelajaran di satu kelas pada hari dan jam tertentu.
+                    Satu slot jadwal = satu mata kuliah di satu kelas pada hari dan jam tertentu.
                 </p>
             </div>
         </div>
@@ -72,7 +72,7 @@
         <div class="mt-5 flex gap-3 rounded-xl border border-indigo-100 bg-indigo-50 p-4 text-sm text-indigo-800">
             <i class="fas fa-info-circle mt-0.5 shrink-0"></i>
             <p>
-                Satu kelas dan satu guru tidak boleh punya dua jadwal yang rentang jamnya bertumpuk
+                Satu kelas dan satu dosen tidak boleh punya dua jadwal yang rentang jamnya bertumpuk
                 pada hari yang sama. Slot yang bersambung, misalnya 07:30-08:30 lalu 08:30-09:00,
                 tetap diperbolehkan.
             </p>

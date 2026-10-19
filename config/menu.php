@@ -9,7 +9,7 @@ return [
     |
     | Definisi menu untuk `components.sidebar`. Dipilih otomatis oleh
     | View Composer di AppServiceProvider berdasarkan prefix nama route
-    | (mis. route `guru.dashboard` -> menu `guru`).
+    | (mis. route `dosen.dashboard` -> menu `dosen`).
     |
     | Struktur tiap grup:
     |   'label' => string  -> judul grup
@@ -31,18 +31,18 @@ return [
         [
             'label' => 'Manajemen',
             'items' => [
-                ['label' => 'Students', 'route' => 'cms.student', 'icon' => 'fas fa-user-graduate'],
-                ['label' => 'Teachers', 'route' => 'cms.teachers', 'icon' => 'fas fa-chalkboard-teacher'],
-                ['label' => 'Classes', 'route' => 'cms.classes', 'icon' => 'fas fa-book-open'],
-                ['label' => 'Subjects', 'route' => 'cms.mata-pelajaran', 'icon' => 'fas fa-layer-group'],
-                ['label' => 'Timetables', 'route' => 'cms.jadwal', 'icon' => 'fas fa-calendar-days'],
+                ['label' => 'Mahasiswa', 'route' => 'cms.mahasiswa', 'icon' => 'fas fa-user-graduate'],
+                ['label' => 'Dosen', 'route' => 'cms.dosens', 'icon' => 'fas fa-chalkboard-user'],
+                ['label' => 'Kelas', 'route' => 'cms.kelas', 'icon' => 'fas fa-book-open'],
+                ['label' => 'Mata Kuliah', 'route' => 'cms.mata-kuliah', 'icon' => 'fas fa-layer-group'],
+                ['label' => 'Jadwal', 'route' => 'cms.jadwal', 'icon' => 'fas fa-calendar-days'],
             ],
         ],
         [
             'label' => 'Sistem',
             'items' => [
-                ['label' => 'Users', 'route' => 'cms.users', 'icon' => 'fas fa-users-cog'],
-                ['label' => 'Summary', 'route' => 'cms.rekap', 'icon' => 'fas fa-clipboard-list'],
+                ['label' => 'Pengguna', 'route' => 'cms.users', 'icon' => 'fas fa-users-cog'],
+                ['label' => 'Rekap Absensi', 'route' => 'cms.rekap', 'icon' => 'fas fa-clipboard-list'],
             ],
         ],
         [
@@ -53,18 +53,18 @@ return [
         ],
     ],
 
-    'guru' => [
+    'dosen' => [
         [
             'label' => 'Menu Utama',
             'items' => [
-                ['label' => 'Dashboard', 'route' => 'guru.dashboard', 'icon' => 'fas fa-tachometer-alt'],
-                ['label' => 'Kelola Data Kelas', 'route' => 'guru.kelola', 'icon' => 'fas fa-users-cog'],
+                ['label' => 'Dashboard', 'route' => 'dosen.dashboard', 'icon' => 'fas fa-tachometer-alt'],
+                ['label' => 'Kelola Data Kelas', 'route' => 'dosen.kelola', 'icon' => 'fas fa-users-cog'],
             ],
         ],
         [
             'label' => 'Laporan',
             'items' => [
-                ['label' => 'Laporan Bulanan', 'route' => 'guru.laporan', 'icon' => 'fas fa-file-alt'],
+                ['label' => 'Laporan Bulanan', 'route' => 'dosen.laporan', 'icon' => 'fas fa-file-alt'],
             ],
         ],
         [
@@ -86,11 +86,11 @@ return [
         'cms' => [
             'initial' => 'AD',
             'name' => 'Admin',
-            'email' => 'admin@sekolah.id',
+            'email' => 'admin@kampus.ac.id',
         ],
-        'guru' => [
-            'initial' => 'G',
-            'name' => 'Guru',
+        'dosen' => [
+            'initial' => 'D',
+            'name' => 'Dosen',
             'email' => '-',
         ],
     ],
@@ -99,8 +99,8 @@ return [
     | Subtitle brand di header sidebar, mengikuti area route yang dibuka.
     */
     'brand' => [
-        'cms' => 'School Management',
-        'guru' => 'Portal Guru',
+        'cms' => 'Manajemen Kampus',
+        'dosen' => 'Portal Dosen',
     ],
 
     /*
@@ -108,7 +108,7 @@ return [
     */
     'areas' => [
         'cms' => 'cms.*',
-        'guru' => 'guru.*',
+        'dosen' => 'dosen.*',
     ],
 
 ];

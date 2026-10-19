@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\JadwalController;
-use App\Models\Guru;
+use App\Models\Dosen;
 use App\Models\Jadwal;
 use App\Models\Kelas;
 use App\Models\User;
@@ -19,19 +19,19 @@ beforeEach(function () {
 });
 
 /**
- * Guru lengkap dengan akun penggunanya, sama seperti dipakai modul lain.
+ * Dosen lengkap dengan akun penggunanya, sama seperti dipakai modul lain.
  */
-function guruUntukJadwal(string $nama = 'Guru Jadwal'): Guru
+function dosenUntukJadwal(string $nama = 'Dosen Jadwal'): Dosen
 {
     $user = User::factory()->create(['name' => $nama]);
 
-    return Guru::factory()->create(['user_id' => $user->id]);
+    return Dosen::factory()->create(['user_id' => $user->id]);
 }
 
 /**
  * Kelas aktif untuk dipakai pada pengujian jadwal.
  */
-function kelasUntukJadwal(string $nama = 'X-A'): Kelas
+function kelasUntukJadwal(string $nama = 'Kelas A'): Kelas
 {
     return Kelas::factory()->create(['nama_kelas' => $nama, 'status' => 'Aktif']);
 }
@@ -45,14 +45,14 @@ function kelasUntukJadwal(string $nama = 'X-A'): Kelas
 function dataJadwal(array $ubah = []): array
 {
     return array_merge([
-        'kelas_id' => kelasUntukJadwal('X-A')->id,
-        'guru_id' => guruUntukJadwal('Guru Jadwal')->id,
-        'mata_pelajaran' => 'Informatika',
+        'kelas_id' => kelasUntukJadwal('Kelas A')->id,
+        'dosen_id' => dosenUntukJadwal('Dosen Jadwal')->id,
+        'mata_kuliah' => 'Informatika',
         'hari' => 'Senin',
         'jam_mulai' => '07:30',
         'jam_selesai' => '09:00',
         'ruang' => 'R. 101',
-        'tahun_ajaran' => 2026,
+        'tahun_akademik' => 2026,
         'status' => 'Aktif',
     ], $ubah);
 }
@@ -63,7 +63,7 @@ function dataJadwal(array $ubah = []): array
 
 test('halaman jadwal menampilkan data dari database', function () {
     $jadwal = Jadwal::factory()->create([
-        'mata_pelajaran' => 'Informatika',
+        'mata_kuliah' => 'Informatika',
         'hari' => 'Rabu',
         'jam_mulai' => '10:15',
         'jam_selesai' => '11:45',
@@ -121,9 +121,9 @@ test('nama route jadwal tidak terdaftar dua kali', function () {
     expect($ganda)->toBe([]);
 });
 
-test('halaman tambah jadwal menampilkan form dengan pilihan kelas dan guru', function () {
-    $kelas = kelasUntukJadwal('XI-B');
-    $guru = guruUntukJadwal('Siti Rahayu');
+test('halaman tambah jadwal menampilkan form dengan pilihan kelas dan dosen', function () {
+    $kelas = kelasUntukJadwal('Kelas F');
+    $dosen = dosenUntukJadwal('Siti Rahayu');
 
     $this->get(route('cms.jadwal.create'))
         ->assertOk()
@@ -136,12 +136,12 @@ test('halaman tambah jadwal menampilkan form dengan pilihan kelas dan guru', fun
 
 test('halaman edit jadwal menampilkan data yang sedang diedit', function () {
     $jadwal = Jadwal::factory()->create([
-        'mata_pelajaran' => 'Fisika',
+        'mata_kuliah' => 'Fisika',
         'hari' => 'Jumat',
         'jam_mulai' => '08:00',
         'jam_selesai' => '09:30',
         'ruang' => 'R. 303',
-        'tahun_ajaran' => 2027,
+        'tahun_akademik' => 2027,
         'status' => 'Nonaktif',
     ]);
 
@@ -159,18 +159,18 @@ test('halaman edit jadwal menampilkan data yang sedang diedit', function () {
 */
 
 test('jadwal baru dapat ditambahkan melalui form', function () {
-    $kelas = kelasUntukJadwal('X-C');
-    $guru = guruUntukJadwal('Rina Wijaya');
+    $kelas = kelasUntukJadwal('Kelas C');
+    $dosen = dosenUntukJadwal('Rina Wijaya');
 
     $response = $this->from(route('cms.jadwal.create'))->post(route('cms.jadwal.store'), [
         'kelas_id' => $kelas->id,
-        'guru_id' => $guru->id,
-        'mata_pelajaran' => 'Matematika',
+        'dosen_id' => $dosen->id,
+        'mata_kuliah' => 'Matematika',
         'hari' => 'Selasa',
         'jam_mulai' => '07:00',
         'jam_selesai' => '08:30',
         'ruang' => 'R. 105',
-        'tahun_ajaran' => 2026,
+        'tahun_akademik' => 2026,
         'status' => 'Aktif',
     ]);
 
@@ -180,33 +180,33 @@ test('jadwal baru dapat ditambahkan melalui form', function () {
 
     $this->assertDatabaseHas('jadwals', [
         'kelas_id' => $kelas->id,
-        'guru_id' => $guru->id,
-        'mata_pelajaran' => 'Matematika',
+        'dosen_id' => $dosen->id,
+        'mata_kuliah' => 'Matematika',
         'hari' => 'Selasa',
         'jam_mulai' => '07:00',
         'jam_selesai' => '08:30',
         'ruang' => 'R. 105',
-        'tahun_ajaran' => 2026,
+        'tahun_akademik' => 2026,
         'status' => 'Aktif',
     ]);
 });
 
 test('jadwal dapat diperbarui', function () {
     $jadwal = Jadwal::factory()->create([
-        'mata_pelajaran' => 'Informatika',
+        'mata_kuliah' => 'Informatika',
         'jam_mulai' => '07:00',
         'jam_selesai' => '08:30',
     ]);
 
     $this->from(route('cms.jadwal.edit', $jadwal))->put(route('cms.jadwal.update', $jadwal), [
         'kelas_id' => $jadwal->kelas_id,
-        'guru_id' => $jadwal->guru_id,
-        'mata_pelajaran' => 'Sejarah',
+        'dosen_id' => $jadwal->dosen_id,
+        'mata_kuliah' => 'Sejarah',
         'hari' => 'Kamis',
         'jam_mulai' => '10:15',
         'jam_selesai' => '11:45',
         'ruang' => 'R. 404',
-        'tahun_ajaran' => 2026,
+        'tahun_akademik' => 2026,
         'status' => 'Nonaktif',
     ])
         ->assertRedirect(route('cms.jadwal'))
@@ -214,7 +214,7 @@ test('jadwal dapat diperbarui', function () {
 
     $this->assertDatabaseHas('jadwals', [
         'id' => $jadwal->id,
-        'mata_pelajaran' => 'Sejarah',
+        'mata_kuliah' => 'Sejarah',
         'hari' => 'Kamis',
         'jam_selesai' => '11:45',
         'status' => 'Nonaktif',
@@ -232,7 +232,7 @@ test('jadwal dapat dihapus', function () {
 });
 
 test('hapus kelas ikut menghapus jadwalnya', function () {
-    $kelas = kelasUntukJadwal('X-D');
+    $kelas = kelasUntukJadwal('Kelas D');
     $jadwal = Jadwal::factory()->create(['kelas_id' => $kelas->id]);
 
     $kelas->delete();
@@ -248,35 +248,35 @@ test('form jadwal memvalidasi kolom wajib dan nilainya', function () {
     $this->from(route('cms.jadwal.create'))
         ->post(route('cms.jadwal.store'), [
             'kelas_id' => '',
-            'guru_id' => '',
-            'mata_pelajaran' => '',
+            'dosen_id' => '',
+            'mata_kuliah' => '',
             'hari' => 'Minggu',
             'jam_mulai' => 'bukan jam',
             'jam_selesai' => 'bukan jam',
-            'tahun_ajaran' => 'tahun',
+            'tahun_akademik' => 'tahun',
             'status' => 'Dibekukan',
         ])
         ->assertSessionHasErrors([
             'kelas_id',
-            'guru_id',
-            'mata_pelajaran',
+            'dosen_id',
+            'mata_kuliah',
             'hari',
             'jam_mulai',
             'jam_selesai',
-            'tahun_ajaran',
+            'tahun_akademik',
             'status',
         ]);
 
     $this->assertDatabaseCount('jadwals', 0);
 });
 
-test('form jadwal menolak kelas dan guru yang tidak ada', function () {
+test('form jadwal menolak kelas dan dosen yang tidak ada', function () {
     $this->from(route('cms.jadwal.create'))
         ->post(route('cms.jadwal.store'), dataJadwal([
             'kelas_id' => 999999,
-            'guru_id' => 999999,
+            'dosen_id' => 999999,
         ]))
-        ->assertSessionHasErrors(['kelas_id', 'guru_id']);
+        ->assertSessionHasErrors(['kelas_id', 'dosen_id']);
 
     $this->assertDatabaseCount('jadwals', 0);
 });
@@ -301,30 +301,30 @@ test('jam selesai harus setelah jam mulai', function () {
 });
 
 /*
-| Aturan domain jadwal: satu kelas dan satu guru tidak boleh berada di dua
+| Aturan domain jadwal: satu kelas dan satu dosen tidak boleh berada di dua
 | tempat pada jam yang sama.
 */
 
 test('kelas tidak boleh punya dua jadwal yang jamnya bertumpuk', function () {
-    $kelas = kelasUntukJadwal('X-A');
+    $kelas = kelasUntukJadwal('Kelas A');
 
     Jadwal::factory()->create([
         'kelas_id' => $kelas->id,
         'hari' => 'Senin',
         'jam_mulai' => '07:30',
         'jam_selesai' => '09:00',
-        'tahun_ajaran' => 2026,
+        'tahun_akademik' => 2026,
         'status' => 'Aktif',
     ]);
 
     $this->from(route('cms.jadwal.create'))->post(route('cms.jadwal.store'), [
         'kelas_id' => $kelas->id,
-        'guru_id' => guruUntukJadwal('Guru Kedua')->id,
-        'mata_pelajaran' => 'Matematika',
+        'dosen_id' => dosenUntukJadwal('Dosen Kedua')->id,
+        'mata_kuliah' => 'Matematika',
         'hari' => 'Senin',
         'jam_mulai' => '08:00',
         'jam_selesai' => '09:30',
-        'tahun_ajaran' => 2026,
+        'tahun_akademik' => 2026,
         'status' => 'Aktif',
     ])->assertSessionHasErrors('jam_mulai');
 
@@ -332,92 +332,92 @@ test('kelas tidak boleh punya dua jadwal yang jamnya bertumpuk', function () {
 });
 
 test('slot jam yang bersambung boleh berurutan di kelas yang sama', function () {
-    $kelas = kelasUntukJadwal('X-A');
+    $kelas = kelasUntukJadwal('Kelas A');
 
     Jadwal::factory()->create([
         'kelas_id' => $kelas->id,
         'hari' => 'Senin',
         'jam_mulai' => '07:30',
         'jam_selesai' => '08:30',
-        'tahun_ajaran' => 2026,
+        'tahun_akademik' => 2026,
         'status' => 'Aktif',
     ]);
 
     $this->from(route('cms.jadwal.create'))->post(route('cms.jadwal.store'), [
         'kelas_id' => $kelas->id,
-        'guru_id' => guruUntukJadwal('Guru Kedua')->id,
-        'mata_pelajaran' => 'Matematika',
+        'dosen_id' => dosenUntukJadwal('Dosen Kedua')->id,
+        'mata_kuliah' => 'Matematika',
         'hari' => 'Senin',
         'jam_mulai' => '08:30',
         'jam_selesai' => '10:00',
-        'tahun_ajaran' => 2026,
+        'tahun_akademik' => 2026,
         'status' => 'Aktif',
     ])->assertSessionHasNoErrors();
 
     $this->assertDatabaseCount('jadwals', 2);
 });
 
-test('guru tidak boleh mengajar dua kelas pada jam yang sama', function () {
-    $guru = guruUntukJadwal('Guru Sibuk');
+test('dosen tidak boleh mengajar dua kelas pada jam yang sama', function () {
+    $dosen = dosenUntukJadwal('Dosen Sibuk');
 
     Jadwal::factory()->create([
-        'guru_id' => $guru->id,
-        'kelas_id' => kelasUntukJadwal('X-A')->id,
+        'dosen_id' => $dosen->id,
+        'kelas_id' => kelasUntukJadwal('Kelas A')->id,
         'hari' => 'Rabu',
         'jam_mulai' => '07:00',
         'jam_selesai' => '08:30',
-        'tahun_ajaran' => 2026,
+        'tahun_akademik' => 2026,
         'status' => 'Aktif',
     ]);
 
     $this->from(route('cms.jadwal.create'))->post(route('cms.jadwal.store'), [
-        'kelas_id' => kelasUntukJadwal('X-B')->id,
-        'guru_id' => $guru->id,
-        'mata_pelajaran' => 'Fisika',
+        'kelas_id' => kelasUntukJadwal('Kelas B')->id,
+        'dosen_id' => $dosen->id,
+        'mata_kuliah' => 'Fisika',
         'hari' => 'Rabu',
         'jam_mulai' => '08:00',
         'jam_selesai' => '09:30',
-        'tahun_ajaran' => 2026,
+        'tahun_akademik' => 2026,
         'status' => 'Aktif',
     ])->assertSessionHasErrors('jam_mulai');
 
     $this->assertDatabaseCount('jadwals', 1);
 });
 
-test('jadwal pada hari atau tahun ajaran lain tidak dianggap bentrok', function () {
-    $kelas = kelasUntukJadwal('X-A');
+test('jadwal pada hari atau tahun akademik lain tidak dianggap bentrok', function () {
+    $kelas = kelasUntukJadwal('Kelas A');
 
     Jadwal::factory()->create([
         'kelas_id' => $kelas->id,
-        'guru_id' => guruUntukJadwal('Guru Awal')->id,
+        'dosen_id' => dosenUntukJadwal('Dosen Awal')->id,
         'hari' => 'Senin',
         'jam_mulai' => '07:00',
         'jam_selesai' => '08:30',
-        'tahun_ajaran' => 2026,
+        'tahun_akademik' => 2026,
         'status' => 'Aktif',
     ]);
 
     // Hari berbeda.
     $this->from(route('cms.jadwal.create'))->post(route('cms.jadwal.store'), [
         'kelas_id' => $kelas->id,
-        'guru_id' => guruUntukJadwal('Guru Baru')->id,
-        'mata_pelajaran' => 'Matematika',
+        'dosen_id' => dosenUntukJadwal('Dosen Baru')->id,
+        'mata_kuliah' => 'Matematika',
         'hari' => 'Selasa',
         'jam_mulai' => '07:00',
         'jam_selesai' => '08:30',
-        'tahun_ajaran' => 2026,
+        'tahun_akademik' => 2026,
         'status' => 'Aktif',
     ])->assertSessionHasNoErrors();
 
     // Tahun ajaran berbeda.
     $this->from(route('cms.jadwal.create'))->post(route('cms.jadwal.store'), [
         'kelas_id' => $kelas->id,
-        'guru_id' => guruUntukJadwal('Guru Lain')->id,
-        'mata_pelajaran' => 'Fisika',
+        'dosen_id' => dosenUntukJadwal('Dosen Lain')->id,
+        'mata_kuliah' => 'Fisika',
         'hari' => 'Senin',
         'jam_mulai' => '07:00',
         'jam_selesai' => '08:30',
-        'tahun_ajaran' => 2027,
+        'tahun_akademik' => 2027,
         'status' => 'Aktif',
     ])->assertSessionHasNoErrors();
 
@@ -425,25 +425,25 @@ test('jadwal pada hari atau tahun ajaran lain tidak dianggap bentrok', function 
 });
 
 test('jadwal nonaktif tidak memblokir jadwal baru di slot yang sama', function () {
-    $kelas = kelasUntukJadwal('X-A');
+    $kelas = kelasUntukJadwal('Kelas A');
 
     Jadwal::factory()->create([
         'kelas_id' => $kelas->id,
         'hari' => 'Senin',
         'jam_mulai' => '07:00',
         'jam_selesai' => '08:30',
-        'tahun_ajaran' => 2026,
+        'tahun_akademik' => 2026,
         'status' => 'Nonaktif',
     ]);
 
     $this->from(route('cms.jadwal.create'))->post(route('cms.jadwal.store'), [
         'kelas_id' => $kelas->id,
-        'guru_id' => guruUntukJadwal('Guru Pengganti')->id,
-        'mata_pelajaran' => 'Informatika',
+        'dosen_id' => dosenUntukJadwal('Dosen Pengganti')->id,
+        'mata_kuliah' => 'Informatika',
         'hari' => 'Senin',
         'jam_mulai' => '07:00',
         'jam_selesai' => '08:30',
-        'tahun_ajaran' => 2026,
+        'tahun_akademik' => 2026,
         'status' => 'Aktif',
     ])->assertSessionHasNoErrors();
 
@@ -452,30 +452,30 @@ test('jadwal nonaktif tidak memblokir jadwal baru di slot yang sama', function (
 
 test('jadwal tidak dianggap bentrok dengan dirinya sendiri saat diubah', function () {
     $jadwal = Jadwal::factory()->create([
-        'kelas_id' => kelasUntukJadwal('X-A')->id,
-        'guru_id' => guruUntukJadwal('Guru Tunggal')->id,
+        'kelas_id' => kelasUntukJadwal('Kelas A')->id,
+        'dosen_id' => dosenUntukJadwal('Dosen Tunggal')->id,
         'hari' => 'Senin',
         'jam_mulai' => '07:00',
         'jam_selesai' => '08:30',
-        'tahun_ajaran' => 2026,
+        'tahun_akademik' => 2026,
         'status' => 'Aktif',
     ]);
 
-    // Hanya mengubah mata pelajaran, jamnya tetap sama.
+    // Hanya mengubah mata kuliah, jamnya tetap sama.
     $this->from(route('cms.jadwal.edit', $jadwal))->put(route('cms.jadwal.update', $jadwal), [
         'kelas_id' => $jadwal->kelas_id,
-        'guru_id' => $jadwal->guru_id,
-        'mata_pelajaran' => 'Informatika Baru',
+        'dosen_id' => $jadwal->dosen_id,
+        'mata_kuliah' => 'Informatika Baru',
         'hari' => 'Senin',
         'jam_mulai' => '07:00',
         'jam_selesai' => '08:30',
-        'tahun_ajaran' => 2026,
+        'tahun_akademik' => 2026,
         'status' => 'Aktif',
     ])->assertSessionHasNoErrors();
 
     $this->assertDatabaseHas('jadwals', [
         'id' => $jadwal->id,
-        'mata_pelajaran' => 'Informatika Baru',
+        'mata_kuliah' => 'Informatika Baru',
     ]);
 });
 
@@ -484,19 +484,19 @@ test('jadwal tidak dianggap bentrok dengan dirinya sendiri saat diubah', functio
 */
 
 test('pencarian jadwal bisa digabung dengan filter kelas, hari, dan status', function () {
-    $kelasA = kelasUntukJadwal('X-A');
-    $kelasB = kelasUntukJadwal('X-B');
+    $kelasA = kelasUntukJadwal('Kelas A');
+    $kelasB = kelasUntukJadwal('Kelas B');
 
     $target = Jadwal::factory()->create([
         'kelas_id' => $kelasA->id,
-        'mata_pelajaran' => 'Informatika',
+        'mata_kuliah' => 'Informatika',
         'hari' => 'Senin',
         'status' => 'Aktif',
     ]);
 
     Jadwal::factory()->create([
         'kelas_id' => $kelasB->id,
-        'mata_pelajaran' => 'Fisika',
+        'mata_kuliah' => 'Fisika',
         'hari' => 'Selasa',
         'status' => 'Nonaktif',
     ]);
@@ -508,12 +508,12 @@ test('pencarian jadwal bisa digabung dengan filter kelas, hari, dan status', fun
         'status' => 'Aktif',
     ]))
         ->assertOk()
-        ->assertSee($target->mata_pelajaran)
-        ->assertSee('X-A')
+        ->assertSee($target->mata_kuliah)
+        ->assertSee('Kelas A')
         ->assertDontSee('Fisika');
 
-    // Pencarian juga menyentuh nama kelas dan nama guru.
-    $this->get(route('cms.jadwal', ['q' => 'X-B']))
+    // Pencarian juga menyentuh nama kelas dan nama dosen.
+    $this->get(route('cms.jadwal', ['q' => 'Kelas B']))
         ->assertOk()
         ->assertSee('Fisika')
         ->assertDontSee('Informatika');
@@ -521,7 +521,7 @@ test('pencarian jadwal bisa digabung dengan filter kelas, hari, dan status', fun
 
 test('filter jadwal yang tidak dikenal diabaikan, bukan menghasilkan halaman kosong', function () {
     Jadwal::factory()->create([
-        'mata_pelajaran' => 'Informatika',
+        'mata_kuliah' => 'Informatika',
         'hari' => 'Senin',
         'status' => 'Aktif',
     ]);
@@ -532,7 +532,7 @@ test('filter jadwal yang tidak dikenal diabaikan, bukan menghasilkan halaman kos
 });
 
 test('pagination jadwal mempertahankan filter yang aktif', function () {
-    $kelas = kelasUntukJadwal('X-A');
+    $kelas = kelasUntukJadwal('Kelas A');
 
     Jadwal::factory()->count(12)->create([
         'kelas_id' => $kelas->id,

@@ -1,6 +1,6 @@
 @extends('layouts.absensi')
 
-@section('title', 'Kode NISN · Hadirin.web')
+@section('title', 'Kode NIM · Hadirin.web')
 
 @section('konten')
     <div class="min-h-screen">
@@ -13,12 +13,12 @@
 
                 <div class="flex items-center gap-3">
                     <div class="hidden text-right sm:block">
-                        <p class="text-sm font-semibold text-slate-800">{{ $siswa->user->name }}</p>
-                        <p class="text-xs text-slate-500">{{ $siswa->kelas }}</p>
+                        <p class="text-sm font-semibold text-slate-800">{{ $mahasiswa->user->name }}</p>
+                        <p class="text-xs text-slate-500">{{ $mahasiswa->kelas }}</p>
                     </div>
                     <span
                         class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-indigo-100 text-sm font-semibold text-indigo-700">
-                        {{ strtoupper(substr($siswa->user->name, 0, 1)) }}
+                        {{ strtoupper(substr($mahasiswa->user->name, 0, 1)) }}
                     </span>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
@@ -41,7 +41,7 @@
                     Kembali ke presensi
                 </a>
                 <h1 class="mt-3 text-2xl font-bold tracking-tight text-slate-800 sm:text-3xl">
-                    Presen Kode NISN
+                    Presen Kode NIM
                 </h1>
                 <p class="mt-1 max-w-2xl text-slate-600">
                     Ketik kode yang tertera di kartu presensi. Pakai cara ini kalau kamera HP sedang tidak bisa
@@ -110,7 +110,7 @@
                             <div class="border-b border-slate-100 px-6 py-5">
                                 <h2 class="text-lg font-semibold text-slate-800">Masukkan Kode</h2>
                                 <p class="mt-1 text-sm text-slate-500">
-                                    Kode ada di kartu presensi yang kamu terima dari sekolah.
+                                    Kode ada di kartu presensi yang kamu terima dari kampus.
                                 </p>
                             </div>
 
@@ -157,7 +157,7 @@
                                 {{-- Input kode --}}
                                 <div>
                                     <label for="kode" class="block text-sm font-medium text-slate-700">
-                                        Kode NISN
+                                        Kode NIM
                                         <span class="text-red-500">*</span>
                                     </label>
                                     <input type="text" id="kode" name="kode" value="{{ old('kode') }}"
@@ -191,7 +191,7 @@
 
                 {{-- Panel samping --}}
                 <section class="space-y-4">
-                    {{-- Kartu-absensi mini, supaya siswa bisa cek kode sendiri --}}
+                    {{-- Kartu-absensi mini, supaya mahasiswa bisa cek kode sendiri --}}
                     <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                         <div class="h-1.5 w-full bg-gradient-to-r from-indigo-500 to-blue-500"></div>
                         <div class="p-5">
@@ -201,21 +201,21 @@
                             </p>
 
                             <p class="mt-4 rounded-xl bg-slate-50 py-4 text-center font-mono text-2xl font-bold tracking-[0.2em] text-slate-800">
-                                {{ $siswa->nisn }}
+                                {{ $mahasiswa->nim }}
                             </p>
 
                             <dl class="mt-4 space-y-2 text-xs">
                                 <div class="flex items-center justify-between">
                                     <dt class="text-slate-500">Nama</dt>
-                                    <dd class="font-semibold text-slate-800">{{ $siswa->user->name }}</dd>
+                                    <dd class="font-semibold text-slate-800">{{ $mahasiswa->user->name }}</dd>
                                 </div>
                                 <div class="flex items-center justify-between">
                                     <dt class="text-slate-500">Kelas</dt>
-                                    <dd class="font-semibold text-slate-800">{{ $siswa->kelas }}</dd>
+                                    <dd class="font-semibold text-slate-800">{{ $mahasiswa->kelas }}</dd>
                                 </div>
                                 <div class="flex items-center justify-between">
-                                    <dt class="text-slate-500">NISN</dt>
-                                    <dd class="font-semibold text-slate-800">{{ $siswa->nisn }}</dd>
+                                    <dt class="text-slate-500">NIM</dt>
+                                    <dd class="font-semibold text-slate-800">{{ $mahasiswa->nim }}</dd>
                                 </div>
                             </dl>
                         </div>
@@ -257,7 +257,7 @@
                             </li>
                             <li class="flex gap-2">
                                 <i class="fas fa-circle-check mt-0.5 text-[10px] text-indigo-500"></i>
-                                Kehadiran langsung terlihat oleh guru.
+                                Kehadiran langsung terlihat oleh dosen.
                             </li>
                         </ul>
                     </div>
@@ -270,7 +270,7 @@
 @push('scripts')
     <script>
         // ============================================================
-        // ABSEN KODE NISN
+        // ABSEN KODE NIM
         // ============================================================
 
         const inputKode = document.getElementById('kode');
@@ -280,7 +280,7 @@
             inputKode.focus();
 
             // Spasi yang ditekan di tengah kode membuat form terkirim lebih
-            // dulu, padahal kode belum lengkap. Dimakan supaya siswa punya
+            // dulu, padahal kode belum lengkap. Dimakan supaya mahasiswa punya
             // waktu selesai mengetik.
             inputKode.addEventListener('keydown', (event) => {
                 if (event.key === ' ') {

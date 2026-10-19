@@ -9,18 +9,18 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * Satu slot jadwal mengajar: mata pelajaran di kelas tertentu, pada hari dan
- * jam tertentu, diajarkan oleh seorang guru.
+ * Satu slot jadwal mengajar: mata kuliah di kelas tertentu, pada hari dan
+ * jam tertentu, diajarkan oleh seorang dosen.
  *
  * @property int $id
  * @property int $kelas_id
- * @property int $guru_id
- * @property string $mata_pelajaran
+ * @property int $dosen_id
+ * @property string $mata_kuliah
  * @property string $hari
  * @property string $jam_mulai
  * @property string $jam_selesai
  * @property string|null $ruang
- * @property int $tahun_ajaran
+ * @property int $tahun_akademik
  * @property string $status
  */
 class Jadwal extends Model
@@ -29,7 +29,7 @@ class Jadwal extends Model
     use HasFactory;
 
     /**
-     * Nama hari yang dipakai sekolah, sudah urut dari hari kerja.
+     * Nama hari yang dipakai kampus, sudah urut dari hari kerja.
      *
      * @var list<string>
      */
@@ -54,13 +54,13 @@ class Jadwal extends Model
 
     protected $fillable = [
         'kelas_id',
-        'guru_id',
-        'mata_pelajaran',
+        'dosen_id',
+        'mata_kuliah',
         'hari',
         'jam_mulai',
         'jam_selesai',
         'ruang',
-        'tahun_ajaran',
+        'tahun_akademik',
         'status',
     ];
 
@@ -81,9 +81,9 @@ class Jadwal extends Model
         return $this->belongsTo(Kelas::class);
     }
 
-    public function guru(): BelongsTo
+    public function dosen(): BelongsTo
     {
-        return $this->belongsTo(Guru::class);
+        return $this->belongsTo(Dosen::class);
     }
 
     /**

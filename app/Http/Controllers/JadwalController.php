@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Guru;
+use App\Models\Dosen;
 use App\Models\Jadwal;
 use App\Models\Kelas;
 use Illuminate\Http\RedirectResponse;
@@ -31,15 +31,15 @@ class JadwalController extends Controller
 
         $jadwal = Jadwal::query()
             ->with('kelas')
-            ->with('guru.user:id,name')
+            ->with('dosen.user:id,name')
             ->when($request->filled('q'), function ($query) use ($request) {
                 $keyword = '%'.$request->string('q').'%';
 
                 $query->where(function ($inner) use ($keyword) {
-                    $inner->where('mata_pelajaran', 'like', $keyword)
+                    $inner->where('mata_kuliah', 'like', $keyword)
                         ->orWhere('ruang', 'like', $keyword)
                         ->orWhereHas('kelas', fn ($kelas) => $kelas->where('nama_kelas', 'like', $keyword))
-                        ->orWhereHas('guru.user', fn ($user) => $user->where('name', 'like', $keyword));
+                        ->orWhereHas('dosen.user', fn ($user) => $user->where('name', 'like', $keyword));
                 });
             })
             ->when($kelas !== null, fn ($query) => $query->where('kelas_id', $kelas))
@@ -70,7 +70,7 @@ class JadwalController extends Controller
     {
         return view('cms.jadwal.create', [
             'kelasList' => $this->kelasList(),
-            'guruList' => $this->guruList(),
+            'dosenList' => $this->dosenList(),
             'daftarHari' => Jadwal::HARI_TERSEDIA,
             'daftarStatus' => Jadwal::STATUS_TERSEDIA,
         ]);
@@ -100,7 +100,7 @@ class JadwalController extends Controller
         return view('cms.jadwal.edit', [
             'jadwal' => $jadwal,
             'kelasList' => $this->kelasList(),
-            'guruList' => $this->guruList(),
+            'dosenList' => $this->dosenList(),
             'daftarHari' => Jadwal::HARI_TERSEDIA,
             'daftarStatus' => Jadwal::STATUS_TERSEDIA,
         ]);
@@ -147,21 +147,21 @@ class JadwalController extends Controller
     {
         return [
             'kelas_id' => ['required', 'integer', 'exists:kelas,id'],
-            'guru_id' => ['required', 'integer', 'exists:gurus,id'],
-            'mata_pelajaran' => ['required', 'string', 'min:2', 'max:100'],
+            'dosen_id' => ['required', 'integer', 'exists:dosens,id'],
+            'mata_kuliah' => ['required', 'string', 'min:2', 'max:100'],
             'hari' => ['required', Rule::in(Jadwal::HARI_TERSEDIA)],
             'jam_mulai' => ['required', 'date_format:H:i'],
             // `after` menolak jadwal yang selesai sebelum atau tepat sama
             // dengan waktu mulainya, jadi durasinya selalu di atas nol.
             'jam_selesai' => ['required', 'date_format:H:i', 'after:jam_mulai'],
             'ruang' => ['nullable', 'string', 'max:50'],
-            'tahun_ajaran' => ['required', 'integer', 'min:2000', 'max:'.(now()->year + 2)],
+            'tahun_akademik' => ['required', 'integer', 'min:2000', 'max:'.(now()->year + 2)],
             'status' => ['required', Rule::in(Jadwal::STATUS_TERSEDIA)],
         ];
     }
 
     /**
-     * Tolak jadwal yang menabrak jadwal lain di kelas atau guru yang sama.
+     * Tolak jadwal yang menabrak jadwal lain di kelas atau dosen yang sama.
      *
      * Dua slot dianggap bertabrakan kalau jadwal baru mulai sebelum jadwal lama
      * selesai, dan selesai setelah jadwal lama mulai. Slot yang bersambung
@@ -178,14 +178,14 @@ class JadwalController extends Controller
     {
         $sumber = [
             'kelas_id' => 'Kelas ini sudah punya jadwal lain pada rentang jam tersebut.',
-            'guru_id' => 'Guru ini sudah mengajar kelas lain pada rentang jam tersebut.',
+            'dosen_id' => 'Dosen ini sudah mengajar kelas lain pada rentang jam tersebut.',
         ];
 
         foreach ($sumber as $kolom => $pesan) {
             $bentrok = Jadwal::query()
                 ->where($kolom, $data[$kolom])
                 ->where('hari', $data['hari'])
-                ->where('tahun_ajaran', $data['tahun_ajaran'])
+                ->where('tahun_akademik', $data['tahun_akademik'])
                 ->where('status', 'Aktif')
                 ->where('jam_mulai', '<', $data['jam_selesai'])
                 ->where('jam_selesai', '>', $data['jam_mulai'])
@@ -216,13 +216,13 @@ class JadwalController extends Controller
     }
 
     /**
-     * Guru aktif untuk dropdown form.
+     * Dosen aktif untuk dropdown form.
      *
-     * @return Collection<int, Guru>
+     * @return Collection<int, Dosen>
      */
-    private function guruList()
+    private function dosenList()
     {
-        return Guru::query()
+        return Dosen::query()
             ->with('user:id,name')
             ->orderBy('id')
             ->get();

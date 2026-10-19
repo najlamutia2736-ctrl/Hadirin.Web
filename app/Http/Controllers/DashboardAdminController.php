@@ -3,11 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Absensi;
-use App\Models\Guru;
+use App\Models\Dosen;
 use App\Models\Jadwal;
 use App\Models\Kelas;
-use App\Models\MataPelajaran;
-use App\Models\Siswa;
+use App\Models\Mahasiswa;
+use App\Models\MataKuliah;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
@@ -19,9 +19,9 @@ use Illuminate\View\View;
  *
  * Semua angka di halaman ini diambil dari tabel yang sama dengan halaman
  * pengelolaan masing-masing: kartu statistik menghitung baris yang benar
- * dari `siswas`, `gurus`, `kelas`, `mata_pelajaran`, `jadwals`, dan `users`,
+ * dari `mahasiswa`, `dosens`, `kelas`, `mata_kuliah`, `jadwals`, dan `users`,
  * sedangkan rekap kehadiran memakai `absensis` yang juga dipakai halaman Rekap
- * dan dashboard guru.
+ * dan dashboard dosen.
  *
  * Angka di sini sengaja tidak dihitung ulang dengan rumus lain, supaya kartu
  * dashboard dan isi halaman tujuan selalu cocok. Kalau ada perbedaan, itu bug,
@@ -47,7 +47,7 @@ class DashboardAdminController extends Controller
      * Label status absensi dalam bahasa Indonesia.
      *
      * Di database alpa tersimpan sebagai `alpha`, sedangkan halaman Rekap dan
-     * dashboard guru menampilkannya sebagai "Alpa".
+     * dashboard dosen menampilkannya sebagai "Alpa".
      *
      * @var array<string, string>
      */
@@ -61,7 +61,7 @@ class DashboardAdminController extends Controller
     /**
      * Warna tiap status, dipakai titik legenda pada donut rekap harian.
      *
-     * Nilainya sama dengan warna yang dipakai halaman Rekap dan dashboard guru.
+     * Nilainya sama dengan warna yang dipakai halaman Rekap dan dashboard dosen.
      *
      * @var array<string, array<string, string>>
      */
@@ -120,20 +120,20 @@ class DashboardAdminController extends Controller
     {
         return [
             [
-                'label' => 'Siswa',
-                'value' => Siswa::query()->count(),
+                'label' => 'Mahasiswa',
+                'value' => Mahasiswa::query()->count(),
                 'icon' => 'fas fa-user-graduate',
                 'tone' => 'blue',
-                'route' => 'cms.student',
-                'detail' => $this->ringkasanSiswa(),
+                'route' => 'cms.mahasiswa',
+                'detail' => $this->ringkasanMahasiswa(),
             ],
             [
-                'label' => 'Guru',
-                'value' => Guru::query()->count(),
-                'icon' => 'fas fa-chalkboard-teacher',
+                'label' => 'Dosen',
+                'value' => Dosen::query()->count(),
+                'icon' => 'fas fa-chalkboard-dosen',
                 'tone' => 'green',
-                'route' => 'cms.teachers',
-                'detail' => Guru::query()->where('status', 'Aktif')->count().' aktif',
+                'route' => 'cms.dosens',
+                'detail' => Dosen::query()->where('status', 'Aktif')->count().' aktif',
             ],
             [
                 'label' => 'Kelas',
@@ -143,15 +143,15 @@ class DashboardAdminController extends Controller
                 'value' => Kelas::query()->count(),
                 'icon' => 'fas fa-book-open',
                 'tone' => 'purple',
-                'route' => 'cms.classes',
+                'route' => 'cms.kelas',
                 'detail' => $this->ringkasanKelas(),
             ],
             [
-                'label' => 'Mata Pelajaran',
-                'value' => MataPelajaran::query()->count(),
+                'label' => 'Mata Kuliah',
+                'value' => MataKuliah::query()->count(),
                 'icon' => 'fas fa-layer-group',
                 'tone' => 'violet',
-                'route' => 'cms.mata-pelajaran',
+                'route' => 'cms.mata-kuliah',
                 'detail' => null,
             ],
             [
@@ -174,11 +174,11 @@ class DashboardAdminController extends Controller
     }
 
     /**
-     * Ringkasan siswa untuk detail kartu: jumlah laki-laki dan perempuan.
+     * Ringkasan mahasiswa untuk detail kartu: jumlah laki-laki dan perempuan.
      */
-    private function ringkasanSiswa(): string
+    private function ringkasanMahasiswa(): string
     {
-        $baris = Siswa::query()
+        $baris = Mahasiswa::query()
             ->selectRaw("count(case when jenis_kelamin = 'L' then 1 end) as laki")
             ->selectRaw("count(case when jenis_kelamin = 'P' then 1 end) as perempuan")
             ->first();
@@ -217,8 +217,8 @@ class DashboardAdminController extends Controller
     /**
      * Rekap kehadiran hari ini, dihitung dari tabel `absensis`.
      *
-     * Siswa yang belum absen hari ini sengaja tidak dihitung sebagai alpa,
-     * supaya angka di sini sama dengan dashboard guru: yang dihitung adalah
+     * Mahasiswa yang belum absen hari ini sengaja tidak dihitung sebagai alpa,
+     * supaya angka di sini sama dengan dashboard dosen: yang dihitung adalah
      * catatan absensi yang benar-benar ada.
      *
      * @return array<string, mixed>
@@ -250,7 +250,7 @@ class DashboardAdminController extends Controller
             'total' => $total,
             'persentase' => $total > 0 ? (int) round($hadir / $total * 100) : 0,
             'tanggal' => now()->locale('id')->translatedFormat('l, d F Y'),
-            'siswaTerpantau' => Siswa::query()->count(),
+            'mahasiswaTerpantau' => Mahasiswa::query()->count(),
         ];
     }
 
@@ -373,7 +373,7 @@ class DashboardAdminController extends Controller
         $hari = now()->locale('id')->translatedFormat('l');
 
         return Jadwal::query()
-            ->with(['kelas:id,nama_kelas', 'guru.user:id,name'])
+            ->with(['kelas:id,nama_kelas', 'dosen.user:id,name'])
             ->where('hari', $hari)
             ->where('status', 'Aktif')
             ->orderBy('jam_mulai')
@@ -382,13 +382,13 @@ class DashboardAdminController extends Controller
     }
 
     /**
-     * Kelas dengan siswa terbanyak, untuk memberi konteks jumlah siswa.
+     * Kelas dengan mahasiswa terbanyak, untuk memberi konteks jumlah mahasiswa.
      *
      * @return list<array<string, mixed>>
      */
     private function kelasTeramai(): array
     {
-        return Siswa::query()
+        return Mahasiswa::query()
             ->whereNotNull('kelas')
             ->where('kelas', '<>', '')
             ->selectRaw('kelas, count(*) as total')
@@ -399,7 +399,7 @@ class DashboardAdminController extends Controller
             ->get()
             ->map(fn ($baris): array => [
                 'kelas' => (string) $baris->kelas,
-                'siswa' => (int) $baris->total,
+                'mahasiswa' => (int) $baris->total,
             ])
             ->all();
     }

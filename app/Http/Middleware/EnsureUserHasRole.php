@@ -10,7 +10,7 @@ use Symfony\Component\HttpFoundation\Response;
  * Batasi halaman berdasarkan role akun yang sedang login.
  *
  * Selalu dipakai setelah middleware `auth`, jadi user yang belum login sudah
- * ditolak lebih dulu dan middleware ini hanya mengurus soal role-nya. Tanpa
+ * ditolak lebih dulu dan middleware ini hanya mendosens soal role-nya. Tanpa
  * `auth` di_chain sebelumnya, `$request->user()` bisa null dan seluruh request
  * ikut ditolak dengan 403.
  */

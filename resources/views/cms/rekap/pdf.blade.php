@@ -198,7 +198,7 @@
     <div class="lembar">
         <div class="kop">
             <h1>{{ config('app.name') }}</h1>
-            <p>Laporan Rekap Kehadiran Siswa</p>
+            <p>Laporan Rekap Kehadiran Mahasiswa</p>
         </div>
 
         <h2 class="judul">Rekap Kehadiran per Kelas</h2>
@@ -213,7 +213,7 @@
             <thead>
                 <tr>
                     <th class="kelas" style="width: 22%">Kelas</th>
-                    <th>Jumlah Siswa</th>
+                    <th>Jumlah Mahasiswa</th>
                     <th>Hadir</th>
                     <th>Izin</th>
                     <th>Sakit</th>
@@ -226,7 +226,7 @@
                 @forelse ($rekap as $row)
                     <tr>
                         <td class="kelas">{{ $row['kelas'] }}</td>
-                        <td>{{ $row['students'] }}</td>
+                        <td>{{ $row['mahasiswa'] }}</td>
                         <td>{{ $row['hadir'] }}</td>
                         <td>{{ $row['izin'] }}</td>
                         <td>{{ $row['sakit'] }}</td>
@@ -244,7 +244,7 @@
                 <tfoot>
                     <tr>
                         <td class="kelas">TOTAL ({{ count($rekap) }} kelas)</td>
-                        <td>{{ $total['students'] }}</td>
+                        <td>{{ $total['mahasiswa'] }}</td>
                         <td>{{ $total['hadir'] }}</td>
                         <td>{{ $total['izin'] }}</td>
                         <td>{{ $total['sakit'] }}</td>
@@ -265,7 +265,7 @@
             <div>
                 <div class="ruang"></div>
                 Hormat saya,<br>
-                Kepala Sekolah
+                Dekan
             </div>
         </div>
     </div>

@@ -4,7 +4,7 @@
     <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
             <h2 class="text-2xl font-bold text-gray-800">Jadwal Mengajar</h2>
-            <p class="mt-1 text-gray-600">Atur mata pelajaran, kelas, guru, dan jam mengajar setiap hari.</p>
+            <p class="mt-1 text-gray-600">Atur mata kuliah, kelas, dosen, dan jam mengajar setiap hari.</p>
         </div>
         <a href="{{ route('cms.jadwal.create') }}"
             class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
@@ -44,7 +44,7 @@
                 <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-400">
                     <i class="fas fa-search text-sm"></i>
                 </span>
-                <input type="search" name="q" value="{{ request('q') }}" placeholder="Cari mapel, kelas, atau guru..."
+                <input type="search" name="q" value="{{ request('q') }}" placeholder="Cari mata kuliah, kelas, atau dosen..."
                     class="w-full rounded-lg border border-gray-200 py-2 pl-9 pr-3 text-sm text-gray-700 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
             </div>
             <div class="flex flex-col gap-3 sm:flex-row">
@@ -83,9 +83,9 @@
                 <thead class="bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500">
                     <tr>
                         <th class="px-6 py-3">Hari &amp; Jam</th>
-                        <th class="px-6 py-3">Mata Pelajaran</th>
+                        <th class="px-6 py-3">Mata Kuliah</th>
                         <th class="px-6 py-3">Kelas</th>
-                        <th class="px-6 py-3">Guru Pengajar</th>
+                        <th class="px-6 py-3">Dosen Pengajar</th>
                         <th class="px-6 py-3">Ruang</th>
                         <th class="px-6 py-3">Status</th>
                         <th class="px-6 py-3 text-right">Aksi</th>
@@ -109,15 +109,15 @@
                             <td class="px-6 py-4">
                                 <span
                                     class="inline-block rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-600">
-                                    {{ $baris->mata_pelajaran }}
+                                    {{ $baris->mata_kuliah }}
                                 </span>
                             </td>
                             <td class="px-6 py-4 text-gray-700">
                                 {{ $baris->kelas?->nama_kelas ?? 'Kelas terhapus' }}
-                                <p class="text-xs text-gray-400">TA {{ $baris->tahun_ajaran }}</p>
+                                <p class="text-xs text-gray-400">TA {{ $baris->tahun_akademik }}</p>
                             </td>
                             <td class="px-6 py-4 text-gray-500">
-                                {{ $baris->guru?->user?->name ?? 'Guru tanpa akun' }}
+                                {{ $baris->dosen?->user?->name ?? 'Dosen tanpa akun' }}
                             </td>
                             <td class="px-6 py-4 text-gray-500">{{ $baris->ruang ?? '-' }}</td>
                             <td class="px-6 py-4">

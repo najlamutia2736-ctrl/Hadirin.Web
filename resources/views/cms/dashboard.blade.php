@@ -6,7 +6,7 @@
     /*
     | Definisi warna kartu, ikon, dan label status ditaruh di sini supaya mudah
     | disetel tanpa menyentuh Blade di bawah. Nilainya mengikuti warna yang
-    | dipakai dashboard guru dan halaman Rekap supaya angka yang sama selalu
+    | dipakai dashboard dosen dan halaman Rekap supaya angka yang sama selalu
     | dibaca dengan warna yang sama di seluruh aplikasi.
     */
     $tones = [
@@ -59,7 +59,7 @@
 
         <div class="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-                <p class="text-sm font-medium text-indigo-100">Ringkasan data sekolah hari ini</p>
+                <p class="text-sm font-medium text-indigo-100">Ringkasan data kampus hari ini</p>
                 <h2 class="mt-1 text-2xl font-bold text-white">
                     Selamat datang, {{ \Illuminate\Support\Str::before(auth()->user()->name ?? 'Admin', ' ') }} 👋
                 </h2>
@@ -88,7 +88,7 @@
 
         Enam kartu ini dibuat ringkas dan dalam satu baris, tapi baris penuh
         baru mulai di `xl`. Sidebar selebar 256px, jadi di `lg` (1024px) tiap
-        kartu hanya mendapat sekitar 110px dan label seperti "Mata Pelajaran"
+        kartu hanya mendapat sekitar 110px dan label seperti "Mata Kuliah"
         terpotong. Di bawah itu kartu jadi tiga kolom, lalu dua di ponsel.
 
         Tata letak di dalam kartu: ikon dan label sebaris di atas, angka besar
@@ -141,7 +141,7 @@
                         <div>
                             <h3 class="font-semibold text-gray-800">Tren Kehadiran</h3>
                             <p class="text-xs text-gray-500">
-                                Persentase kehadiran siswa per {{ $tren === 'tahunan' ? 'tahun' : 'bulan' }}
+                                Persentase kehadiran mahasiswa per {{ $tren === 'tahunan' ? 'tahun' : 'bulan' }}
                                 &middot; {{ count($trenAktif) }} periode terakhir
                             </p>
                         </div>
@@ -212,7 +212,7 @@
                             <i class="fas fa-chart-simple mb-2 block text-2xl text-gray-300"></i>
                             Belum ada catatan presensi untuk ditampilkan.
                             <br>
-                            <span class="text-xs">Data muncul begitu presensi pertama tercatat di halaman presensi siswa.</span>
+                            <span class="text-xs">Data muncul begitu presensi pertama tercatat di halaman presensi mahasiswa.</span>
                         </p>
                     @endif
                 </div>
@@ -246,7 +246,7 @@
                         <div class="relative h-36 w-36">
                             @php
                                 // Segmen disusun manual supaya bisa menyisakan abu-abu
-                                // untuk siswa yang belum absen hari ini.
+                                // untuk mahasiswa yang belum absen hari ini.
                                 $kumulatif = 0;
                                 $segmen = [];
                                 foreach ($rekapHariIni['baris'] as $baris) {
@@ -272,7 +272,7 @@
                             </span>
                             <p class="text-sm font-semibold text-gray-700">Belum ada presensi hari ini</p>
                             <p class="mt-0.5 max-w-[13rem] text-xs text-gray-500">
-                                {{ number_format($rekapHariIni['siswaTerpantau'], 0, ',', '.') }} siswa terdaftar,
+                                {{ number_format($rekapHariIni['mahasiswaTerpantau'], 0, ',', '.') }} mahasiswa terdaftar,
                                 belum ada catatan masuk hari ini.
                             </p>
                         </div>
@@ -287,7 +287,7 @@
                             </span>
                             <span class="text-sm font-semibold text-gray-800">
                                 {{ number_format($baris['value'], 0, ',', '.') }}
-                                <span class="font-normal text-gray-400">siswa</span>
+                                <span class="font-normal text-gray-400">mahasiswa</span>
                             </span>
                         </div>
                     @endforeach
@@ -295,7 +295,7 @@
 
                 <div class="border-t border-gray-100 px-6 py-3 text-center text-xs text-gray-500">
                     Total <span class="font-semibold text-gray-800">{{ number_format($rekapHariIni['total'], 0, ',', '.') }}</span>
-                    siswa tercatat presensi hari ini
+                    mahasiswa tercatat presensi hari ini
                 </div>
             </div>
         </div>
@@ -344,7 +344,7 @@
                                 </span>
                                 <span class="min-w-0 flex-1">
                                     <span class="block truncate text-sm font-semibold text-gray-800">
-                                        {{ $jadwal->mata_pelajaran }}
+                                        {{ $jadwal->mata_kuliah }}
                                     </span>
                                     <span class="block truncate text-xs text-gray-400">
                                         {{ $jadwal->kelas?->nama_kelas ?? 'Tanpa kelas' }}
@@ -352,7 +352,7 @@
                                     </span>
                                 </span>
                                 <span class="shrink-0 rounded-full bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-600">
-                                    {{ $jadwal->guru?->user?->name ?? 'Tanpa guru' }}
+                                    {{ $jadwal->dosen?->user?->name ?? 'Tanpa dosen' }}
                                 </span>
                             </div>
                         @endforeach
@@ -366,11 +366,11 @@
                 <div class="border-b border-gray-200 px-6 py-4">
                     <div class="flex items-center gap-3">
                         <span class="grid h-9 w-9 place-items-center rounded-lg bg-violet-50 text-violet-600">
-                            <i class="fas fa-school"></i>
+                            <i class="fas fa-building-columns"></i>
                         </span>
                         <div>
                             <h3 class="font-semibold text-gray-800">Kelas Terbanyak</h3>
-                            <p class="text-xs text-gray-500">Lima kelas dengan siswa terbanyak</p>
+                            <p class="text-xs text-gray-500">Lima kelas dengan mahasiswa terbanyak</p>
                         </div>
                     </div>
                 </div>
@@ -380,24 +380,24 @@
                         <span class="mb-2 grid h-12 w-12 place-items-center rounded-full bg-gray-100 text-gray-400">
                             <i class="fas fa-users-slash"></i>
                         </span>
-                        <p class="text-sm font-semibold text-gray-700">Belum ada siswa</p>
-                        <p class="mt-0.5 text-xs text-gray-500">Tambahkan siswa dari menu Students.</p>
+                        <p class="text-sm font-semibold text-gray-700">Belum ada mahasiswa</p>
+                        <p class="mt-0.5 text-xs text-gray-500">Tambahkan mahasiswa dari menu Students.</p>
                     </div>
                 @else
                     <div class="space-y-3 px-6 py-5">
-                        @php $maksimum = max(array_column($kelasTeramai, 'siswa')); @endphp
+                        @php $maksimum = max(array_column($kelasTeramai, 'mahasiswa')); @endphp
                         @foreach ($kelasTeramai as $baris)
-                            <a href="{{ route('cms.student', ['kelas' => $baris['kelas']]) }}"
+                            <a href="{{ route('cms.mahasiswa', ['kelas' => $baris['kelas']]) }}"
                                 class="block rounded-lg transition-colors hover:bg-gray-50">
                                 <div class="mb-1.5 flex items-center justify-between gap-2">
                                     <span class="truncate text-sm font-semibold text-gray-700">{{ $baris['kelas'] }}</span>
                                     <span class="shrink-0 text-xs text-gray-500">
-                                        <span class="font-semibold text-gray-800">{{ $baris['siswa'] }}</span> siswa
+                                        <span class="font-semibold text-gray-800">{{ $baris['mahasiswa'] }}</span> mahasiswa
                                     </span>
                                 </div>
                                 <div class="progress-bar">
                                     <div class="progress-fill bg-violet-500"
-                                        style="width: {{ $maksimum > 0 ? round($baris['siswa'] / $maksimum * 100) : 0 }}%"></div>
+                                        style="width: {{ $maksimum > 0 ? round($baris['mahasiswa'] / $maksimum * 100) : 0 }}%"></div>
                                 </div>
                             </a>
                         @endforeach
@@ -405,7 +405,7 @@
                 @endif
 
                 <div class="border-t border-gray-100 px-6 py-3 text-xs text-gray-500">
-                    <a href="{{ route('cms.classes') }}"
+                    <a href="{{ route('cms.kelas') }}"
                         class="font-semibold text-indigo-600 transition-colors hover:text-indigo-700">
                         Lihat semua kelas
                     </a>

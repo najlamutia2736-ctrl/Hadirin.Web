@@ -4,12 +4,12 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Metode Presensi Siswa
+    | Metode Presensi Mahasiswa
     |--------------------------------------------------------------------------
     |
     | Daftar cara absen yang ditampilkan oleh dua halaman sekaligus:
     | `absensi/metode` (halaman khusus) dan halaman depan `/` (dipakai sebagai
-    | panduan untuk siswa yang mau absen).
+    | panduan untuk mahasiswa yang mau absen).
     |
     | Disimpan di config, bukan ditulis di tiap view, karena dua halaman itu
     | harus menampilkan cara absen yang sama persis. Kalau daftarnya ditulis dua
@@ -51,24 +51,24 @@ return [
     ],
 
     [
-        'label' => 'Kode NISN',
-        'ringkasan' => 'Ketik NISN pribadi yang tertera di kartu.',
+        'label' => 'Kode NIM',
+        'ringkasan' => 'Ketik NIM pribadi yang tertera di kartu.',
         'penjelasan' => 'Dipakai kalau kamera tidak bisa dipakai, misalnya HP tidak punya kamera atau sedang dipakai aplikasi lain.',
         'ikon' => 'fa-keyboard',
         'warna' => 'bg-emerald-50 text-emerald-600',
         'accent' => 'from-emerald-500 to-teal-500',
         'route' => 'absensi.id-unik',
-        'butuh' => 'NISN dari kartu siswa',
+        'butuh' => 'NIM dari kartu mahasiswa',
         'langkah' => [
-            'Buka halaman Kode NISN dari daftar di atas.',
-            'Ketik NISN yang tertera di kartu presensi.',
+            'Buka halaman Kode NIM dari daftar di atas.',
+            'Ketik NIM yang tertera di kartu presensi.',
             'Kirim dan tunggu konfirmasi masuk.',
         ],
     ],
 
     [
         'label' => 'Izin / Sakit',
-        'ringkasan' => 'Kirim keterangan kalau tidak bisa hadir di sekolah.',
+        'ringkasan' => 'Kirim keterangan kalau tidak bisa hadir di kampus.',
         'penjelasan' => 'Berbeda dari dua cara di atas, ini bukan kehadiran. Izin dan sakit dicatat supaya tidak dihitung sebagai alpa.',
         'ikon' => 'fa-envelope-open-text',
         'warna' => 'bg-amber-50 text-amber-600',
@@ -78,7 +78,7 @@ return [
         'langkah' => [
             'Buka halaman Izin / Sakit dari daftar di atas.',
             'Pilih jenis pengajuan dan tulis alasannya.',
-            'Kirim pengajuan ke wali kelas.',
+            'Kirim pengajuan ke pembimbing akademik.',
         ],
     ],
 

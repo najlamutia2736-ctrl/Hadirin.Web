@@ -1,26 +1,14 @@
 <!-- resources/views/navbar.blade.php -->
 @php
     /*
-    | Navbar punya dua wajah: untuk pengunjung umum, dan untuk pengguna yang
-    | sudah masuk. Wajahnya ditentukan langsung dari sesi, jadi halaman yang
-    | memakainya tidak perlu mengirim flag apa pun.
+    | Navbar hanya menampilkan logo dan tombol akun. Semua area (CMS, Dosen,
+    | dan Presensi) punya halaman & navigasinya sendiri, jadi navbar publik
+    | tidak menampilkan link menu apa pun.
     |
     | Dipakai lewat:
     |     @include('navbar')
     */
     $user = auth()->user();
-
-    // Menu "Presen Siswa" hanya untuk akun yang punya profil di tabel `siswas`.
-    // Pemeriksaannya sama dengan yang dipakai AbsensiSiswaController, supaya
-    // menu ini tidak pernah mengarah ke halaman yang akan menolak user.
-    $bisaAbsen = $user?->siswa !== null;
-
-    // Halaman CMS dan Guru sudah dilindungi middleware `role`, jadi link-nya
-    // hanya ditampilkan ke akun yang benar-benar boleh membukanya. Tanpa ini,
-    // tamu akan melihat link yang setelah diklik hanya memantulkan ke halaman
-    // login.
-    $bukaCms = in_array($user?->role, ['Admin', 'Operator'], true);
-    $bukaGuru = $user?->role === 'Guru';
 @endphp
 <header class="w-full bg-white/80 backdrop-blur-sm border-b border-slate-200/60 sticky top-0 z-10">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -34,23 +22,9 @@
                 </a>
             </div>
 
-            <!-- Menu Desktop -->
-            <div class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
-                @if ($bisaAbsen)
-                    <a href="{{ route('absensi.index') }}"
-                        class="hover:text-indigo-600 transition {{ request()->routeIs('absensi.*') ? 'text-indigo-600 font-semibold' : '' }}">Presen Siswa</a>
-                @endif
-                @if ($bukaGuru)
-                    <a href="{{ route('guru.dashboard') }}"
-                        class="hover:text-indigo-600 transition {{ request()->routeIs('guru.dashboard') ? 'text-indigo-600 font-semibold' : '' }}">Dashboard Guru</a>
-                @endif
-                @if ($bukaCms)
-                    <a href="{{ route('cms.dashboard') }}"
-                        class="hover:text-indigo-600 transition {{ request()->routeIs('cms.dashboard') ? 'text-indigo-600 font-semibold' : '' }}">Dashboard Admin</a>
-                    <a href="{{ route('cms.rekap') }}"
-                        class="hover:text-indigo-600 transition {{ request()->routeIs('cms.rekap') ? 'text-indigo-600 font-semibold' : '' }}">Rekap</a>
-                @endif
-            </div>
+            <!-- Menu Desktop: sengaja kosong. Semua area punya halaman & navigasinya
+                 sendiri, jadi navbar publik hanya menampilkan logo dan akun. -->
+            <div class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600"></div>
 
             <!-- Tombol Login / User -->
             <div class="hidden md:block">
@@ -75,55 +49,22 @@
                 @endif
             </div>
 
-            <!-- Mobile Menu -->
+            <!-- Mobile Menu: tanpa tombol hamburger karena navbar tidak punya
+                 menu dropdown. Nama akun dan logout sudah cukup. -->
             <div class="md:hidden flex items-center gap-3">
                 @if ($user)
                     <span class="text-sm font-medium text-slate-600">{{ $user->name }}</span>
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="text-sm text-red-500 hover:text-red-700 transition">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
+                    </form>
                 @else
                     <a href="{{ route('login') }}"
                         class="text-sm font-medium text-indigo-600 bg-indigo-50 px-4 py-2 rounded-full">Log In</a>
                 @endif
-                <button class="text-slate-500 hover:text-indigo-600 transition" onclick="toggleMobileNav()">
-                    <i class="fas fa-bars text-xl" id="mobileNavIcon"></i>
-                </button>
             </div>
         </nav>
     </div>
-
-    <!-- Mobile Dropdown Menu -->
-    <div id="mobileNavDropdown" class="hidden md:hidden border-t border-slate-200/60 bg-white/95 backdrop-blur-sm">
-        <div class="px-4 py-3 space-y-1">
-            @if ($bisaAbsen)
-                <a href="{{ route('absensi.index') }}"
-                    class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
-                    <i class="fas fa-user-graduate w-5"></i> HALAMAN PRESENSI SISWA
-                </a>
-            @endif
-            @if ($bukaGuru)
-                <a href="{{ route('guru.dashboard') }}"
-                    class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
-                    <i class="fas fa-chalkboard-teacher w-5"></i> HALAMAN DASHBOARD GURU / DOSEN
-                </a>
-            @endif
-            @if ($bukaCms)
-                <a href="{{ route('cms.dashboard') }}"
-                    class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
-                    <i class="fas fa-user-shield w-5"></i> HALAMAN DASHBOARD ADMIN
-                </a>
-            @endif
-        </div>
-    </div>
 </header>
-
-<script>
-    function toggleMobileNav() {
-        const menu = document.getElementById('mobileNavDropdown');
-        const icon = document.getElementById('mobileNavIcon');
-        if (!menu) return;
-        menu.classList.toggle('hidden');
-        if (icon) {
-            icon.classList.toggle('fa-bars');
-            icon.classList.toggle('fa-times');
-        }
-    }
-</script>

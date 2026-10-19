@@ -15,65 +15,70 @@ class Kelas extends Model
     use HasFactory;
 
     /**
-     * Rombel yang tersedia di sekolah.
+     * Daftar kelas yang tersedia di kampus.
      *
-     * Daftar ini adalah sumber kebenaran nama kelas. `siswas.kelas` dan
+     * Daftar ini adalah sumber kebenaran nama kelas. `mahasiswa.kelas` dan
      * `kelas.nama_kelas` memakai nilai yang sama persis supaya relasi
-     * `Kelas::siswa()` benar-benar bisa menemukan siswanya, dan supaya jumlah
-     * siswa di halaman Classes selalu sama dengan isi tabel `siswas`.
+     * `Kelas::mahasiswa()` benar-benar bisa menemukan mahasiswanya, dan supaya jumlah
+     * mahasiswa di halaman Kelas selalu sama dengan isi tabel `mahasiswa`.
      *
      * @var list<string>
      */
-    public const ROMBEL_TERSEDIA = [
-        'X.1',
-        'X.2',
-        'X.3',
-        'XI.1',
-        'XI.2',
-        'XI.3',
-        'XII.1',
-        'XII.2',
-        'XII.3',
+    public const KELAS_TERSEDIA = [
+        'Kelas A',
+        'Kelas B',
+        'Kelas C',
+        'Kelas D',
+        'Kelas E',
+        'Kelas F',
+        'Kelas G',
+        'Kelas H',
+        'Kelas I',
     ];
 
     protected $fillable = [
         'nama_kelas',
         'tingkat',
-        'mata_pelajaran_id',
-        'wali_kelas_id',
+        'mata_kuliah_id',
+        'pembimbing_akademik_id',
         'ruang',
-        'tahun_ajaran',
+        'tahun_akademik',
         'status',
     ];
 
     /**
-     * Tingkat yang bisa dipilih pada form kelas.
+     * Semester yang bisa dipilih pada form kelas.
      *
      * @var list<string>
      */
     public const TINGKAT_TERSEDIA = [
-        'X',
-        'XI',
-        'XII',
+        'Semester 1',
+        'Semester 2',
+        'Semester 3',
+        'Semester 4',
+        'Semester 5',
+        'Semester 6',
+        'Semester 7',
+        'Semester 8',
     ];
 
-    public function waliKelas(): BelongsTo
+    public function pembimbingAkademik(): BelongsTo
     {
-        return $this->belongsTo(Guru::class, 'wali_kelas_id');
+        return $this->belongsTo(Dosen::class, 'pembimbing_akademik_id');
     }
 
-    public function mataPelajaran(): BelongsTo
+    public function mataKuliah(): BelongsTo
     {
-        return $this->belongsTo(MataPelajaran::class, 'mata_pelajaran_id');
+        return $this->belongsTo(MataKuliah::class, 'mata_kuliah_id');
     }
 
-    public function siswa(): HasMany
+    public function mahasiswa(): HasMany
     {
-        return $this->hasMany(Siswa::class, 'kelas', 'nama_kelas');
+        return $this->hasMany(Mahasiswa::class, 'kelas', 'nama_kelas');
     }
 
-    public function guru(): BelongsToMany
+    public function dosen(): BelongsToMany
     {
-        return $this->belongsToMany(Guru::class, 'guru_kelas')->using(GuruKelas::class);
+        return $this->belongsToMany(Dosen::class, 'dosen_kelas')->using(DosenKelas::class);
     }
 }

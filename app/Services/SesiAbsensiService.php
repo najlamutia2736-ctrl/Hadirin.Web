@@ -8,9 +8,9 @@ use Illuminate\Support\Carbon;
 /**
  * Pembuat sesi absensi harian.
  *
- * Aplikasi ini tidak punya layar "buka sesi" untuk guru, padahal kolom
+ * Aplikasi ini tidak punya layar "buka sesi" untuk dosen, padahal kolom
  * `sesi_absensi_id` di tabel `absensis` tidak boleh kosong. Tanpa proses yang
- * membuat sesi, siswa selalu kena pesan "Belum ada sesi absensi yang
+ * membuat sesi, mahasiswa selalu kena pesan "Belum ada sesi absensi yang
  * berjalan" dan kehadiran tidak bisa dicatat sama sekali.
  *
  * Kelas ini mengisi celah itu: sesi untuk setiap hari dibuat otomatis dari
@@ -41,7 +41,7 @@ class SesiAbsensiService
      * Pastikan ada sesi yang sedang berjalan, buatkan kalau belum ada.
      *
      * Dipakai command harian supaya sesi hari ini selalu ada sebelum jam
-     * sekolah mulai. Kalau ternyata masih ada sesi yang berjalan, sesi itu
+     * kampus mulai. Kalau ternyata masih ada sesi yang berjalan, sesi itu
      * dikembalikan tanpa membuat sesi baru, jadi command aman dijalankan
      * berulang kali.
      */
@@ -94,7 +94,7 @@ class SesiAbsensiService
     /**
      * Tutup semua sesi yang rentangnya sudah lewat.
      *
-     * Sesi basi yang masih berstatus `aktif` dirapikan supaya dashboard guru
+     * Sesi basi yang masih berstatus `aktif` dirapikan supaya dashboard dosen
      * tidak salah membaca sesi berjalan sebagai sesi yang sudah tutup.
      *
      * @return int jumlah sesi yang berubah status

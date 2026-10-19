@@ -3,7 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Kelas;
-use App\Models\MataPelajaran;
+use App\Models\MataKuliah;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -18,17 +18,17 @@ class KelasFactory extends Factory
      */
     public function definition(): array
     {
-        $namaKelas = fake()->unique()->randomElement(Kelas::ROMBEL_TERSEDIA);
+        $namaKelas = fake()->unique()->randomElement(Kelas::KELAS_TERSEDIA);
 
         return [
             'nama_kelas' => $namaKelas,
-            // Nama kelas berformat "XII.1", jadi tingkat diambil dari bagian
-            // sebelum titik, bukan dari pemisah tanda hubung.
-            'tingkat' => explode('.', $namaKelas)[0],
-            'mata_pelajaran_id' => MataPelajaran::factory(),
-            'wali_kelas_id' => null,
+            // Nama kelas tidak lagi memuat tingkat di dalamnya, jadi semester
+            // diambil langsung dari daftar semester yang tersedia.
+            'tingkat' => fake()->randomElement(Kelas::TINGKAT_TERSEDIA),
+            'mata_kuliah_id' => MataKuliah::factory(),
+            'pembimbing_akademik_id' => null,
             'ruang' => 'R. '.fake()->numberBetween(101, 999),
-            'tahun_ajaran' => now()->year,
+            'tahun_akademik' => now()->year,
             'status' => 'Aktif',
         ];
     }

@@ -1,7 +1,7 @@
 <?php
 
-use App\Models\Guru;
-use App\Models\MataPelajaran;
+use App\Models\Dosen;
+use App\Models\MataKuliah;
 use App\Models\User;
 use Tests\TestCase;
 
@@ -12,7 +12,7 @@ use Tests\TestCase;
 |
 | The closure you provide to your test functions is always bound to a specific PHPUnit test
 | case class. By default, that class is "PHPUnit\Framework\TestCase". Of course, you may
-| need to change it using the "pest()" function to bind a different classes or traits.
+| need to change it using the "pest()" function to bind a different kelas or traits.
 |
 */
 
@@ -56,7 +56,7 @@ function something()
 | Helper Login
 |--------------------------------------------------------------------------
 |
-| Halaman CMS dan dashboard guru dilindungi middleware `auth` + `role`, jadi
+| Halaman CMS dan dashboard dosen dilindungi middleware `auth` + `role`, jadi
 | test yang memanggil route-nya wajib login lebih dulu. Dua helper ini
 | shortening `actingAs()` supaya setiap test cukup menulis `$this->loginAdmin()`.
 |
@@ -78,17 +78,17 @@ function loginAdmin(string $role = 'Admin'): User
 }
 
 /**
- * Masuk sebagai akun guru yang juga punya baris di tabel `gurus`.
+ * Masuk sebagai akun dosen yang juga punya baris di tabel `dosens`.
  */
-function loginGuru(string $nama = 'Guru Uji'): User
+function loginDosen(string $nama = 'Dosen Uji'): User
 {
     $user = User::factory()->create([
         'name' => $nama,
-        'role' => 'Guru',
+        'role' => 'Dosen',
         'status' => 'Aktif',
     ]);
 
-    Guru::factory()->create(['user_id' => $user->id]);
+    Dosen::factory()->create(['user_id' => $user->id]);
 
     test()->actingAs($user);
 
@@ -100,12 +100,12 @@ function loginGuru(string $nama = 'Guru Uji'): User
  *
  * `DKV` dan `RPL` sudah diisi migration `add_jurusan_id_to_kelas_table`, jadi
  * test yang memakai kode tersebut tidak boleh memanggil factory (kode dan nama
- * mapel unique) tanpa mengecek dulu.
+ * mata kuliah unique) tanpa mengecek dulu.
  */
-function mapelDenganKode(string $kode, string $nama): MataPelajaran
+function mataKuliahDenganKode(string $kode, string $nama): MataKuliah
 {
-    return MataPelajaran::query()->firstOrCreate(
-        ['kode_mata_pelajaran' => $kode],
-        ['nama_mata_pelajaran' => $nama],
+    return MataKuliah::query()->firstOrCreate(
+        ['kode_mata_kuliah' => $kode],
+        ['nama_mata_kuliah' => $nama],
     );
 }

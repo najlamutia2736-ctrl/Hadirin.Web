@@ -1,19 +1,19 @@
 <?php
 
 use App\Models\Absensi;
-use App\Models\Guru;
+use App\Models\Dosen;
 use App\Models\Jadwal;
 use App\Models\Kelas;
-use App\Models\MataPelajaran;
+use App\Models\Mahasiswa;
+use App\Models\MataKuliah;
 use App\Models\SesiAbsensi;
-use App\Models\Siswa;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 /*
 | Dashboard admin harus memakai angka yang sama dengan halaman pengelolaan
-| masing-masing. Sebelumnya semua angkanya placeholder di Blade (1.248 siswa,
-| 86 guru, 32 kelas), sehingga dashboard tidak pernah cocok dengan isi
-| Students, Teachers, Classes, Subjects, Timetables, maupun Users.
+| masing-masing. Sebelumnya semua angkanya placeholder di Blade (1.248 mahasiswa,
+| 86 dosen, 32 kelas), sehingga dashboard tidak pernah cocok dengan isi
+| Students, Teachers, Classes, Mata Kuliah, Timetables, maupun Users.
 */
 uses(RefreshDatabase::class);
 
@@ -24,7 +24,7 @@ beforeEach(function () {
 /**
  * Kelas dengan nama yang pasti.
  *
- * `KelasFactory` mengambil nama dari `Kelas::ROMBEL_TERSEDIA` dengan
+ * `KelasFactory` mengambil nama dari `Kelas::KELAS_TERSEDIA` dengan
  * `unique()`, jadi membuat lebih dari sembilan kelas sekaligus akan habis
  * kandidat. Test yang butuh banyak kelas memakai helper ini.
  */
@@ -32,14 +32,14 @@ function buatKelas(string $nama): Kelas
 {
     return Kelas::factory()->create([
         'nama_kelas' => $nama,
-        'tingkat' => explode('.', $nama)[0],
+        'tingkat' => 'Semester 1',
     ]);
 }
 
 /**
- * Absensi untuk satu siswa pada tanggal tertentu.
+ * Absensi untuk satu mahasiswa pada tanggal tertentu.
  */
-function catatAbsensi(Siswa $siswa, string $waktu, string $status = 'hadir'): void
+function catatAbsensi(Mahasiswa $mahasiswa, string $waktu, string $status = 'hadir'): void
 {
     $momen = now()->parse($waktu);
 
@@ -53,7 +53,7 @@ function catatAbsensi(Siswa $siswa, string $waktu, string $status = 'hadir'): vo
     );
 
     Absensi::create([
-        'siswa_id' => $siswa->id,
+        'mahasiswa_id' => $mahasiswa->id,
         'sesi_absensi_id' => $sesi->id,
         'waktu_absen' => $momen,
         'status' => $status,
@@ -61,14 +61,14 @@ function catatAbsensi(Siswa $siswa, string $waktu, string $status = 'hadir'): vo
 }
 
 test('kartu statistik menghitung baris yang sama dengan halaman tujuan', function () {
-    Siswa::factory()->count(4)->create();
-    Guru::factory()->count(3)->create();
+    Mahasiswa::factory()->count(4)->create();
+    Dosen::factory()->count(3)->create();
 
-    foreach (['X.1', 'X.2', 'X.3', 'XII.1', 'XII.2'] as $nama) {
+    foreach (['Kelas A', 'Kelas B', 'Kelas C', 'Kelas H', 'Kelas I'] as $nama) {
         buatKelas($nama);
     }
 
-    MataPelajaran::factory()->count(6)->create();
+    MataKuliah::factory()->count(6)->create();
 
     $kelas = Kelas::query()->firstOrFail();
 
@@ -77,31 +77,31 @@ test('kartu statistik menghitung baris yang sama dengan halaman tujuan', functio
 
     // Hitungan diambil dari database setelah semua baris dibuat, bukan dari angka
     // yang ditulis test, karena `KelasFactory` dan `JadwalFactory` ikut membuat
-    // baris lain (mata pelajaran, guru) lewat default factory-nya.
-    $siswa = Siswa::count();
-    $guru = Guru::count();
+    // baris lain (mata kuliah, dosen) lewat default factory-nya.
+    $mahasiswa = Mahasiswa::count();
+    $dosen = Dosen::count();
     $kelas = Kelas::count();
-    $mapel = MataPelajaran::count();
+    $mataKuliah = MataKuliah::count();
     $jadwalAktif = Jadwal::where('status', 'Aktif')->count();
 
     $this->get(route('cms.dashboard'))
         ->assertOk()
-        ->assertSee('Siswa')->assertSee('Guru')->assertSee('Kelas')
-        ->assertSee('Mata Pelajaran')->assertSee('Jadwal')->assertSee('Pengguna')
+        ->assertSee('Mahasiswa')->assertSee('Dosen')->assertSee('Kelas')
+        ->assertSee('Mata Kuliah')->assertSee('Jadwal')->assertSee('Pengguna')
         // Angka hasil hitungan muncul di kartu, bukan placeholder lama.
-        ->assertSee(number_format($siswa, 0, ',', '.'))
+        ->assertSee(number_format($mahasiswa, 0, ',', '.'))
         ->assertSee(number_format($kelas, 0, ',', '.'))
         ->assertSee(number_format($jadwalAktif, 0, ',', '.'));
 
-    expect($siswa)->toBe(4)
-        ->and($guru)->toBeGreaterThanOrEqual(3)
+    expect($mahasiswa)->toBe(4)
+        ->and($dosen)->toBeGreaterThanOrEqual(3)
         ->and($kelas)->toBe(5)
-        ->and($mapel)->toBeGreaterThanOrEqual(6)
+        ->and($mataKuliah)->toBeGreaterThanOrEqual(6)
         ->and($jadwalAktif)->toBe(2);
 });
 
 test('kelas arsip tetap dihitung tapi disebutkan terpisah', function () {
-    foreach (['X.1', 'X.2'] as $nama) {
+    foreach (['Kelas A', 'Kelas B'] as $nama) {
         buatKelas($nama);
     }
 
@@ -124,46 +124,46 @@ test('kelas arsip tetap dihitung tapi disebutkan terpisah', function () {
         ->and(Jadwal::where('status', 'Aktif')->count())->toBe(0);
 });
 
-test('jumlah siswa di dashboard sama dengan halaman students', function () {
-    Siswa::factory()->count(7)->create();
+test('jumlah mahasiswa di dashboard sama dengan halaman mahasiswa', function () {
+    Mahasiswa::factory()->count(7)->create();
 
-    // Halaman Students menampilkan baris `siswas` yang sama, jadi kartu
+    // Halaman Students menampilkan baris `mahasiswa` yang sama, jadi kartu
     // dashboard harus memakai angka yang sama.
     $this->get(route('cms.dashboard'))
         ->assertOk()
-        ->assertSee('Siswa')
-        ->assertSeeInOrder(['Siswa', '7'], escape: false);
+        ->assertSee('Mahasiswa')
+        ->assertSeeInOrder(['Mahasiswa', '7'], escape: false);
 
-    // Pagination di halaman Students menulis "… dari 7 siswa".
-    $this->get(route('cms.student'))
+    // Pagination di halaman Students menulis "… dari 7 mahasiswa".
+    $this->get(route('cms.mahasiswa'))
         ->assertOk()
         ->assertSee('dari')
         ->assertSee('7')
-        ->assertSee('siswa');
+        ->assertSee('mahasiswa');
 
-    expect(Siswa::count())->toBe(7);
+    expect(Mahasiswa::count())->toBe(7);
 });
 
 test('dashboard tidak lagi menampilkan angka placeholder', function () {
-    Siswa::factory()->count(2)->create();
+    Mahasiswa::factory()->count(2)->create();
 
     $html = $this->get(route('cms.dashboard'))->assertOk()->getContent();
 
     // Sisa angka lama yang dulu ditulis langsung di Blade.
-    expect($html)->not->toContain('1,248')     // siswa
+    expect($html)->not->toContain('1,248')     // mahasiswa
         ->not->toContain('>216<')          // hadir hari ini
         ->not->toContain('trend')              // badge tren palsu
         ->not->toContain('spark')              // sparkline palsu
-        ->and(Siswa::count())->toBe(2);
+        ->and(Mahasiswa::count())->toBe(2);
 });
 
 test('rekap hari ini dihitung dari tabel absensi', function () {
-    $siswa = Siswa::factory()->count(3)->create()->first();
+    $mahasiswa = Mahasiswa::factory()->count(3)->create()->first();
 
-    catatAbsensi($siswa, 'today 07:00', 'hadir');
-    catatAbsensi($siswa, 'today 07:05', 'izin');
-    catatAbsensi($siswa, 'today 07:10', 'sakit');
-    catatAbsensi($siswa, 'today 07:15', 'alpha');
+    catatAbsensi($mahasiswa, 'today 07:00', 'hadir');
+    catatAbsensi($mahasiswa, 'today 07:05', 'izin');
+    catatAbsensi($mahasiswa, 'today 07:10', 'sakit');
+    catatAbsensi($mahasiswa, 'today 07:15', 'alpha');
 
     $html = $this->get(route('cms.dashboard'))->assertOk()->getContent();
 
@@ -174,24 +174,24 @@ test('rekap hari ini dihitung dari tabel absensi', function () {
 });
 
 test('absensi hari lain tidak ikut dihitung sebagai kehadiran hari ini', function () {
-    $siswa = Siswa::factory()->create();
+    $mahasiswa = Mahasiswa::factory()->create();
 
-    catatAbsensi($siswa, 'today 07:00', 'hadir');
-    catatAbsensi($siswa, now()->subDays(3)->format('Y-m-d 07:00'), 'hadir');
+    catatAbsensi($mahasiswa, 'today 07:00', 'hadir');
+    catatAbsensi($mahasiswa, now()->subDays(3)->format('Y-m-d 07:00'), 'hadir');
 
     $html = $this->get(route('cms.dashboard'))->assertOk()->getContent();
 
-    // Hanya 1 catatan hari ini, jadiDua angka "1 siswa" untuk hadir.
+    // Hanya 1 catatan hari ini, jadiDua angka "1 mahasiswa" untuk hadir.
     expect(substr_count($html, '1</span>'))->toBeGreaterThan(0);
 });
 
 test('tren kehadiran dihitung per bulan dari tabel absensi', function () {
-    $siswa = Siswa::factory()->create();
+    $mahasiswa = Mahasiswa::factory()->create();
 
     // Dua catatan bulan ini, satu bulan lalu.
-    catatAbsensi($siswa, 'today 07:00', 'hadir');
-    catatAbsensi($siswa, 'today 07:10', 'hadir');
-    catatAbsensi($siswa, now()->subMonth()->format('Y-m-d 07:00'), 'hadir');
+    catatAbsensi($mahasiswa, 'today 07:00', 'hadir');
+    catatAbsensi($mahasiswa, 'today 07:10', 'hadir');
+    catatAbsensi($mahasiswa, now()->subMonth()->format('Y-m-d 07:00'), 'hadir');
 
     $html = $this->get(route('cms.dashboard'))->assertOk()->getContent();
 
@@ -201,8 +201,8 @@ test('tren kehadiran dihitung per bulan dari tabel absensi', function () {
 });
 
 test('tab tahunan memakai lima tahun terakhir', function () {
-    $siswa = Siswa::factory()->create();
-    catatAbsensi($siswa, now()->subYears(2)->format('Y-m-d 07:00'), 'hadir');
+    $mahasiswa = Mahasiswa::factory()->create();
+    catatAbsensi($mahasiswa, now()->subYears(2)->format('Y-m-d 07:00'), 'hadir');
 
     $this->get(route('cms.dashboard', ['tren' => 'tahunan']))
         ->assertOk()
@@ -215,7 +215,7 @@ test('tab tahunan memakai lima tahun terakhir', function () {
 });
 
 test('grafik bulanan menandai bulan tanpa absensi, bukan mengarangnya', function () {
-    Siswa::factory()->create();
+    Mahasiswa::factory()->create();
 
     // Tidak ada catatan sama sekali: tidak boleh muncul persentase palsu.
     $html = $this->get(route('cms.dashboard'))->assertOk()->getContent();
@@ -233,10 +233,10 @@ test('tab tren yang tidak dikenal kembali ke bulanan', function () {
 test('kartu statistik menautkan ke halaman masing-masing', function () {
     $this->get(route('cms.dashboard'))
         ->assertOk()
-        ->assertSee(route('cms.student'), false)
-        ->assertSee(route('cms.teachers'), false)
-        ->assertSee(route('cms.classes'), false)
-        ->assertSee(route('cms.mata-pelajaran'), false)
+        ->assertSee(route('cms.mahasiswa'), false)
+        ->assertSee(route('cms.dosens'), false)
+        ->assertSee(route('cms.kelas'), false)
+        ->assertSee(route('cms.mata-kuliah'), false)
         ->assertSee(route('cms.jadwal'), false)
         ->assertSee(route('cms.users'), false);
 });
@@ -244,14 +244,14 @@ test('kartu statistik menautkan ke halaman masing-masing', function () {
 test('jadwal hari ini menampilkan jadwal sesuai hari berjalan', function () {
     $hariIni = now()->locale('id')->translatedFormat('l');
 
-    $kelas = buatKelas('X.1');
-    $guru = Guru::factory()->create();
+    $kelas = buatKelas('Kelas A');
+    $dosen = Dosen::factory()->create();
 
     Jadwal::factory()->create([
         'kelas_id' => $kelas->id,
-        'guru_id' => $guru->id,
+        'dosen_id' => $dosen->id,
         'hari' => $hariIni,
-        'mata_pelajaran' => 'Mata Pelajaran Hari Ini',
+        'mata_kuliah' => 'Mata Kuliah Hari Ini',
         'jam_mulai' => '07:00',
         'jam_selesai' => '08:00',
         'status' => 'Aktif',
@@ -264,26 +264,26 @@ test('jadwal hari ini menampilkan jadwal sesuai hari berjalan', function () {
 
     Jadwal::factory()->create([
         'kelas_id' => $kelas->id,
-        'guru_id' => $guru->id,
+        'dosen_id' => $dosen->id,
         'hari' => $hariLain,
-        'mata_pelajaran' => 'Mata Pelajaran Hari Lain',
+        'mata_kuliah' => 'Mata Kuliah Hari Lain',
         'status' => 'Aktif',
     ]);
 
     $this->get(route('cms.dashboard'))
         ->assertOk()
         ->assertSee('Jadwal Mengajar Hari Ini')
-        ->assertSee('Mata Pelajaran Hari Ini')
-        ->assertDontSee('Mata Pelajaran Hari Lain');
+        ->assertSee('Mata Kuliah Hari Ini')
+        ->assertDontSee('Mata Kuliah Hari Lain');
 });
 
 test('jadwal nonaktif tidak dihitung di dashboard', function () {
-    $kelas = buatKelas('X.1');
-    $guru = Guru::factory()->create();
+    $kelas = buatKelas('Kelas A');
+    $dosen = Dosen::factory()->create();
 
     Jadwal::factory()->count(3)->create([
         'kelas_id' => $kelas->id,
-        'guru_id' => $guru->id,
+        'dosen_id' => $dosen->id,
         'status' => 'Nonaktif',
     ]);
 
@@ -292,18 +292,18 @@ test('jadwal nonaktif tidak dihitung di dashboard', function () {
         ->assertSee('Tidak ada jadwal untuk hari ini');
 });
 
-test('dashboard menampilkan kelas dengan siswa terbanyak', function () {
-    buatKelas('XII-BANYAK');
-    buatKelas('XII-SEDIKIT');
+test('dashboard menampilkan kelas dengan mahasiswa terbanyak', function () {
+    buatKelas('Kelas Ramai');
+    buatKelas('Kelas Sepi');
 
-    Siswa::factory()->count(5)->create(['kelas' => 'XII-BANYAK']);
-    Siswa::factory()->create(['kelas' => 'XII-SEDIKIT']);
+    Mahasiswa::factory()->count(5)->create(['kelas' => 'Kelas Ramai']);
+    Mahasiswa::factory()->create(['kelas' => 'Kelas Sepi']);
 
     $this->get(route('cms.dashboard'))
         ->assertOk()
         ->assertSee('Kelas Terbanyak')
-        ->assertSee('XII-BANYAK')
-        ->assertSee('XII-SEDIKIT');
+        ->assertSee('Kelas Ramai')
+        ->assertSee('Kelas Sepi');
 });
 
 test('dashboard tetap aman saat belum ada data sama sekali', function () {
@@ -312,7 +312,7 @@ test('dashboard tetap aman saat belum ada data sama sekali', function () {
         ->assertSee('Belum ada catatan presensi untuk ditampilkan.')
         ->assertSee('Belum ada presensi hari ini')
         ->assertSee('Tidak ada jadwal untuk hari ini')
-        ->assertSee('Belum ada siswa');
+        ->assertSee('Belum ada mahasiswa');
 });
 
 test('tombol ekspor mengarah ke ekspor csv rekap', function () {
@@ -322,7 +322,7 @@ test('tombol ekspor mengarah ke ekspor csv rekap', function () {
         ->assertSee('Ekspor CSV');
 });
 
-test('siswa yang belum login tidak bisa membuka dashboard', function () {
+test('mahasiswa yang belum login tidak bisa membuka dashboard', function () {
     auth()->logout();
 
     $this->get(route('cms.dashboard'))->assertRedirect(route('login'));

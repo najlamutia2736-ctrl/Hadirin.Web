@@ -6,7 +6,7 @@
     // Route `absensi.scan-qr` hanya mengembalikan view tanpa data tambahan,
     // jadi identitas untuk topbar diambil dari relasi user yang sedang login.
     $user = auth()->user();
-    $siswa = $user?->siswa;
+    $mahasiswa = $user?->mahasiswa;
 @endphp
 
 @section('konten')
@@ -21,7 +21,7 @@
                 <div class="flex items-center gap-3">
                     <div class="hidden text-right sm:block">
                         <p class="text-sm font-semibold text-slate-800">{{ $user?->name }}</p>
-                        <p class="text-xs text-slate-500">{{ $siswa?->kelas ?? 'Presensi Siswa' }}</p>
+                        <p class="text-xs text-slate-500">{{ $mahasiswa?->kelas ?? 'Presensi Mahasiswa' }}</p>
                     </div>
                     <span
                         class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-indigo-100 text-sm font-semibold text-indigo-700">
@@ -170,7 +170,7 @@
                     <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                         <h2 class="text-sm font-semibold text-slate-800">Kamera tidak tersedia?</h2>
                         <p class="mt-1 text-xs leading-relaxed text-slate-500">
-                            Izinkan akses kamera di pengaturan browser, atau pakai cara presen lewat Kode NISN.
+                            Izinkan akses kamera di pengaturan browser, atau pakai cara presen lewat Kode NIM.
                         </p>
 
                         <label for="kodeManual" class="mt-4 block text-xs font-medium text-slate-600">
@@ -186,7 +186,7 @@
                         <a href="{{ route('absensi.id-unik') }}"
                             class="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">
                             <i class="fas fa-keyboard text-xs"></i>
-                            Presen lewat Kode NISN
+                            Presen lewat Kode NIM
                         </a>
                     </div>
 
@@ -215,7 +215,7 @@
                 <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
                     Halaman ini butuh JavaScript untuk menyalakan kamera. Aktifkan JavaScript di browsermu, atau
                     langsung buka halaman
-                    <a href="{{ route('absensi.id-unik') }}" class="font-semibold underline">Presen lewat Kode NISN</a>.
+                    <a href="{{ route('absensi.id-unik') }}" class="font-semibold underline">Presen lewat Kode NIM</a>.
                 </div>
             </noscript>
         </main>
@@ -309,7 +309,7 @@
         // ============================================================
 
         // Setiap error dari getUserMedia punya nama sendiri, jadi dibedakan
-        // supaya siswa tahu harus memperbaiki apa, bukan cuma "gagal".
+        // supaya mahasiswa tahu harus memperbaiki apa, bukan cuma "gagal".
         const PESAN_KAMERA = {
             NotAllowedError: {
                 judul: 'Izin kamera ditolak',
@@ -317,7 +317,7 @@
             },
             NotFoundError: {
                 judul: 'Kamera tidak ditemukan',
-                detail: 'Tidak ada kamera yang bisa dipakai di perangkat ini. Coba presen lewat Kode NISN.',
+                detail: 'Tidak ada kamera yang bisa dipakai di perangkat ini. Coba presen lewat Kode NIM.',
             },
             NotReadableError: {
                 judul: 'Kamera sedang dipakai aplikasi lain',
@@ -325,7 +325,7 @@
             },
             OverconstrainedError: {
                 judul: 'Kamera tidak mendukung',
-                detail: 'Kamera yang diminta tidak tersedia. Coba ganti kamera atau gunakan Kode NISN.',
+                detail: 'Kamera yang diminta tidak tersedia. Coba ganti kamera atau gunakan Kode NIM.',
             },
             SecurityError: {
                 judul: 'Kamera diblokir browser',
@@ -363,7 +363,7 @@
                 tampilkanStatus(
                     'fa-triangle-exclamation',
                     'Browser tidak mendukung kamera',
-                    'Gunakan Chrome, Edge, Firefox, atau Safari versi terbaru. Sementara itu kamu bisa presen lewat Kode NISN.',
+                    'Gunakan Chrome, Edge, Firefox, atau Safari versi terbaru. Sementara itu kamu bisa presen lewat Kode NIM.',
                     true
                 );
                 return;
@@ -530,7 +530,7 @@
                 return;
             }
 
-            // Getar dan bunyi pendek supaya siswa tahu tanpa harus menatap layar.
+            // Getar dan bunyi pendek supaya mahasiswa tahu tanpa harus menatap layar.
             if (navigator.vibrate) {
                 navigator.vibrate(120);
             }
@@ -542,7 +542,7 @@
             aksiSetelahBenar.classList.remove('hidden');
             panelHasil.classList.add('terbaca');
 
-            // Kamera dimatikan supaya merekam wajah siswa tidak berlanjut.
+            // Kamera dimatikan supaya merekam wajah mahasiswa tidak berlanjut.
             matikanKamera();
             tampilkanStatus('fa-circle-check', 'QR code terbaca', 'Kamera sudah dimatikan otomatis.');
         }

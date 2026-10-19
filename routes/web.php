@@ -1,15 +1,15 @@
 <?php
 
-use App\Http\Controllers\AbsensiSiswaController;
+use App\Http\Controllers\AbsensiMahasiswaController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardAdminController;
-use App\Http\Controllers\DashboardGuruController;
-use App\Http\Controllers\GuruController;
+use App\Http\Controllers\DashboardDosenController;
+use App\Http\Controllers\DosenController;
 use App\Http\Controllers\JadwalController;
 use App\Http\Controllers\KelasController;
-use App\Http\Controllers\MataPelajaranController;
+use App\Http\Controllers\MahasiswaController;
+use App\Http\Controllers\MataKuliahController;
 use App\Http\Controllers\RekapController;
-use App\Http\Controllers\StudentController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -51,48 +51,48 @@ Route::post('/logout', [AuthController::class, 'destroy'])
     ->middleware('auth')
     ->name('logout');
 
-// Halaman Absensi Siswa.
+// Halaman Absensi Mahasiswa.
 Route::prefix('/absensi')
     ->name('absensi.')
     ->middleware('auth')
     ->group(function () {
-        Route::get('/index', [AbsensiSiswaController::class, 'index'])
+        Route::get('/index', [AbsensiMahasiswaController::class, 'index'])
             ->name('index');
 
-        Route::get('/identitas', [AbsensiSiswaController::class, 'identitas'])
+        Route::get('/identitas', [AbsensiMahasiswaController::class, 'identitas'])
             ->name('identitas');
 
-        Route::post('/identitas', [AbsensiSiswaController::class, 'updateIdentitas'])
+        Route::post('/identitas', [AbsensiMahasiswaController::class, 'updateIdentitas'])
             ->name('identitas.update');
 
-        Route::get('/metode', [AbsensiSiswaController::class, 'metode'])
+        Route::get('/metode', [AbsensiMahasiswaController::class, 'metode'])
             ->name('metode');
 
         Route::get('/scan-qr', function () {
             return view('absensi.scan-qr');
         })->name('scan-qr');
 
-        Route::get('/id-unik', [AbsensiSiswaController::class, 'idUnik'])
+        Route::get('/id-unik', [AbsensiMahasiswaController::class, 'idUnik'])
             ->name('id-unik');
 
-        Route::post('/id-unik', [AbsensiSiswaController::class, 'storeIdUnik'])
+        Route::post('/id-unik', [AbsensiMahasiswaController::class, 'storeIdUnik'])
             ->name('id-unik.store');
 
-        Route::get('/izin-sakit', [AbsensiSiswaController::class, 'izinSakit'])
+        Route::get('/izin-sakit', [AbsensiMahasiswaController::class, 'izinSakit'])
             ->name('izin-sakit');
 
-        Route::post('/izin-sakit', [AbsensiSiswaController::class, 'storeIzinSakit'])
+        Route::post('/izin-sakit', [AbsensiMahasiswaController::class, 'storeIzinSakit'])
             ->name('izin-sakit.store');
 
-        Route::get('/notifikasi', [AbsensiSiswaController::class, 'notifikasi'])
+        Route::get('/notifikasi', [AbsensiMahasiswaController::class, 'notifikasi'])
             ->name('notifikasi');
     });
 
-// Dashboard Guru. Wajib login dan hanya untuk akun guru.
-Route::prefix('dashboard/guru')
-    ->name('guru.')
-    ->controller(DashboardGuruController::class)
-    ->middleware(['auth', 'role:Guru'])
+// Dashboard Dosen. Wajib login dan hanya untuk akun dosen.
+Route::prefix('dashboard/dosen')
+    ->name('dosen.')
+    ->controller(DashboardDosenController::class)
+    ->middleware(['auth', 'role:Dosen'])
     ->group(function () {
         Route::get('/', 'dashboard')
             ->name('dashboard');
@@ -100,14 +100,14 @@ Route::prefix('dashboard/guru')
         Route::get('/kelola', 'kelola')
             ->name('kelola');
 
-        Route::post('/kelola/siswa', 'storeSiswa')
-            ->name('kelola.siswa.store');
+        Route::post('/kelola/mahasiswa', 'storeMahasiswa')
+            ->name('kelola.mahasiswa.store');
 
-        Route::put('/kelola/siswa/{siswa}', 'updateSiswa')
-            ->name('kelola.siswa.update');
+        Route::put('/kelola/mahasiswa/{mahasiswa}', 'updateMahasiswa')
+            ->name('kelola.mahasiswa.update');
 
-        Route::delete('/kelola/siswa/{siswa}', 'destroySiswa')
-            ->name('kelola.siswa.destroy');
+        Route::delete('/kelola/mahasiswa/{mahasiswa}', 'destroyMahasiswa')
+            ->name('kelola.mahasiswa.destroy');
 
         Route::get('/laporan', 'laporan')
             ->name('laporan');
@@ -117,102 +117,102 @@ Route::prefix('dashboard/guru')
     });
 
 /*
- * `/dashboard/guru/realtime` dulu jadi halaman tersendiri untuk memantau
- * absensi yang masuk. Isinya sekarang bagian dari dashboard guru, jadi alamat
+ * `/dashboard/dosen/realtime` dulu jadi halaman tersendiri untuk memantau
+ * absensi yang masuk. Isinya sekarang bagian dari dashboard dosen, jadi alamat
  * lama hanya mengalihkan supaya bookmark dan tautan yang sudah tersebar tidak
  * ikut rusak. Ditulis di luar group di atas karena group itu mengikat
  * controller, sedangkan rute ini memang tidak memanggil method apa pun.
  */
-Route::get('/dashboard/guru/realtime', fn () => redirect()->route('guru.dashboard'))
-    ->middleware(['auth', 'role:Guru'])
-    ->name('guru.realtime.lama');
+Route::get('/dashboard/dosen/realtime', fn () => redirect()->route('dosen.dashboard'))
+    ->middleware(['auth', 'role:Dosen'])
+    ->name('dosen.realtime.lama');
 
 // Dashboard CMS dan seluruh halaman lainnya. Wajib login dan hanya untuk akun
-// admin. Operator diperlakukan sama karena perannya juga mengelola data sekolah.
+// admin. Operator diperlakukan sama karena perannya juga mengelola data kampus.
 Route::middleware(['auth', 'role:Admin,Operator'])->group(function () {
     Route::controller(DashboardAdminController::class)->group(function () {
         Route::get('/dashboard-admin', 'index')
             ->name('cms.dashboard');
     });
 
-    Route::controller(MataPelajaranController::class)->group(function () {
-        Route::get('/mata-pelajaran', 'index')
-            ->name('cms.mata-pelajaran');
+    Route::controller(MataKuliahController::class)->group(function () {
+        Route::get('/mata-kuliah', 'index')
+            ->name('cms.mata-kuliah');
 
-        Route::get('/tambahmata-pelajaran', 'create')
-            ->name('cms.mata-pelajaran.create');
+        Route::get('/tambahmatakuliah', 'create')
+            ->name('cms.mata-kuliah.create');
 
-        Route::post('/mata-pelajaran', 'store')
-            ->name('cms.mata-pelajaran.store');
+        Route::post('/mata-kuliah', 'store')
+            ->name('cms.mata-kuliah.store');
 
-        Route::get('/mata-pelajaran/{mata_pelajaran}/edit', 'edit')
-            ->name('cms.mata-pelajaran.edit');
+        Route::get('/mata-kuliah/{mata_kuliah}/edit', 'edit')
+            ->name('cms.mata-kuliah.edit');
 
-        Route::put('/mata-pelajaran/{mata_pelajaran}', 'update')
-            ->name('cms.mata-pelajaran.update');
+        Route::put('/mata-kuliah/{mata_kuliah}', 'update')
+            ->name('cms.mata-kuliah.update');
 
-        Route::delete('/mata-pelajaran/{mata_pelajaran}', 'destroy')
-            ->name('cms.mata-pelajaran.destroy');
+        Route::delete('/mata-kuliah/{mata_kuliah}', 'destroy')
+            ->name('cms.mata-kuliah.destroy');
     });
 
-    Route::controller(StudentController::class)->group(function () {
-        Route::get('/students', 'index')
-            ->name('cms.student');
+    Route::controller(MahasiswaController::class)->group(function () {
+        Route::get('/mahasiswa', 'index')
+            ->name('cms.mahasiswa');
 
-        Route::post('/students', 'store')
-            ->name('cms.student.store');
+        Route::post('/mahasiswa', 'store')
+            ->name('cms.mahasiswa.store');
 
-        Route::get('/tambahsiswa', 'tambahsiswa')
-            ->name('cms.student.create');
+        Route::get('/tambahmahasiswa', 'tambahmahasiswa')
+            ->name('cms.mahasiswa.create');
 
-        Route::get('/students/{siswa}/edit', 'edit')
-            ->name('cms.student.edit');
+        Route::get('/mahasiswa/{mahasiswa}/edit', 'edit')
+            ->name('cms.mahasiswa.edit');
 
-        Route::put('/students/{siswa}', 'update')
-            ->name('cms.student.update');
+        Route::put('/mahasiswa/{mahasiswa}', 'update')
+            ->name('cms.mahasiswa.update');
 
-        Route::delete('/students/{siswa}', 'destroy')
-            ->name('cms.student.destroy');
+        Route::delete('/mahasiswa/{mahasiswa}', 'destroy')
+            ->name('cms.mahasiswa.destroy');
     });
 
-    Route::controller(GuruController::class)->group(function () {
-        Route::get('/teachers', 'index')
-            ->name('cms.teachers');
+    Route::controller(DosenController::class)->group(function () {
+        Route::get('/dosens', 'index')
+            ->name('cms.dosens');
 
-        Route::post('/teachers', 'store')
-            ->name('cms.teachers.store');
+        Route::post('/dosens', 'store')
+            ->name('cms.dosens.store');
 
-        Route::get('/tambahguru', 'tambahguru')
-            ->name('cms.teachers.create');
+        Route::get('/tambahdosen', 'tambahdosen')
+            ->name('cms.dosens.create');
 
-        Route::get('/teachers/{guru}/edit', 'edit')
-            ->name('cms.teachers.edit');
+        Route::get('/dosens/{dosen}/edit', 'edit')
+            ->name('cms.dosens.edit');
 
-        Route::put('/teachers/{guru}', 'update')
-            ->name('cms.teachers.update');
+        Route::put('/dosens/{dosen}', 'update')
+            ->name('cms.dosens.update');
 
-        Route::delete('/teachers/{guru}', 'destroy')
-            ->name('cms.teachers.destroy');
+        Route::delete('/dosens/{dosen}', 'destroy')
+            ->name('cms.dosens.destroy');
     });
 
     Route::controller(KelasController::class)->group(function () {
-        Route::get('/classes', 'index')
-            ->name('cms.classes');
+        Route::get('/kelas', 'index')
+            ->name('cms.kelas');
 
-        Route::post('/classes', 'store')
-            ->name('cms.classes.store');
+        Route::post('/kelas', 'store')
+            ->name('cms.kelas.store');
 
         Route::get('/tambahkelas', 'tambahkelas')
-            ->name('cms.classes.create');
+            ->name('cms.kelas.create');
 
-        Route::get('/classes/{kelas}/edit', 'edit')
-            ->name('cms.classes.edit');
+        Route::get('/kelas/{kelas}/edit', 'edit')
+            ->name('cms.kelas.edit');
 
-        Route::put('/classes/{kelas}', 'update')
-            ->name('cms.classes.update');
+        Route::put('/kelas/{kelas}', 'update')
+            ->name('cms.kelas.update');
 
-        Route::delete('/classes/{kelas}', 'destroy')
-            ->name('cms.classes.destroy');
+        Route::delete('/kelas/{kelas}', 'destroy')
+            ->name('cms.kelas.destroy');
     });
 
     Route::controller(JadwalController::class)->group(function () {

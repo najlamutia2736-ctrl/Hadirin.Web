@@ -15,29 +15,29 @@
     */
     $metodeAbsensi = config('metode-absensi');
 
-    // Menu & kartu "Presen Siswa" hanya untuk akun yang punya profil di tabel
-    // `siswas`. Pemeriksaannya sama dengan AbsensiSiswaController.
-    $bisaAbsen = $user?->siswa !== null;
+    // Menu & kartu "Presen Mahasiswa" hanya untuk akun yang punya profil di tabel
+    // `mahasiswa`. Pemeriksaannya sama dengan AbsensiMahasiswaController.
+    $bisaAbsen = $user?->mahasiswa !== null;
 
-    // Sama seperti `navbar.blade.php`: area CMS dan dashboard guru dilindungi
+    // Sama seperti `navbar.blade.php`: area CMS dan dashboard dosen dilindungi
     // middleware `role`, jadi link-nya hanya untuk akun yang boleh membukanya.
     // Kartu peran di bawah tetap tampil untuk semua pengunjung.
     $bukaCms = in_array($user?->role, ['Admin', 'Operator'], true);
-    $bukaGuru = $user?->role === 'Guru';
+    $bukaDosen = $user?->role === 'Dosen';
 
     /*
-    | Kartu peran "Siswa" sengaja selalu tampil, bukan ikut disembunyikan
+    | Kartu peran "Mahasiswa" sengaja selalu tampil, bukan ikut disembunyikan
     | bersama menunya. Kartu ini adalah pintu masuk untuk memilih peran,
     | jadi orang yang belum login justru yang paling butuh melihatnya.
     | Yang menyesuaikan hanya tujuan kliknya, supaya halaman absensi tidak
     | pernah bocor ke akun yang tidak berhak (lihat `MenuAbsensiTest`).
     */
-    $tujuanSiswa = $bisaAbsen ? route('absensi.index') : ($user === null ? route('login') : route('guru.dashboard'));
+    $tujuanMahasiswa = $bisaAbsen ? route('absensi.index') : ($user === null ? route('login') : route('dosen.dashboard'));
 
-    $labelSiswa = match (true) {
+    $labelMahasiswa = match (true) {
         $bisaAbsen => 'Presen Sekarang',
         $user === null => 'Klik',
-        default => 'Bukan Akun Siswa',
+        default => 'Bukan Akun Mahasiswa',
     };
 
     // Tombol hero mengikuti sesi: tamu diarahkan ke login, sedangkan pengguna
@@ -45,8 +45,8 @@
     // akan mendarat di middleware `guest` dan cuma dipantulkan balik ke beranda.
     $tujuanMasuk = match ($user?->role) {
         'Admin', 'Operator' => route('cms.dashboard'),
-        'Guru' => route('guru.dashboard'),
-        'Siswa' => $bisaAbsen ? route('absensi.index') : route('beranda'),
+        'Dosen' => route('dosen.dashboard'),
+        'Mahasiswa' => $bisaAbsen ? route('absensi.index') : route('beranda'),
         default => route('beranda'),
     };
 @endphp
@@ -173,7 +173,7 @@
         <div aria-hidden="true" class="banner-glow -bottom-32 right-0 h-80 w-80 bg-fuchsia-400/30"></div>
 
         {{--
-        | Kartu melayang di sisi banner. Isinya dulu "Kode QR" dan "Kode NISN",
+        | Kartu melayang di sisi banner. Isinya dulu "Kode QR" dan "Kode NIM",
         | tapi keduanya cuma mengulang cara absen yang sudah dijelaskan panjang
         | di bagian Panduan Cara Presen di bawah, jadi tidak menambah informasi.
         | Sekarang isinya keunggulan aplikasinya.
@@ -214,7 +214,7 @@
                         <span class="block text-[10px] uppercase tracking-wider text-white/70">Mandiri</span>
                         <span class="block text-sm font-semibold">Cek Riwayat Sendiri</span>
                         <span class="mt-1 block text-[11px] leading-snug text-white/75">
-                            Siswa bisa melihat kehadiran sendiri kapan saja.
+                            Mahasiswa bisa melihat kehadiran sendiri kapan saja.
                         </span>
                     </span>
                 </div>
@@ -228,7 +228,7 @@
             </div>
 
             <h2 class="text-3xl md:text-4xl lg:text-5xl font-extrabold mb-5 tracking-tight">
-                PRESENSI SEKOLAH <span class="text-yellow-300">DIGITAL</span>
+                PRESENSI KAMPUS <span class="text-yellow-300">DIGITAL</span>
             </h2>
 
             {{-- Garis pemisah tipis membuat judul tidak langsung menempel ke paragraf. --}}
@@ -282,7 +282,7 @@
                         @if ($user === null)
                             Lakukan Login Terlebih Dahulu Untuk Memulai Presensi Digital Mu!
                         @else
-                            Selamat datang, {{ $user->name }}. Kelola kehadiran sekolah dari satu tempat.
+                            Selamat datang, {{ $user->name }}. Kelola kehadiran kampus dari satu tempat.
                         @endif
                     </p>
 
@@ -346,7 +346,7 @@
                                     <div class="text-3xl text-indigo-500 mb-2">
                                         <i class="fas fa-keyboard"></i>
                                     </div>
-                                    <p class="text-xs font-semibold text-slate-700">Ketik NISN</p>
+                                    <p class="text-xs font-semibold text-slate-700">Ketik NIM</p>
                                     <p class="text-[10px] text-slate-400">manual cepat</p>
                                     <div class="mt-2 flex justify-center">
                                         <div
@@ -384,8 +384,8 @@
                             Hadirin.web merupakan alternatif pengganti buku presensi kertas dengan pencatatan otomatis
                             dan
                             terpusat.
-                            Siswa cukup memindai kode QR atau memasukkan Kode NISN miliknya.
-                            <span class="text-indigo-600 font-medium">— guru dan wali murid langsung melihat status
+                            Mahasiswa cukup memindai kode QR atau memasukkan Kode NIM miliknya.
+                            <span class="text-indigo-600 font-medium">— dosen dan mahasiswa langsung melihat status
                                 kehadiran secara real-time.</span>
                         </p>
                     </div>
@@ -397,56 +397,56 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
             <div class="mb-8">
                 <h3 class="text-2xl font-bold text-slate-800 text-center mb-2">Pilihlah Peranmu Disisni</h3>
-                <p class="text-sm text-slate-500 text-center mb-8">Tentukan cara masuk sesuai peranmu di sekolah!</p>
+                <p class="text-sm text-slate-500 text-center mb-8">Tentukan cara masuk sesuai peranmu di kampus!</p>
             </div>
 
             <!-- Cards Peran -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-                <!-- Card Guru / Wali Kelas -->
+                <!-- Card Dosen / Pembimbing Akademik -->
                 <div
                     class="bg-white rounded-2xl shadow-md border border-slate-200/60 p-6 text-center card-hover transition-all duration-300">
                     <div class="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-chalkboard-teacher text-3xl text-emerald-600"></i>
+                        <i class="fas fa-chalkboard-user text-3xl text-emerald-600"></i>
                     </div>
-                    <h4 class="text-xl font-bold text-slate-800 mb-2">Guru / Dosen</h4>
+                    <h4 class="text-xl font-bold text-slate-800 mb-2">Dosen / Dosen</h4>
                     <p class="text-sm text-slate-500 mb-4">Memantau kehadiran Real-Time dan unduh rekap bulanan.</p>
-                    <a href="{{ route('guru.dashboard') }}"
+                    <a href="{{ route('dosen.dashboard') }}"
                         class="inline-block bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 py-2.5 rounded-xl transition shadow-md shadow-emerald-200/60">
                         <i class="fas fa-right-to-bracket mr-1"></i> Klik
                     </a>
                 </div>
 
-                <!-- Card Siswa -->
+                <!-- Card Mahasiswa -->
                 {{-- Kartu ini tidak pernah disembunyikan: pilih peran harus bisa
                      dilakukan sebelum login. Yang dijaga hanya link tujuan, agar
-                     URL halaman absensi tidak bocor ke akun non-siswa. --}}
+                     URL halaman absensi tidak bocor ke akun non-mahasiswa. --}}
                 <div
                     class="bg-white rounded-2xl shadow-md border border-slate-200/60 p-6 text-center card-hover transition-all duration-300">
                     <div class="w-20 h-20 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
                         <i class="fas fa-user-graduate text-3xl text-indigo-600"></i>
                     </div>
                     <h4 class="text-xl font-bold text-slate-800 mb-2">Mahasiswa</h4>
-                    <p class="text-sm text-slate-500 mb-4">Presen mandiri lewat scan QRCode atau kode NISN.</p>
+                    <p class="text-sm text-slate-500 mb-4">Presen mandiri lewat scan QRCode atau kode NIM.</p>
 
                     @if ($bisaAbsen)
                         <a href="{{ route('absensi.index') }}"
                             class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2.5 rounded-xl transition shadow-md shadow-indigo-200/60">
-                            <i class="fas fa-right-to-bracket mr-1"></i> {{ $labelSiswa }}
+                            <i class="fas fa-right-to-bracket mr-1"></i> {{ $labelMahasiswa }}
                         </a>
                     @elseif ($user === null)
                         {{-- Belum login: arahkan ke login, bukan ke halaman absensi,
                              supaya middleware tetap yang menjaga halamannya. --}}
                         <a href="{{ route('login') }}"
                             class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2.5 rounded-xl transition shadow-md shadow-indigo-200/60">
-                            <i class="fas fa-right-to-bracket mr-1"></i> {{ $labelSiswa }}
+                            <i class="fas fa-right-to-bracket mr-1"></i> {{ $labelMahasiswa }}
                         </a>
                     @else
-                        {{-- Sudah login tapi bukan siswa: jelaskan, jangan paksa. --}}
+                        {{-- Sudah login tapi bukan mahasiswa: jelaskan, jangan paksa. --}}
                         <span
                             class="inline-block cursor-not-allowed rounded-xl border border-slate-200 bg-slate-100 px-6 py-2.5 font-medium text-slate-400"
-                            title="Gunakan akun siswa untuk presen.">
-                            <i class="fas fa-lock mr-1"></i> {{ $labelSiswa }}
+                            title="Gunakan akun mahasiswa untuk presen.">
+                            <i class="fas fa-lock mr-1"></i> {{ $labelMahasiswa }}
                         </span>
                     @endif
                 </div>
@@ -458,7 +458,7 @@
                         <i class="fas fa-user-shield text-3xl text-purple-600"></i>
                     </div>
                     <h4 class="text-xl font-bold text-slate-800 mb-2">Admin</h4>
-                    <p class="text-sm text-slate-500 mb-4">Kelola data seluruh siswa dan lihat laporan menyeluruh.</p>
+                    <p class="text-sm text-slate-500 mb-4">Kelola data seluruh mahasiswa dan lihat laporan menyeluruh.</p>
                     <a href="{{ route('cms.dashboard') }}"
                         class="inline-block bg-purple-600 hover:bg-purple-700 text-white font-medium px-6 py-2.5 rounded-xl transition shadow-md shadow-purple-200/60">
                         <i class="fas fa-right-to-bracket mr-1"></i> Klik
@@ -475,14 +475,14 @@
         | Halaman ini terbuka untuk semua orang, jadi URL halaman absensi tidak
         | boleh ikut dimuat: setiap kartu berhenti pada penjelasannya, dan yang
         | jadi tujuan hanya satu tombol di bawah. Tujuan tombolnya mengikuti sesi
-        | seperti kartu peran di atas, supaya akun guru atau admin tidak pernah
+        | seperti kartu peran di atas, supaya akun dosen atau admin tidak pernah
         | diarahkan ke halaman absensi.
         --}}
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
             <div class="text-center mb-8">
                 <h3 class="text-2xl font-bold text-slate-800 mb-2">Panduan Cara Presen</h3>
                 <p class="text-sm text-slate-500">
-                    Scan QR Code dan Kode NISN sama-sama mencatat kehadiran. Izin / Sakit untuk pengajuan, dan
+                    Scan QR Code dan Kode NIM sama-sama mencatat kehadiran. Izin / Sakit untuk pengajuan, dan
                     Notifikasi hanya untuk melihat riwayat.
                 </p>
             </div>
@@ -535,7 +535,7 @@
 
             <div class="mt-8 flex flex-col items-center gap-3 text-center">
                 <p class="text-xs text-slate-400">
-                    Scan QR Code dan Kode NISN sama-sama mencatat kehadiran hari ini. Kamu perlu presen disetiap
+                    Scan QR Code dan Kode NIM sama-sama mencatat kehadiran hari ini. Kamu perlu presen disetiap
                     mata kuliah yang kamu ikuti.
                 </p>
             </div>

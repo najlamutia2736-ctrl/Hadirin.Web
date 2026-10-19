@@ -16,7 +16,7 @@ class UserController extends Controller
      *
      * @var list<string>
      */
-    private const PERAN_TERSEDIA = ['Admin', 'Guru', 'Siswa', 'Operator'];
+    private const PERAN_TERSEDIA = ['Admin', 'Dosen', 'Mahasiswa', 'Operator'];
 
     /**
      * Status keaktifan akun yang recognized oleh form dan filter.
@@ -40,7 +40,7 @@ class UserController extends Controller
         $status = $this->filter($request->query('status'), $daftarStatus);
 
         $users = User::query()
-            ->with('siswa:id,user_id,jenis_kelamin')
+            ->with('mahasiswa:id,user_id,jenis_kelamin')
             ->when($request->filled('q'), function ($query) use ($request) {
                 $query->where(function ($inner) use ($request) {
                     $inner->where('name', 'like', '%'.$request->string('q').'%')
@@ -118,10 +118,10 @@ class UserController extends Controller
     /**
      * Rapikan input sebelum divalidasi.
      *
-     * Spasi di pinggir dibuang supaya ` budi@sekolah.id ` tidak gagal
+     * Spasi di pinggir dibuang supaya ` budi@kampus.ac.id ` tidak gagal
      * validasi dan tidak tersimpan dengan spasi, dan email dilowercase
-     * supaya `Budi@Sekolah.ID` tidak tersimpan sebagai akun terpisah dari
-     * `budi@sekolah.id`.
+     * supaya `Budi@Kampus.ac.id` tidak tersimpan sebagai akun terpisah dari
+     * `budi@kampus.ac.id`.
      */
     private function rapikanInput(Request $request): void
     {

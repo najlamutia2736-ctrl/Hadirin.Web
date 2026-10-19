@@ -27,7 +27,7 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Isi `components.sidebar` dan `components.header` sesuai area route yang dibuka.
      *
-     * Komponen jadi generik: halaman CMS maupun Guru cukup memakai layout yang
+     * Komponen jadi generik: halaman CMS maupun Dosen cukup memakai layout yang
      * sama, menunya ditentukan dari prefix nama route (lihat config/menu.php),
      * dan identitas di sidebar/header diambil dari user yang sedang login.
      */
@@ -71,7 +71,7 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * Prefix route yang sedang aktif, mis. `guru.dashboard` -> `guru`.
+     * Prefix route yang sedang aktif, mis. `dosen.dashboard` -> `dosen`.
      */
     protected function resolveMenuArea(): string
     {

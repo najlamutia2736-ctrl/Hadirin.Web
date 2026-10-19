@@ -7,7 +7,7 @@
     <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
             <h2 class="text-2xl font-bold text-gray-800">Rekap Kehadiran</h2>
-            <p class="mt-1 text-gray-600">Ringkasan kehadiran siswa per kelas dan per bulan.</p>
+            <p class="mt-1 text-gray-600">Ringkasan kehadiran mahasiswa per kelas dan per bulan.</p>
         </div>
         <div class="flex flex-col gap-3 sm:flex-row">
             <a href="{{ route('cms.rekap.export.pdf', request()->except('page')) }}" target="_blank" rel="noopener"
@@ -89,7 +89,7 @@
                 <thead class="bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500">
                     <tr>
                         <th class="px-6 py-3">Kelas</th>
-                        <th class="px-6 py-3">Jumlah Siswa</th>
+                        <th class="px-6 py-3">Jumlah Mahasiswa</th>
                         <th class="px-6 py-3">Hadir</th>
                         <th class="px-6 py-3">Izin</th>
                         <th class="px-6 py-3">Sakit</th>
@@ -105,7 +105,7 @@
                                     {{ $row['kelas'] }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 text-gray-500">{{ $row['students'] }}</td>
+                            <td class="px-6 py-4 text-gray-500">{{ $row['mahasiswa'] }}</td>
                             <td class="px-6 py-4 font-medium text-green-600">{{ $row['hadir'] }}</td>
                             <td class="px-6 py-4 text-blue-600">{{ $row['izin'] }}</td>
                             <td class="px-6 py-4 text-amber-600">{{ $row['sakit'] }}</td>
@@ -132,7 +132,7 @@
                     <tfoot class="border-t-2 border-gray-200 bg-gray-50 text-sm font-semibold text-gray-800">
                         <tr>
                             <td class="px-6 py-3">Total ({{ count($rekap) }} kelas)</td>
-                            <td class="px-6 py-3">{{ $total['students'] }}</td>
+                            <td class="px-6 py-3">{{ $total['mahasiswa'] }}</td>
                             <td class="px-6 py-3 text-green-600">{{ $total['hadir'] }}</td>
                             <td class="px-6 py-3 text-blue-600">{{ $total['izin'] }}</td>
                             <td class="px-6 py-3 text-amber-600">{{ $total['sakit'] }}</td>
