@@ -68,7 +68,7 @@
                 <a href="{{ route('absensi.index') }}"
                     class="inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition-colors hover:text-indigo-600">
                     <i class="fas fa-arrow-left text-xs"></i>
-                    Kembali ke absensi
+                    Kembali ke presensi
                 </a>
                 <h1 class="mt-3 text-2xl font-bold tracking-tight text-slate-800 sm:text-3xl">
                     Izin / Sakit
@@ -235,7 +235,7 @@
                             <div class="mt-3 flex items-center gap-3 rounded-xl bg-slate-50 p-3">
                                 <i class="fas fa-hourglass-half text-lg text-slate-400"></i>
                                 <div>
-                                    <p class="text-sm font-semibold text-slate-800">Belum absen</p>
+                                    <p class="text-sm font-semibold text-slate-800">Belum presen</p>
                                     <p class="text-xs text-slate-500">Formulir masih bisa diisi</p>
                                 </div>
                             </div>

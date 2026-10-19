@@ -1,6 +1,6 @@
 @extends('layouts.absensi')
 
-@section('title', 'Absensi Siswa · Hadirin.web')
+@section('title', 'Presensi Siswa · Hadirin.web')
 
 @php
     // Peta status dari kolom enum `absensis.status` ke tampilan. Nilai `null`
@@ -16,7 +16,7 @@
         ],
         'izin' => [
             'label' => 'Izin',
-            'ringkasan' => 'Absensi izin sudah tercatat',
+            'ringkasan' => 'Presensi izin sudah tercatat',
             'ikon' => 'fa-file-signature',
             'kartu' => 'from-blue-500 to-sky-500',
             'lencana' => 'bg-blue-100 text-blue-700',
@@ -24,7 +24,7 @@
         ],
         'sakit' => [
             'label' => 'Sakit',
-            'ringkasan' => 'Absensi sakit sudah tercatat',
+            'ringkasan' => 'Presensi sakit sudah tercatat',
             'ikon' => 'fa-heart-pulse',
             'kartu' => 'from-amber-500 to-orange-500',
             'lencana' => 'bg-amber-100 text-amber-700',
@@ -39,8 +39,8 @@
             'garis' => 'bg-rose-500',
         ],
         null => [
-            'label' => 'Belum Absen',
-            'ringkasan' => 'Pilih salah satu cara untuk absen hari ini',
+            'label' => 'Belum Presen',
+            'ringkasan' => 'Pilih salah satu cara untuk presen hari ini',
             'ikon' => 'fa-hourglass-half',
             'kartu' => 'from-indigo-700 to-purple-500',
             'lencana' => 'bg-slate-100 text-slate-700',
@@ -74,7 +74,7 @@
         ],
         [
             'label' => 'Notifikasi',
-            'deskripsi' => 'Lihat riwayat dan hasil absensi yang sudah dikirim.',
+            'deskripsi' => 'Lihat riwayat dan hasil presensi yang sudah dikirim.',
             'ikon' => 'fa-bell',
             'warna' => 'bg-sky-50 text-sky-600',
             'rute' => route('absensi.notifikasi'),
@@ -166,7 +166,7 @@
                         @unless ($hariIni)
                             <a href="{{ route('absensi.metode') }}"
                                 class="inline-flex shrink-0 items-center justify-center gap-2 self-start rounded-xl bg-white/20 px-5 py-3 text-sm font-semibold text-white ring-1 ring-white/25 transition-colors hover:bg-white/30 sm:self-auto">
-                                Absen Sekarang
+                                Presen Sekarang
                                 <i class="fas fa-arrow-right text-xs"></i>
                             </a>
                         @endunless
@@ -213,7 +213,7 @@
             <section>
                 <div class="flex flex-wrap items-end justify-between gap-2">
                     <div>
-                        <h2 class="text-lg font-bold text-slate-800">Pilih Cara Absen</h2>
+                        <h2 class="text-lg font-bold text-slate-800">Pilih Cara Presen</h2>
                         <p class="mt-0.5 text-sm text-slate-500">
                             @if ($hariIni)
                                 Kehadiran hari ini sudah tercatat. Kamu masih bisa mengganti lewat izin atau sakit.

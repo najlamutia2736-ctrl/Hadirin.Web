@@ -38,13 +38,13 @@
                 <a href="{{ route('absensi.index') }}"
                     class="inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition-colors hover:text-indigo-600">
                     <i class="fas fa-arrow-left text-xs"></i>
-                    Kembali ke absensi
+                    Kembali ke presensi
                 </a>
                 <h1 class="mt-3 text-2xl font-bold tracking-tight text-slate-800 sm:text-3xl">
                     Identitas Siswa
                 </h1>
                 <p class="mt-1 max-w-2xl text-slate-600">
-                    Data yang dipakai untuk absensi harian. Pastikan nama dan kontak wali selalu benar.
+                    Data yang dipakai untuk presensi harian. Pastikan nama dan kontak wali selalu benar.
                 </p>
             </section>
 
@@ -205,7 +205,7 @@
                     <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                         <h2 class="text-sm font-semibold text-slate-800">Data Permanen</h2>
                         <p class="mt-1 text-xs leading-relaxed text-slate-500">
-                            Dua data di bawah tidak bisa diubah sendiri karena menentukan absensimu.
+                            Dua data di bawah tidak bisa diubah sendiri karena menentukan presensimu.
                         </p>
 
                         <dl class="mt-4 space-y-3">
@@ -215,7 +215,7 @@
                                     {{ $siswa->nisn }}
                                 </dd>
                                 <p class="mt-1 text-[11px] leading-relaxed text-slate-500">
-                                    Selalu dipakai saat memilih Kode NISN. Salah ketik berarti absen manualmu gagal.
+                                    Selalu dipakai saat memilih Kode NISN. Salah ketik berarti presen manualmu gagal.
                                 </p>
                             </div>
 
@@ -273,8 +273,8 @@
                             Kenapa dibatasi
                         </h2>
                         <p class="mt-2 text-xs leading-relaxed text-indigo-800/80">
-                            Kalau semua data bisa diubah sendiri, absensinya bisa dimanipulasi. NISN
-                            menentukan keabsenan, dan kelas menentukan siapa yang melihat absensimu.
+                            Kalau semua data bisa diubah sendiri, presensinya bisa dimanipulasi. NISN
+                            menentukan kepresenan, dan kelas menentukan siapa yang melihat presensimu.
                         </p>
                     </div>
                 </section>

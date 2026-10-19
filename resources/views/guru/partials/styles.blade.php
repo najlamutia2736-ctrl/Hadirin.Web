@@ -62,7 +62,7 @@
         font-size: 11px;
     }
 
-    /* badge siswa yang belum punya catatan absensi hari ini */
+    /* badge siswa yang belum punya catatan presensi hari ini */
     .badge-belum {
         background: #f1f5f9;
         color: #64748b;

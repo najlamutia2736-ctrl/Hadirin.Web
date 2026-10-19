@@ -158,7 +158,7 @@
     /**
      * Susun `presensiList` untuk satu kelas.
      *
-     * Semua baris berasal dari database. Siswa yang belum punya catatan absensi
+     * Semua baris berasal dari database. Siswa yang belum punya catatan presensi
      * hari ini tetap ikut masuk dengan status null supaya tidak salah
      * dihitung sebagai alpha. Kelas yang tidak ada di database guru ini
      * menghasilkan daftar kosong, bukan data contoh.
@@ -189,7 +189,7 @@
     /**
      * Status dari database tersimpan huruf kecil (`hadir`, `izin`, ...),
      * sedangkan tampilan memakai huruf besar. Students yang belum punya
-     * catatan absensi bernilai null dan dibiarkan null.
+     * catatan presensi bernilai null dan dibiarkan null.
      */
     function toLabelStatus(status) {
         if (!status) return null;

@@ -171,7 +171,7 @@ class DashboardGuruController extends Controller
     {
         return [
             ['nilai' => 'bulanan', 'label' => 'Rekap Bulanan'],
-            ['nilai' => 'periode', 'label' => 'Progres Absensi'],
+            ['nilai' => 'periode', 'label' => 'Progres Presensi'],
         ];
     }
 
@@ -530,7 +530,7 @@ class DashboardGuruController extends Controller
     /**
      * Satu kelas beserta siswa dan absensi hari ini.
      *
-     * Siswa yang belum punya catatan absensi hari ini dikirim dengan status
+     * Siswa yang belum punya catatan presensi hari ini dikirim dengan status
      * `null` supaya tampilan tidak salah menghitungnya sebagai alpha.
      *
      * @return array<string, mixed>
@@ -773,7 +773,7 @@ class DashboardGuruController extends Controller
     }
 
     /**
-     * Isi halaman laporan untuk tab Progres Absensi.
+     * Isi halaman laporan untuk tab Progres Presensi.
      *
      * Bedanya dengan rekap bulanan: periodenya bukan satu bulan kalender,
      * melainkan rentang berpatokan hari ke belakang. Karena itu halaman ini
@@ -815,7 +815,7 @@ class DashboardGuruController extends Controller
         usort($perKelas, fn (array $a, array $b): int => $b['persentase'] <=> $a['persentase']
             ?: strnatcmp((string) $a['kelas'], (string) $b['kelas']));
 
-        // Siswa dengan kehadiran terendah dulu. Siswa tanpa catatan absensi
+        // Siswa dengan kehadiran terendah dulu. Siswa tanpa catatan presensi
         // disortir paling akhir supaya tidak dianggap sebagai yang paling buruk.
         $perSiswa = $rekap['perSiswa'];
 
@@ -895,9 +895,9 @@ class DashboardGuruController extends Controller
     }
 
     /**
-     * Siswa yang kehadirannya di bawah ambang dan punya catatan absensi.
+     * Siswa yang kehadirannya di bawah ambang dan punya catatan presensi.
      *
-     * Tanpa catatan absensi tidak dihitung, karena "tidak punya data" bukan
+     * Tanpa catatan presensi tidak dihitung, karena "tidak punya data" bukan
      * sama dengan "kehadirannya rendah".
      *
      * @param  list<array<string, mixed>>  $perSiswa

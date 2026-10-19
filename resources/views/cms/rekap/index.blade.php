@@ -152,7 +152,7 @@
                 @endif
             </p>
             <p class="mt-1 text-xs text-gray-400">
-                Persentase kehadiran dihitung dari hadir dibagi total catatan absensi pada periode tersebut.
+                Persentase kehadiran dihitung dari hadir dibagi total catatan presensi pada periode tersebut.
             </p>
         </div>
     </div>

@@ -38,13 +38,13 @@
                 <a href="{{ route('absensi.index') }}"
                     class="inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition-colors hover:text-indigo-600">
                     <i class="fas fa-arrow-left text-xs"></i>
-                    Kembali ke absensi
+                    Kembali ke presensi
                 </a>
                 <h1 class="mt-3 text-2xl font-bold tracking-tight text-slate-800 sm:text-3xl">
-                    Absen Kode NISN
+                    Presen Kode NISN
                 </h1>
                 <p class="mt-1 max-w-2xl text-slate-600">
-                    Ketik kode yang tertera di kartu absensi. Pakai cara ini kalau kamera HP sedang tidak bisa
+                    Ketik kode yang tertera di kartu presensi. Pakai cara ini kalau kamera HP sedang tidak bisa
                     dipakai.
                 </p>
             </section>
@@ -90,7 +90,7 @@
                                     <div class="mt-5 flex flex-wrap gap-3">
                                         <a href="{{ route('absensi.index') }}"
                                             class="inline-flex items-center gap-2 rounded-xl bg-slate-800 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-900">
-                                            Kembali ke absensi
+                                            Kembali ke presensi
                                             <i class="fas fa-arrow-right text-xs"></i>
                                         </a>
                                         <a href="{{ route('absensi.notifikasi') }}"
@@ -110,7 +110,7 @@
                             <div class="border-b border-slate-100 px-6 py-5">
                                 <h2 class="text-lg font-semibold text-slate-800">Masukkan Kode</h2>
                                 <p class="mt-1 text-sm text-slate-500">
-                                    Kode ada di kartu absensi yang kamu terima dari sekolah.
+                                    Kode ada di kartu presensi yang kamu terima dari sekolah.
                                 </p>
                             </div>
 
@@ -146,10 +146,10 @@
                                     <div class="flex items-center gap-3 rounded-xl bg-amber-50 p-3.5">
                                         <i class="fas fa-triangle-exclamation text-amber-600"></i>
                                         <p class="text-xs leading-relaxed text-amber-800">
-                                            Sekarang di luar jam absensi
+                                            Sekarang di luar jam presensi
                                             ({{ config('sesi-absensi.jam_buka') }} -
                                             {{ config('sesi-absensi.jam_tutup') }} WIB), jadi kode yang kamu
-                                            masukkan belum bisa disimpan. Coba lagi saat jam absensi dibuka.
+                                            masukkan belum bisa disimpan. Coba lagi saat jam presensi dibuka.
                                         </p>
                                     </div>
                                 @endif
@@ -195,9 +195,9 @@
                     <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                         <div class="h-1.5 w-full bg-gradient-to-r from-indigo-500 to-blue-500"></div>
                         <div class="p-5">
-                            <h2 class="text-sm font-semibold text-slate-800">Kartu Absensi</h2>
+                            <h2 class="text-sm font-semibold text-slate-800">Kartu Presensi</h2>
                             <p class="mt-0.5 text-xs text-slate-500">
-                                Kode yang dipakai untuk absen hari ini.
+                                Kode yang dipakai untuk presen hari ini.
                             </p>
 
                             <p class="mt-4 rounded-xl bg-slate-50 py-4 text-center font-mono text-2xl font-bold tracking-[0.2em] text-slate-800">

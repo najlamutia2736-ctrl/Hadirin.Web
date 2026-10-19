@@ -52,8 +52,8 @@ test('dashboard guru tidak lagi menampilkan tren bulanan palsu', function () {
         ->assertDontSee('"month":"Jan","hadir":92')
         ->assertDontSee('"hadir":92')
         // Judul grafik menyesuaikan keadaan sebenarnya.
-        ->assertSee('Menunggu absensi pertama')
-        ->assertSee('Belum ada catatan absensi untuk kelas yang Anda ampu');
+        ->assertSee('Menunggu presensi pertama')
+        ->assertSee('Belum ada catatan presensi untuk kelas yang Anda ampu');
 });
 
 test('grafik tren tidak digambar saat belum ada absensi', function () {
@@ -81,8 +81,8 @@ test('tren bulanan dirender begitu ada absensi tercatat', function () {
     $html = $this->actingAs($guru->user)->get(route('guru.dashboard'))->assertOk()->getContent();
 
     expect($html)->toContain('id="trenChart"')
-        ->not->toContain('Belum ada catatan absensi untuk kelas yang Anda ampu')
-        ->not->toContain('Menunggu absensi pertama');
+        ->not->toContain('Belum ada catatan presensi untuk kelas yang Anda ampu')
+        ->not->toContain('Menunggu presensi pertama');
 
     // Kelima catatan masuk ke bulan berjalan: 2 hadir, sisanya satu per status.
     preg_match('/const DATA_TREN_BULANAN = (\[.*?\]);/s', $html, $m);
@@ -125,7 +125,7 @@ test('tren guru tanpa kelas tidak menyebabkan error', function () {
     $this->actingAs($user)
         ->get(route('guru.dashboard'))
         ->assertOk()
-        ->assertSee('Menunggu absensi pertama')
+        ->assertSee('Menunggu presensi pertama')
         ->assertDontSee('id="trenChart"');
 });
 

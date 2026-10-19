@@ -97,7 +97,7 @@
             'value' => $total['persentase'] . '%',
             'sub' => $perbandingan
                 ? $total['siswa'] . ' siswa ikut dihitung'
-                : 'dari ' . number_format($total['total'], 0, ',', '.') . ' catatan absensi',
+                : 'dari ' . number_format($total['total'], 0, ',', '.') . ' catatan presensi',
             'badge' => $badgeTren,
         ],
         [
@@ -244,11 +244,11 @@
             class="mb-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
             <i class="fas fa-circle-info mt-0.5 shrink-0"></i>
             <div>
-                <p class="font-semibold">Belum ada catatan absensi pada {{ $laporan['label'] }}.</p>
+                <p class="font-semibold">Belum ada catatan presensi pada {{ $laporan['label'] }}.</p>
                 <p class="mt-0.5">
-                    Laporan ini dihitung dari tabel absensi yang sama dengan dashboard.
+                    Laporan ini dihitung dari tabel presensi yang sama dengan dashboard.
                     {{ $total['siswa'] }} siswa tetap terdaftar di bawah, tetapi semua kolom
-                    kehadiran masih kosong sampai absensi dicatat di halaman
+                    kehadiran masih kosong sampai presensi dicatat di halaman
                     <a href="{{ route('guru.dashboard') }}" class="font-semibold underline">Dashboard Guru</a>.
                 </p>
             </div>
@@ -264,7 +264,7 @@
                     <i class="fas fa-bolt"></i>
                 </span>
                 <div>
-                    <h3 class="text-sm font-semibold text-gray-800">Absensi Hari Ini</h3>
+                    <h3 class="text-sm font-semibold text-gray-800">Presensi Hari Ini</h3>
                     <p class="text-xs text-gray-500" data-hariIniKelas>Memuat data kelas...</p>
                 </div>
             </div>
@@ -372,7 +372,7 @@
                     @else
                         <p class="py-10 text-center text-sm text-gray-400">
                             <i class="fas fa-chart-simple mb-2 block text-2xl text-gray-300"></i>
-                            Belum ada absensi harian pada {{ $laporan['label'] }}.
+                            Belum ada presensi harian pada {{ $laporan['label'] }}.
                         </p>
                     @endif
                 </div>

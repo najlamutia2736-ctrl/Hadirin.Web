@@ -257,7 +257,7 @@
         </table>
 
         <p style="font-size: 10.5px; color: #6b7280; margin-top: 8px">
-            Catatan: persentase kehadiran dihitung dari jumlah hadir dibagi total catatan absensi pada periode
+            Catatan: persentase kehadiran dihitung dari jumlah hadir dibagi total catatan presensi pada periode
             {{ $periode['label'] }}.
         </p>
 

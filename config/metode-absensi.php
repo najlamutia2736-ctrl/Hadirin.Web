@@ -4,7 +4,7 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Metode Absensi Siswa
+    | Metode Presensi Siswa
     |--------------------------------------------------------------------------
     |
     | Daftar cara absen yang ditampilkan oleh dua halaman sekaligus:
@@ -61,7 +61,7 @@ return [
         'butuh' => 'NISN dari kartu siswa',
         'langkah' => [
             'Buka halaman Kode NISN dari daftar di atas.',
-            'Ketik NISN yang tertera di kartu absensi.',
+            'Ketik NISN yang tertera di kartu presensi.',
             'Kirim dan tunggu konfirmasi masuk.',
         ],
     ],
@@ -84,8 +84,8 @@ return [
 
     [
         'label' => 'Notifikasi',
-        'ringkasan' => 'Lihat riwayat dan hasil absensi yang sudah dikirim.',
-        'penjelasan' => 'Hanya untuk melihat. Di sini kamu bisa cek apakah absensi hari ini sudah tercatat atau masih diproses.',
+        'ringkasan' => 'Lihat riwayat dan hasil presensi yang sudah dikirim.',
+        'penjelasan' => 'Hanya untuk melihat. Di sini kamu bisa cek apakah presensi hari ini sudah tercatat atau masih diproses.',
         'ikon' => 'fa-bell',
         'warna' => 'bg-sky-50 text-sky-600',
         'accent' => 'from-sky-500 to-cyan-500',
@@ -94,7 +94,7 @@ return [
         'langkah' => [
             'Buka halaman Notifikasi dari daftar di atas.',
             'Lihat daftar kehadiran terbaru.',
-            'Cek status absensi hari ini.',
+            'Cek status presensi hari ini.',
         ],
     ],
 ];

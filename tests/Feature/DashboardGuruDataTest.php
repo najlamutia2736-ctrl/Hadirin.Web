@@ -674,12 +674,12 @@ test('absensi di luar periode bulan terpilih tidak dihitung', function () {
         ->and($payload['perSiswa'])->toHaveCount(1);
 });
 
-test('siswa tanpa catatan absensi tetap muncul di laporan dengan angka nol', function () {
+test('siswa tanpa catatan presensi tetap muncul di laporan dengan angka nol', function () {
     $guru = guruDenganAkun();
     $kelas = Kelas::factory()->create(['nama_kelas' => 'X-A', 'status' => 'Aktif']);
     $kelas->guru()->sync([$guru->id]);
 
-    siswaDiKelas($kelas, 'Siswa Belum Absen');
+    siswaDiKelas($kelas, 'Siswa Belum Presen');
 
     $payload = $this->actingAs($guru->user)
         ->getJson(route('guru.laporan'))
@@ -687,7 +687,7 @@ test('siswa tanpa catatan absensi tetap muncul di laporan dengan angka nol', fun
         ->json();
 
     expect($payload['perSiswa'])->toHaveCount(1)
-        ->and($payload['perSiswa'][0]['nama'])->toBe('Siswa Belum Absen')
+        ->and($payload['perSiswa'][0]['nama'])->toBe('Siswa Belum Presen')
         ->and($payload['perSiswa'][0]['total'])->toBe(0)
         ->and($payload['perKelas'])->toHaveCount(1);
 });
@@ -947,7 +947,7 @@ test('halaman kelola menampilkan kelas dan siswa dari database', function () {
 });
 
 /*
-| Progres Absensi. Sumber angka tetap tabel `absensis`, dengan dua hal yang
+| Progres Presensi. Sumber angka tetap tabel `absensis`, dengan dua hal yang
 | membedakannya dari laporan bulanan: periodenya bisa beberapa periode
 | sekaligus, dan ada pembanding dengan periode sebelumnya sepanjang yang
 | sama supaya guru tahu arah kehadiran, bukan cuma angkanya.
@@ -1216,7 +1216,7 @@ test('halaman progres absensi menampilkan ringkasan periode di layar', function 
         // Judul halaman tetap "Laporan Bulanan" karena keduanya sudah digabung,
         // sementara isi tabnya yang berbeda.
         ->assertSee('Laporan Bulanan')
-        ->assertSee('Progres Absensi')
+        ->assertSee('Progres Presensi')
         ->assertSee('Rata-rata Kehadiran')
         ->assertSee('Tren Kehadiran Harian')
         ->assertSee('Progres per Kelas')
@@ -1262,7 +1262,7 @@ test('laporan bulanan dan progres absensi digabung jadi satu halaman', function 
     $periode->assertSee('Laporan Bulanan')
         ->assertSee('Progres per Kelas')
         ->assertSee('Progres per Siswa')
-        ->assertSee('Absensi Hari Ini')
+        ->assertSee('Presensi Hari Ini')
         // Tombol ekspor mengikuti periode bulanan, jadi tidak ada di tab ini.
         ->assertDontSee('Ekspor CSV');
 });
@@ -1404,9 +1404,9 @@ test('dashboard guru punya kendali polling dan feed absensi', function () {
         ->assertSee('Tren Kehadiran Bulanan')
         ->assertSee('Ringkasan Hari Ini')
         ->assertSee('Progres per Kelas')
-        ->assertSee('Daftar Absensi Siswa')
+        ->assertSee('Daftar Presensi Siswa')
         // Pemantauan dari halaman real-time monitoring yang sudah digabung.
-        ->assertSee('Absensi Masuk')
+        ->assertSee('Presensi Masuk')
         // Poll dan tombol kendalinya harus ada, kalau tidak halaman diam saja.
         ->assertSee('loadRealtimeFromStorage', false)
         ->assertSee('startRealtimeAutoRefresh', false)

@@ -10,7 +10,7 @@
     */
     $user = auth()->user();
 
-    // Menu "Absen Siswa" hanya untuk akun yang punya profil di tabel `siswas`.
+    // Menu "Presen Siswa" hanya untuk akun yang punya profil di tabel `siswas`.
     // Pemeriksaannya sama dengan yang dipakai AbsensiSiswaController, supaya
     // menu ini tidak pernah mengarah ke halaman yang akan menolak user.
     $bisaAbsen = $user?->siswa !== null;
@@ -38,18 +38,15 @@
             <div class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
                 @if ($bisaAbsen)
                     <a href="{{ route('absensi.index') }}"
-                        class="hover:text-indigo-600 transition {{ request()->routeIs('absensi.*') ? 'text-indigo-600 font-semibold' : '' }}">Absen
-                        Siswa</a>
+                        class="hover:text-indigo-600 transition {{ request()->routeIs('absensi.*') ? 'text-indigo-600 font-semibold' : '' }}">Presen Siswa</a>
                 @endif
                 @if ($bukaGuru)
                     <a href="{{ route('guru.dashboard') }}"
-                        class="hover:text-indigo-600 transition {{ request()->routeIs('guru.dashboard') ? 'text-indigo-600 font-semibold' : '' }}">Dashboard
-                        Guru</a>
+                        class="hover:text-indigo-600 transition {{ request()->routeIs('guru.dashboard') ? 'text-indigo-600 font-semibold' : '' }}">Dashboard Guru</a>
                 @endif
                 @if ($bukaCms)
                     <a href="{{ route('cms.dashboard') }}"
-                        class="hover:text-indigo-600 transition {{ request()->routeIs('cms.dashboard') ? 'text-indigo-600 font-semibold' : '' }}">Dashboard
-                        Admin</a>
+                        class="hover:text-indigo-600 transition {{ request()->routeIs('cms.dashboard') ? 'text-indigo-600 font-semibold' : '' }}">Dashboard Admin</a>
                     <a href="{{ route('cms.rekap') }}"
                         class="hover:text-indigo-600 transition {{ request()->routeIs('cms.rekap') ? 'text-indigo-600 font-semibold' : '' }}">Rekap</a>
                 @endif
@@ -99,7 +96,7 @@
             @if ($bisaAbsen)
                 <a href="{{ route('absensi.index') }}"
                     class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
-                    <i class="fas fa-user-graduate w-5"></i> HALAMAN ABSENSI SISWA
+                    <i class="fas fa-user-graduate w-5"></i> HALAMAN PRESENSI SISWA
                 </a>
             @endif
             @if ($bukaGuru)

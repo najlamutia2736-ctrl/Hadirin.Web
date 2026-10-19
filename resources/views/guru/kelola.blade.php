@@ -87,7 +87,7 @@
                         <th class="px-4 py-3 font-semibold">L/P</th>
                         <th class="px-4 py-3 font-semibold">Wali</th>
                         <th class="px-4 py-3 font-semibold">Kontak Wali</th>
-                        <th class="px-4 py-3 font-semibold">Absensi Hari Ini</th>
+                        <th class="px-4 py-3 font-semibold">Presensi Hari Ini</th>
                         <th class="px-4 py-3 font-semibold">Status</th>
                         <th class="px-6 py-3 text-right font-semibold">Aksi</th>
                     </tr>
@@ -446,7 +446,7 @@
                     '<td class="px-4 py-3">' +
                         (siswa.absensi
                             ? '<span class="' + badgeAbsensi(siswa.absensi) + '">' + kapital(siswa.absensi) + '</span>'
-                            : '<span class="badge-belum">Belum Absen</span>') +
+                            : '<span class="badge-belum">Belum Presen</span>') +
                     '</td>' +
                     '<td class="px-4 py-3">' +
                         '<span class="' + (BADGE_STATUS_SISWA[siswa.status] || 'badge-belum') + '">' +

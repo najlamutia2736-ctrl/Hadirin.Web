@@ -26,7 +26,7 @@
                     <h1 class="text-3xl font-extrabold text-slate-800 tracking-tight">
                         <span class="text-indigo-600">HADIRIN</span>
                     </h1>
-                    <p class="text-sm text-slate-500 mt-1 font-medium tracking-wide">Absensi Siswa Harian</p>
+                    <p class="text-sm text-slate-500 mt-1 font-medium tracking-wide">Presensi Siswa Harian</p>
                 </div>
 
                 <!-- Selamat Datang -->
@@ -92,7 +92,7 @@
         <div class="max-w-7xl mx-auto px-4 flex flex-wrap items-center justify-center gap-3">
             <span>© 2026 Hadirin.web</span>
             <span class="w-px h-3 bg-slate-300"></span>
-            <span>Absensi Siswa Harian</span>
+            <span>Presensi Siswa Harian</span>
         </div>
     </footer>
 

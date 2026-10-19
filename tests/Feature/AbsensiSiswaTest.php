@@ -48,7 +48,7 @@ test('halaman absensi menampilkan identitas siswa yang login', function () {
         ->assertSee('20240101')
         ->assertSee('XII-A')
         ->assertSee('Matematika')
-        ->assertSee('Identitas Siswa');
+        ->assertSee('Identitas Mahasiswa');
 });
 
 test('halaman absensi menampilkan status belum absen saat belum ada catatan hari ini', function () {
@@ -72,11 +72,11 @@ test('halaman absensi menampilkan status belum absen saat belum ada catatan hari
     $this->actingAs($siswa->user)
         ->get(route('absensi.index'))
         ->assertOk()
-        ->assertSee('Belum Absen')
-        ->assertSee('Absen Sekarang');
+        ->assertSee('Belum Presen')
+        ->assertSee('Presen Sekarang');
 });
 
-test('halaman absensi menampilkan status dan waktu saat sudah absen hari ini', function () {
+test('halaman absensi menampilkan status dan waktu saat sudah presen hari ini', function () {
     $siswa = siswaDenganAkun();
 
     $sesi = SesiAbsensi::create([
@@ -101,7 +101,7 @@ test('halaman absensi menampilkan status dan waktu saat sudah absen hari ini', f
         ->assertSee('07:30')
         ->assertSee('PAGI')
         ->assertSee('Tepat waktu')
-        ->assertDontSee('Absen Sekarang');
+        ->assertDontSee('Presen Sekarang');
 });
 
 test('rekap bulan ini menghitung hadir izin sakit dan alpha', function () {
@@ -179,7 +179,7 @@ test('halaman metode menjelaskan keempat cara absen', function () {
     $this->actingAs($siswa->user)
         ->get(route('absensi.metode'))
         ->assertOk()
-        ->assertSee('Metode Absensi')
+        ->assertSee('Metode Presensi')
         ->assertSee('Scan QR Code')
         ->assertSee('Kode NISN')
         ->assertSee('Izin / Sakit')
@@ -207,11 +207,11 @@ test('halaman metode menampilkan status belum absen dan menawarkan absen', funct
     $this->actingAs($siswa->user)
         ->get(route('absensi.metode'))
         ->assertOk()
-        ->assertSee('Belum Absen')
-        ->assertSee('Absen Sekarang');
+        ->assertSee('Belum Presen')
+        ->assertSee('Presen Sekarang');
 });
 
-test('halaman metode menampilkan waktu absen saat sudah absen hari ini', function () {
+test('halaman metode menampilkan waktu absen saat sudah presen hari ini', function () {
     $siswa = siswaDenganAkun();
 
     $sesi = SesiAbsensi::create([
@@ -235,7 +235,7 @@ test('halaman metode menampilkan waktu absen saat sudah absen hari ini', functio
         ->assertSee('Izin')
         ->assertSee('15:10')
         ->assertSee('SORE')
-        ->assertDontSee('Absen Sekarang');
+        ->assertDontSee('Presen Sekarang');
 });
 
 /*
@@ -266,9 +266,9 @@ test('halaman id unik menampilkan formulir dan kode kartu siswa', function () {
     $this->actingAs($siswa->user)
         ->get(route('absensi.id-unik'))
         ->assertOk()
-        ->assertSee('Absen Kode NISN')
+        ->assertSee('Presen Kode NISN')
         ->assertSee('Masukkan Kode')
-        ->assertSee('Kartu Absensi')
+        ->assertSee('Kartu Presensi')
         ->assertSee('20240101')
         ->assertSee('XI-RPL')
         ->assertSee($siswa->user->name)
@@ -365,7 +365,7 @@ test('id unik ditolak saat tidak ada sesi absensi yang berjalan', function () {
     expect(Absensi::where('siswa_id', $siswa->id)->count())->toBe(0);
 });
 
-test('halaman id unik menyembunyikan formulir saat sudah absen', function () {
+test('halaman id unik menyembunyikan formulir saat sudah presen', function () {
     $siswa = siswaDenganAkun(['nisn' => '20240101']);
     $sesi = sesiBerjalan();
 
@@ -536,10 +536,10 @@ test('halaman notifikasi menampilkan riwayat rekap dan strip mingguan', function
     $this->actingAs($siswa->user)
         ->get(route('absensi.notifikasi'))
         ->assertOk()
-        ->assertSee('Notifikasi Absensi')
+        ->assertSee('Notifikasi Presensi')
         ->assertSee('7 Hari Terakhir')
         ->assertSee('Rekap Bulan Ini')
-        ->assertSee('Riwayat Absensi')
+        ->assertSee('Riwayat Presensi')
         ->assertSee('4 catatan')
         // Rekap bulan ini: 1 hadir dari 4 catatan = 25%.
         ->assertSee('25', false)
@@ -564,7 +564,7 @@ test('halaman notifikasi menampilkan daftar kosong saat belum ada riwayat', func
         ->get(route('absensi.notifikasi'))
         ->assertOk()
         ->assertSee('Belum ada riwayat')
-        ->assertSee('Mulai absen');
+        ->assertSee('Mulai presen');
 });
 
 test('halaman notifikasi menampilkan status hari ini beserta waktu dan sesi', function () {
@@ -584,7 +584,7 @@ test('halaman notifikasi menampilkan status hari ini beserta waktu dan sesi', fu
         ->assertSee('Hadir')
         ->assertSee('07:30')
         ->assertSee('PAGI')
-        ->assertDontSee('Absen Sekarang');
+        ->assertDontSee('Presen Sekarang');
 });
 
 test('halaman notifikasi menampilkan tujuh hari terakhir dengan hari kosong', function () {
@@ -738,7 +738,7 @@ test('tidak bisa mengirim pengajuan kedua di hari yang sama', function () {
     $this->actingAs($siswa->user)
         ->post(route('absensi.izin-sakit.store'), [
             'jenis' => 'izin',
-            'alasan' => 'Mau izin padahal sudah absen pagi tadi.',
+            'alasan' => 'Mau izin padahal sudah presen pagi tadi.',
             'tanggal' => now()->toDateString(),
         ])
         ->assertRedirect(route('absensi.izin-sakit'))

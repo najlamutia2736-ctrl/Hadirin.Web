@@ -1,6 +1,6 @@
 @extends('layouts.absensi')
 
-@section('title', 'Metode Absensi · Hadirin.web')
+@section('title', 'Metode Presensi · Hadirin.web')
 
 @php
     /*
@@ -36,7 +36,7 @@
             'ikon' => 'fa-circle-xmark',
         ],
         default => [
-            'label' => 'Belum Absen',
+            'label' => 'Belum Presen',
             'warna' => 'bg-slate-50 text-slate-700 border-slate-200',
             'ikon' => 'fa-hourglass-half',
         ],
@@ -79,10 +79,10 @@
                 <a href="{{ route('absensi.index') }}"
                     class="inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition-colors hover:text-indigo-600">
                     <i class="fas fa-arrow-left text-xs"></i>
-                    Kembali ke absensi
+                    Kembali ke presensi
                 </a>
                 <h1 class="mt-3 text-2xl font-bold tracking-tight text-slate-800 sm:text-3xl">
-                    Metode Absensi
+                    Metode Presensi
                 </h1>
                 <p class="mt-1 max-w-2xl text-slate-600">
                     Ada beberapa cara untuk mencatat kehadiran. Pilih yang paling sesuai dengan situasimu
@@ -123,7 +123,7 @@
                     @else
                         <a href="{{ route('absensi.scan-qr') }}"
                             class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700">
-                            Absen Sekarang
+                            Presen Sekarang
                             <i class="fas fa-arrow-right text-xs"></i>
                         </a>
                     @endif
@@ -132,7 +132,7 @@
 
             {{-- Kartu tiap metode --}}
             <section>
-                <h2 class="text-lg font-bold text-slate-800">Pilihan Cara Absen</h2>
+                <h2 class="text-lg font-bold text-slate-800">Pilihan Cara Presen</h2>
                 <p class="mt-0.5 text-sm text-slate-500">
                     Scan QR Code dan Kode NISN sama-sama mencatat kehadiran. Izin / Sakit untuk pengajuan, dan
                     Notifikasi hanya untuk melihat riwayat.
@@ -236,7 +236,7 @@
                     <ul class="mt-2.5 space-y-1.5 text-xs leading-relaxed text-slate-600">
                         <li class="flex gap-2">
                             <i class="fas fa-circle-check mt-0.5 text-[10px] text-slate-400"></i>
-                            Hanya perlu absen sekali perpelajaran, tidak perlu diulang.
+                            Hanya perlu presen sekali perpelajaran, tidak perlu diulang.
                         </li>
                         <li class="flex gap-2">
                             <i class="fas fa-circle-check mt-0.5 text-[10px] text-slate-400"></i>
@@ -244,7 +244,7 @@
                         </li>
                         <li class="flex gap-2">
                             <i class="fas fa-circle-check mt-0.5 text-[10px] text-slate-400"></i>
-                            Salah absen? Hubungi wali kelas supaya bisa diperbaiki.
+                            Salah presen? Hubungi wali kelas supaya bisa diperbaiki.
                         </li>
                     </ul>
                 </div>

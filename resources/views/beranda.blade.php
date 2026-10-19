@@ -15,7 +15,7 @@
     */
     $metodeAbsensi = config('metode-absensi');
 
-    // Menu & kartu "Absen Siswa" hanya untuk akun yang punya profil di tabel
+    // Menu & kartu "Presen Siswa" hanya untuk akun yang punya profil di tabel
     // `siswas`. Pemeriksaannya sama dengan AbsensiSiswaController.
     $bisaAbsen = $user?->siswa !== null;
 
@@ -35,7 +35,7 @@
     $tujuanSiswa = $bisaAbsen ? route('absensi.index') : ($user === null ? route('login') : route('guru.dashboard'));
 
     $labelSiswa = match (true) {
-        $bisaAbsen => 'Absen Sekarang',
+        $bisaAbsen => 'Presen Sekarang',
         $user === null => 'Klik',
         default => 'Bukan Akun Siswa',
     };
@@ -175,7 +175,7 @@
         {{--
         | Kartu melayang di sisi banner. Isinya dulu "Kode QR" dan "Kode NISN",
         | tapi keduanya cuma mengulang cara absen yang sudah dijelaskan panjang
-        | di bagian Panduan Cara Absen di bawah, jadi tidak menambah informasi.
+        | di bagian Panduan Cara Presen di bawah, jadi tidak menambah informasi.
         | Sekarang isinya keunggulan aplikasinya.
         |
         | Isinya kept static, bukan angka dari database: halaman ini terbuka untuk
@@ -224,11 +224,11 @@
         <div class="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 text-center">
             <div
                 class="inline-flex items-center gap-2 bg-white/15 px-4 py-1.5 rounded-full border border-white/25 text-xs font-semibold mb-6 backdrop-blur-sm">
-                <i class="fas fa-star text-yellow-300"></i> Selamat Datang di Platform Absensi Digital
+                <i class="fas fa-star text-yellow-300"></i> Selamat Datang di Platform Presensi Digital
             </div>
 
             <h2 class="text-3xl md:text-4xl lg:text-5xl font-extrabold mb-5 tracking-tight">
-                ABSENSI SEKOLAH <span class="text-yellow-300">DIGITAL</span>
+                PRESENSI SEKOLAH <span class="text-yellow-300">DIGITAL</span>
             </h2>
 
             {{-- Garis pemisah tipis membuat judul tidak langsung menempel ke paragraf. --}}
@@ -243,7 +243,7 @@
             <div class="flex flex-wrap items-center justify-center gap-3 text-xs">
                 <span
                     class="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 backdrop-blur-sm">
-                    <i class="fas fa-bolt text-yellow-300"></i> Absen dalam hitungan detik
+                    <i class="fas fa-bolt text-yellow-300"></i> Presen dalam hitungan detik
                 </span>
                 <span
                     class="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 backdrop-blur-sm">
@@ -266,7 +266,7 @@
                 <div class="space-y-6">
                     <div
                         class="inline-block bg-indigo-100/70 text-indigo-800 text-xs font-semibold px-4 py-1.5 rounded-full border border-indigo-200/60">
-                        <i class="fas fa-qrcode mr-2"></i> Absensi modern
+                        <i class="fas fa-qrcode mr-2"></i> Presensi modern
                     </div>
 
                     <h1
@@ -280,7 +280,7 @@
                         {{-- Kalimat ini berupa ajakan untuk tamu, tapi berubah jadi
                              sapaan begitu penggunanya sudah masuk. --}}
                         @if ($user === null)
-                            Lakukan Login Terlebih Dahulu Untuk Memulai Absensi Digital Mu!
+                            Lakukan Login Terlebih Dahulu Untuk Memulai Presensi Digital Mu!
                         @else
                             Selamat datang, {{ $user->name }}. Kelola kehadiran sekolah dari satu tempat.
                         @endif
@@ -381,7 +381,7 @@
                     <div>
                         <h2 class="text-lg font-semibold text-slate-800 mb-2">Apa itu Hadirin.web?</h2>
                         <p class="text-sm text-slate-600 leading-relaxed max-w-4xl">
-                            Hadirin.web merupakan alternatif pengganti buku absensi kertas dengan pencatatan otomatis
+                            Hadirin.web merupakan alternatif pengganti buku presensi kertas dengan pencatatan otomatis
                             dan
                             terpusat.
                             Siswa cukup memindai kode QR atau memasukkan Kode NISN miliknya.
@@ -427,7 +427,7 @@
                         <i class="fas fa-user-graduate text-3xl text-indigo-600"></i>
                     </div>
                     <h4 class="text-xl font-bold text-slate-800 mb-2">Mahasiswa</h4>
-                    <p class="text-sm text-slate-500 mb-4">Absen mandiri lewat scan QRCode atau kode NISN.</p>
+                    <p class="text-sm text-slate-500 mb-4">Presen mandiri lewat scan QRCode atau kode NISN.</p>
 
                     @if ($bisaAbsen)
                         <a href="{{ route('absensi.index') }}"
@@ -445,7 +445,7 @@
                         {{-- Sudah login tapi bukan siswa: jelaskan, jangan paksa. --}}
                         <span
                             class="inline-block cursor-not-allowed rounded-xl border border-slate-200 bg-slate-100 px-6 py-2.5 font-medium text-slate-400"
-                            title="Gunakan akun siswa untuk absen.">
+                            title="Gunakan akun siswa untuk presen.">
                             <i class="fas fa-lock mr-1"></i> {{ $labelSiswa }}
                         </span>
                     @endif
@@ -480,7 +480,7 @@
         --}}
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
             <div class="text-center mb-8">
-                <h3 class="text-2xl font-bold text-slate-800 mb-2">Panduan Cara Absen</h3>
+                <h3 class="text-2xl font-bold text-slate-800 mb-2">Panduan Cara Presen</h3>
                 <p class="text-sm text-slate-500">
                     Scan QR Code dan Kode NISN sama-sama mencatat kehadiran. Izin / Sakit untuk pengajuan, dan
                     Notifikasi hanya untuk melihat riwayat.
@@ -534,26 +534,8 @@
             </div>
 
             <div class="mt-8 flex flex-col items-center gap-3 text-center">
-                @if ($bisaAbsen)
-                    <a href="{{ route('absensi.index') }}"
-                        class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 px-6 py-3 text-sm font-semibold text-white shadow-sm shadow-indigo-200/60 transition">
-                        <i class="fas fa-right-to-bracket"></i> Mulai Absen Sekarang
-                    </a>
-                @elseif ($user === null)
-                    <a href="{{ route('login') }}"
-                        class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 px-6 py-3 text-sm font-semibold text-white shadow-sm shadow-indigo-200/60 transition">
-                        <i class="fas fa-right-to-bracket"></i> Login untuk Mulai Absen
-                    </a>
-                @else
-                    <span
-                        class="inline-flex cursor-not-allowed items-center gap-2 rounded-xl border border-slate-200 bg-slate-100 px-6 py-3 text-sm font-medium text-slate-400"
-                        title="Gunakan akun siswa untuk absen.">
-                        <i class="fas fa-lock"></i> Gunakan akun siswa untuk absen
-                    </span>
-                @endif
-
                 <p class="text-xs text-slate-400">
-                    Scan QR Code dan Kode NISN sama-sama mencatat kehadiran hari ini. Kamu perlu absen disetiap
+                    Scan QR Code dan Kode NISN sama-sama mencatat kehadiran hari ini. Kamu perlu presen disetiap
                     mata kuliah yang kamu ikuti.
                 </p>
             </div>
@@ -564,7 +546,7 @@
     <footer
         class="w-full border-t border-slate-200/60 py-6 mt-8 text-center text-xs text-slate-400 bg-white/40 backdrop-blur-sm">
         <div class="max-w-7xl mx-auto px-4 flex flex-wrap items-center justify-center gap-3">
-            <span>© 2026 Sistem Absensi</span>
+            <span>© 2026 Sistem Presensi</span>
             <span class="w-px h-3 bg-slate-300"></span>
             <span>Hadirin.web</span>
         </div>

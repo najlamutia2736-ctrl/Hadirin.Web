@@ -45,7 +45,7 @@
                 <div class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
                     <a href="{{ route('beranda') }}" class="hover:text-indigo-600 transition">Beranda</a>
                     @if (($bisaAbsen ??= auth()->user()?->siswa !== null))
-                        <a href="{{ route('absensi.index') }}" class="hover:text-indigo-600 transition">Absen Siswa</a>
+                        <a href="{{ route('absensi.index') }}" class="hover:text-indigo-600 transition">Presen Siswa</a>
                     @endif
                     <a href="{{ route('guru.dashboard') }}" class="hover:text-indigo-600 transition">Dashboard Guru</a>
                     <a href="{{ route('cms.dashboard') }}" class="hover:text-indigo-600 transition">Dashboard Admin</a>
@@ -85,7 +85,7 @@
                     </a>
                     @if (($bisaAbsen ??= auth()->user()?->siswa !== null))
                         <a href="{{ route('absensi.index') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
-                            <i class="fas fa-user-graduate w-5"></i> Absen Siswa
+                            <i class="fas fa-user-graduate w-5"></i> Presen Siswa
                         </a>
                     @endif
                     <a href="{{ route('guru.dashboard') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
@@ -425,7 +425,7 @@
     <!-- ========== FOOTER ========== -->
     <footer class="w-full border-t border-slate-200/60 py-4 text-center text-[10px] text-slate-400 bg-white/40 backdrop-blur-sm">
         <div class="max-w-7xl mx-auto px-4 flex flex-wrap items-center justify-center gap-3">
-            <span>© 2026 Sistem Absensi</span>
+            <span>© 2026 Sistem Presensi</span>
             <span class="w-px h-3 bg-slate-300"></span>
             <span>Hadirin.web</span>
             <span class="w-px h-3 bg-slate-300"></span>

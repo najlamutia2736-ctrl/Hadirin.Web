@@ -7,7 +7,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 /**
- * Halaman yang memuat link "Absen Siswa" di navigasi publik.
+ * Halaman yang memuat link "Presen Siswa" di navigasi publik.
  */
 function halamanDenganMenuAbsen(): array
 {
@@ -54,7 +54,7 @@ test('link absen siswa muncul untuk akun siswa yang punya profil', function () {
             ->get($url)
             ->assertOk()
             ->assertSee(route('absensi.index'), false)
-            ->assertSee('Absen Siswa');
+            ->assertSee('Presen Siswa');
     }
 });
 
@@ -87,11 +87,11 @@ test('membuka halaman lewat alamat lama beranda tidak mengakhiri sesi', function
     $this->get(route('beranda'))
         ->assertOk()
         ->assertSee(route('absensi.index'), false)
-        ->assertSee('Absen Siswa');
+        ->assertSee('Presen Siswa');
 });
 
 /*
-| Kartu peran "Siswa" di beranda. Berbeda dengan menu "Absen Siswa", kartu
+| Kartu peran "Siswa" di beranda. Berbeda dengan menu "Presen Siswa", kartu
 | ini tidak pernah disembunyikan: tugasnya justru menawarkan pilihan peran,
 | jadi orang yang belum login adalah target utamanya. Yang dijaga hanya
 | tujuan kliknya supaya URL halaman absensi tidak bocor ke akun lain.
@@ -107,7 +107,7 @@ test('kartu peran siswa selalu tampil di beranda untuk semua pengunjung', functi
         ->assertSee('Admin / Kepsek')
         // Teks tombol kartu sudah diubah menjadi "Klik" untuk ketiga peran,
         // jadi yang dicek adalah isi kartu Siswanya sendiri, bukan label tombol.
-        ->assertSee('Absen mandiri lewat scan QRCode atau kode NISN.');
+        ->assertSee('Presen mandiri lewat scan QRCode atau kode NISN.');
 
     foreach (['Admin', 'Guru'] as $role) {
         $this->actingAs(User::factory()->create(['role' => $role]))
@@ -144,7 +144,7 @@ test('kartu peran siswa untuk siswa yang punya profil langsung ke halaman absens
         ->get('/')
         ->assertOk()
         ->assertSee(route('absensi.index'), false)
-        ->assertSee('Absen Sekarang');
+        ->assertSee('Presen Sekarang');
 });
 
 /*
@@ -157,7 +157,7 @@ test('kartu peran siswa untuk siswa yang punya profil langsung ke halaman absens
 test('panduan cara absen tampil di halaman depan untuk semua pengunjung', function () {
     $this->get('/')
         ->assertOk()
-        ->assertSee('Panduan Cara Absen')
+        ->assertSee('Panduan Cara Presen')
         ->assertSee('Scan QR Code')
         ->assertSee('Kode NISN')
         ->assertSee('Izin / Sakit')
@@ -181,26 +181,26 @@ test('panduan cara absen di halaman depan tidak membocorkan url halaman absensi'
     }
 });
 
-test('tombol di bawah panduan mengarah sesuai sesi', function () {
-    $this->get('/')
-        ->assertOk()
-        ->assertSee('Login untuk Mulai Absen')
-        ->assertSee(route('login'), false);
+test('tidak ada tombol aksi di bawah panduan cara absen', function () {
+    // Panduan murni penjelasan; navigasi ke absensi hanya lewat navbar.
+    $siswa = User::factory()->create(['role' => 'Siswa']);
 
-    // Sudah login tapi bukan siswa: tombolnya mati, bukan mengarah ke /absensi
-    // yang pasti menolak dengan 403.
-    $this->actingAs(User::factory()->create(['role' => 'Admin']))
-        ->get('/')
-        ->assertOk()
-        ->assertSee('Gunakan akun siswa untuk absen');
+    Siswa::factory()->create(['user_id' => $siswa->id]);
 
-    $user = User::factory()->create(['role' => 'Siswa']);
+    $halaman = [
+        'tamu' => fn () => $this->get('/'),
+        'admin' => fn () => $this->actingAs(User::factory()->create(['role' => 'Admin']))->get('/'),
+        'siswa' => fn () => $this->actingAs($siswa->fresh())->get('/'),
+    ];
 
-    Siswa::factory()->create(['user_id' => $user->id]);
+    foreach ($halaman as $nama => $request) {
+        $response = $request();
 
-    $this->actingAs($user->fresh())
-        ->get('/')
-        ->assertOk()
-        ->assertSee('Mulai Absen Sekarang')
-        ->assertSee(route('absensi.index'), false);
+        $response->assertOk();
+        $response->assertDontSee('Login untuk Mulai Presen');
+        $response->assertDontSee('Mulai Presen Sekarang');
+        // Needle persis tombol yang dihapus. Frasa polosnya masih dipakai sebagai
+        // `title` pada kartu peran "Mahasiswa" di bagian Pilihlah Peranmu.
+        $response->assertDontSee('<i class="fas fa-lock"></i> Gunakan akun siswa untuk presen', false);
+    }
 });

@@ -21,7 +21,7 @@
                 <div class="flex items-center gap-3">
                     <div class="hidden text-right sm:block">
                         <p class="text-sm font-semibold text-slate-800">{{ $user?->name }}</p>
-                        <p class="text-xs text-slate-500">{{ $siswa?->kelas ?? 'Absensi Siswa' }}</p>
+                        <p class="text-xs text-slate-500">{{ $siswa?->kelas ?? 'Presensi Siswa' }}</p>
                     </div>
                     <span
                         class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-indigo-100 text-sm font-semibold text-indigo-700">
@@ -45,7 +45,7 @@
                 <a href="{{ route('absensi.index') }}"
                     class="inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition-colors hover:text-indigo-600">
                     <i class="fas fa-arrow-left text-xs"></i>
-                    Kembali ke pilihan absen
+                    Kembali ke pilihan presen
                 </a>
                 <h1 class="mt-3 text-2xl font-bold tracking-tight text-slate-800 sm:text-3xl">
                     Scan QR Code
@@ -155,7 +155,7 @@
                         <div id="aksiSetelahBenar" class="mt-4 hidden space-y-2">
                             <a href="{{ route('absensi.index') }}"
                                 class="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-700">
-                                Lanjut isi absensi
+                                Lanjut isi presensi
                                 <i class="fas fa-arrow-right text-xs"></i>
                             </a>
                             <button type="button" id="tombolScanLagi"
@@ -170,7 +170,7 @@
                     <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                         <h2 class="text-sm font-semibold text-slate-800">Kamera tidak tersedia?</h2>
                         <p class="mt-1 text-xs leading-relaxed text-slate-500">
-                            Izinkan akses kamera di pengaturan browser, atau pakai cara absen lewat Kode NISN.
+                            Izinkan akses kamera di pengaturan browser, atau pakai cara presen lewat Kode NISN.
                         </p>
 
                         <label for="kodeManual" class="mt-4 block text-xs font-medium text-slate-600">
@@ -186,7 +186,7 @@
                         <a href="{{ route('absensi.id-unik') }}"
                             class="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">
                             <i class="fas fa-keyboard text-xs"></i>
-                            Absen lewat Kode NISN
+                            Presen lewat Kode NISN
                         </a>
                     </div>
 
@@ -215,7 +215,7 @@
                 <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
                     Halaman ini butuh JavaScript untuk menyalakan kamera. Aktifkan JavaScript di browsermu, atau
                     langsung buka halaman
-                    <a href="{{ route('absensi.id-unik') }}" class="font-semibold underline">Absen lewat Kode NISN</a>.
+                    <a href="{{ route('absensi.id-unik') }}" class="font-semibold underline">Presen lewat Kode NISN</a>.
                 </div>
             </noscript>
         </main>
@@ -317,7 +317,7 @@
             },
             NotFoundError: {
                 judul: 'Kamera tidak ditemukan',
-                detail: 'Tidak ada kamera yang bisa dipakai di perangkat ini. Coba absen lewat Kode NISN.',
+                detail: 'Tidak ada kamera yang bisa dipakai di perangkat ini. Coba presen lewat Kode NISN.',
             },
             NotReadableError: {
                 judul: 'Kamera sedang dipakai aplikasi lain',
@@ -363,7 +363,7 @@
                 tampilkanStatus(
                     'fa-triangle-exclamation',
                     'Browser tidak mendukung kamera',
-                    'Gunakan Chrome, Edge, Firefox, atau Safari versi terbaru. Sementara itu kamu bisa absen lewat Kode NISN.',
+                    'Gunakan Chrome, Edge, Firefox, atau Safari versi terbaru. Sementara itu kamu bisa presen lewat Kode NISN.',
                     true
                 );
                 return;

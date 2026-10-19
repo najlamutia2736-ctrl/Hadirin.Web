@@ -114,13 +114,13 @@ class AbsensiSiswaController extends Controller
         if (! hash_equals((string) $siswa->nisn, $kode)) {
             return redirect()
                 ->route('absensi.id-unik')
-                ->with('gagal', 'Kode tidak cocok dengan kartu absensimu.');
+                ->with('gagal', 'Kode tidak cocok dengan kartu presensimu.');
         }
 
         if ($this->absensiHariIni($siswa) !== null) {
             return redirect()
                 ->route('absensi.id-unik')
-                ->with('gagal', 'Kehadiran hari ini sudah tercatat, jadi tidak perlu absen lagi.');
+                ->with('gagal', 'Kehadiran hari ini sudah tercatat, jadi tidak perlu presen lagi.');
         }
 
         $sesi = $this->sesiBerjalan();
@@ -128,7 +128,7 @@ class AbsensiSiswaController extends Controller
         if ($sesi === null) {
             return redirect()
                 ->route('absensi.id-unik')
-                ->with('gagal', 'Belum ada sesi absensi yang berjalan, jadi kehadiran belum bisa dicatat.');
+                ->with('gagal', 'Belum ada sesi presensi yang berjalan, jadi kehadiran belum bisa dicatat.');
         }
 
         Absensi::create([
@@ -221,7 +221,7 @@ class AbsensiSiswaController extends Controller
     /**
      * Catatan absensi terbaru, dipaginasi.
      *
-     * Dipaginasi supaya tabelnya tidak melebar kalau siswa sudah absen selama
+     * Dipaginasi supaya tabelnya tidak melebar kalau siswa sudah presen selama
      * berbulan-bulan. Sesi di-eager load karena setiap baris menampilkannya.
      *
      * @return LengthAwarePaginator<int, Absensi>
@@ -238,7 +238,7 @@ class AbsensiSiswaController extends Controller
     /**
      * Kehadiran 7 hari terakhir, dihitung per hari.
      *
-     * Hari tanpa catatan absensi ikut dikembalikan dengan status `null`,
+     * Hari tanpa catatan presensi ikut dikembalikan dengan status `null`,
      * supaya siswa bisa melihat hari yang terlewat, bukan cuma hari yang punya
      * data. Kalau satu hari punya dua catatan, yang dipakai yang paling baru.
      *
@@ -306,7 +306,7 @@ class AbsensiSiswaController extends Controller
     }
 
     /**
-     * Simpan pengajuan izin atau sakit sebagai catatan absensi.
+     * Simpan pengajuan izin atau sakit sebagai catatan presensi.
      *
      * Pengajuan dicatat di tabel yang sama dengan absensi biasa, dengan status
      * `izin` atau `sakit`, supaya langsung ikut terhitung di dashboard guru dan
@@ -338,7 +338,7 @@ class AbsensiSiswaController extends Controller
         if ($sesi === null) {
             return redirect()
                 ->route('absensi.izin-sakit')
-                ->with('gagal', 'Belum ada sesi absensi yang berjalan, jadi pengajuan belum bisa disimpan.');
+                ->with('gagal', 'Belum ada sesi presensi yang berjalan, jadi pengajuan belum bisa disimpan.');
         }
 
         Absensi::create([

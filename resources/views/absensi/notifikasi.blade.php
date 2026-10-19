@@ -34,7 +34,7 @@
             'titik' => 'bg-rose-500',
         ],
         null => [
-            'label' => 'Belum Absen',
+            'label' => 'Belum Presen',
             'ikon' => 'fa-hourglass-half',
             'lencana' => 'bg-slate-100 text-slate-700',
             'titik' => 'bg-slate-400',
@@ -91,10 +91,10 @@
                 <a href="{{ route('absensi.index') }}"
                     class="inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition-colors hover:text-indigo-600">
                     <i class="fas fa-arrow-left text-xs"></i>
-                    Kembali ke absensi
+                    Kembali ke presensi
                 </a>
                 <h1 class="mt-3 text-2xl font-bold tracking-tight text-slate-800 sm:text-3xl">
-                    Notifikasi Absensi
+                    Notifikasi Presensi
                 </h1>
                 <p class="mt-1 max-w-2xl text-slate-600">
                     Riwayat kehadiran yang sudah tercatat, lengkap dengan rekap bulan berjalan.
@@ -138,7 +138,7 @@
                     @else
                         <a href="{{ route('absensi.scan-qr') }}"
                             class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700">
-                            Absen Sekarang
+                            Presen Sekarang
                             <i class="fas fa-arrow-right text-xs"></i>
                         </a>
                     @endif
@@ -242,7 +242,7 @@
             {{-- Riwayat lengkap --}}
             <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-                    <h2 class="text-sm font-semibold text-slate-800">Riwayat Absensi</h2>
+                    <h2 class="text-sm font-semibold text-slate-800">Riwayat Presensi</h2>
                     <span class="text-xs text-slate-500">{{ $riwayat->total() }} catatan</span>
                 </div>
 
@@ -254,11 +254,11 @@
                         </span>
                         <p class="mt-3 text-sm font-semibold text-slate-800">Belum ada riwayat</p>
                         <p class="mt-1 text-xs text-slate-500">
-                            Riwayat muncul setelah absensi pertama tercatat.
+                            Riwayat muncul setelah presensi pertama tercatat.
                         </p>
                         <a href="{{ route('absensi.index') }}"
                             class="mt-4 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700">
-                            Mulai absen
+                            Mulai presen
                             <i class="fas fa-arrow-right text-xs"></i>
                         </a>
                     </div>

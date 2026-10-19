@@ -220,7 +220,7 @@ test('grafik bulanan menandai bulan tanpa absensi, bukan mengarangnya', function
     // Tidak ada catatan sama sekali: tidak boleh muncul persentase palsu.
     $html = $this->get(route('cms.dashboard'))->assertOk()->getContent();
 
-    expect($html)->toContain('Belum ada catatan absensi untuk ditampilkan')
+    expect($html)->toContain('Belum ada catatan presensi untuk ditampilkan')
         ->and(Absensi::count())->toBe(0);
 });
 
@@ -309,8 +309,8 @@ test('dashboard menampilkan kelas dengan siswa terbanyak', function () {
 test('dashboard tetap aman saat belum ada data sama sekali', function () {
     $this->get(route('cms.dashboard'))
         ->assertOk()
-        ->assertSee('Belum ada catatan absensi untuk ditampilkan.')
-        ->assertSee('Belum ada absensi hari ini')
+        ->assertSee('Belum ada catatan presensi untuk ditampilkan.')
+        ->assertSee('Belum ada presensi hari ini')
         ->assertSee('Tidak ada jadwal untuk hari ini')
         ->assertSee('Belum ada siswa');
 });

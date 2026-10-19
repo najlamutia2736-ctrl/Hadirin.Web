@@ -81,7 +81,7 @@
         ],
         [
             'key' => 'belum',
-            'label' => 'Belum Absen',
+            'label' => 'Belum Presen',
             'icon' => 'fas fa-hourglass-half',
             'tone' => 'slate',
             'spark' => [50, 46, 40, 52, 44, 38, 34],
@@ -97,14 +97,14 @@
 
     /*
     | Ringkasan kehadiran pada donut. Nilai & persentasenya diisi JS.
-    | `belum` mewakili siswa yang belum punya catatan absensi hari ini.
+    | `belum` mewakili siswa yang belum punya catatan presensi hari ini.
     */
     $rekapItems = [
         ['key' => 'hadir', 'label' => 'Hadir', 'dot' => 'bg-emerald-500', 'hex' => '#22c55e'],
         ['key' => 'izin', 'label' => 'Izin', 'dot' => 'bg-blue-500', 'hex' => '#3b82f6'],
         ['key' => 'sakit', 'label' => 'Sakit', 'dot' => 'bg-amber-500', 'hex' => '#f59e0b'],
         ['key' => 'alpha', 'label' => 'Alpa', 'dot' => 'bg-red-500', 'hex' => '#ef4444'],
-        ['key' => 'belum', 'label' => 'Belum Absen', 'dot' => 'bg-slate-300', 'hex' => '#cbd5e1'],
+        ['key' => 'belum', 'label' => 'Belum Presen', 'dot' => 'bg-slate-300', 'hex' => '#cbd5e1'],
     ];
 
     /*
@@ -229,7 +229,7 @@
                                 @if ($punyaTren)
                                     Persentase hadir siswa sepanjang 12 bulan terakhir
                                 @else
-                                    Menunggu absensi pertama
+                                    Menunggu presensi pertama
                                 @endif
                             </p>
                         </div>
@@ -273,7 +273,7 @@
                         </div>
                         <p class="-mt-2 text-center text-sm text-gray-400">
                             <i class="fas fa-chart-simple mb-2 block text-2xl text-gray-300"></i>
-                            Belum ada catatan absensi untuk kelas yang Anda ampu.
+                            Belum ada catatan presensi untuk kelas yang Anda ampu.
                         </p>
                     @endif
                 </div>
@@ -327,7 +327,7 @@
         </div>
     </div>
 
-    {{-- feed absensi masuk + progres per kelas --}}
+    {{-- feed presensi masuk + progres per kelas --}}
     <div class="mb-6 grid grid-cols-1 gap-5 lg:grid-cols-3">
         <div class="lg:col-span-2">
             <div class="flex h-full flex-col rounded-xl border border-gray-100 bg-white shadow-sm">
@@ -337,7 +337,7 @@
                             <i class="fas fa-bolt"></i>
                         </span>
                         <div>
-                            <h3 class="font-semibold text-gray-800">Absensi Masuk</h3>
+                            <h3 class="font-semibold text-gray-800">Presensi Masuk</h3>
                             <p class="text-xs text-gray-500">Siswa terbaru yang tercatat hari ini</p>
                         </div>
                     </div>
@@ -383,7 +383,7 @@
                     <i class="fas fa-list-check"></i>
                 </span>
                 <div>
-                    <h3 class="font-semibold text-gray-800">Daftar Absensi Siswa</h3>
+                    <h3 class="font-semibold text-gray-800">Daftar Presensi Siswa</h3>
                     <p class="text-xs text-gray-500" data-tabelSubtitle>-</p>
                 </div>
             </div>
@@ -392,7 +392,7 @@
                 <span id="badgeAbsensiQr"
                     class="hidden items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-600">
                     <i class="fas fa-circle-check"></i>
-                    <span data-absensiQrCount>0</span> absensi masuk
+                    <span data-absensiQrCount>0</span> presensi masuk
                 </span>
 
                 <label for="filterStatus" class="sr-only">Saring status</label>
@@ -403,7 +403,7 @@
                     <option value="Izin">Izin</option>
                     <option value="Sakit">Sakit</option>
                     <option value="Alpha">Alpa</option>
-                    <option value="Belum">Belum Absen</option>
+                    <option value="Belum">Belum Presen</option>
                 </select>
             </div>
         </div>
@@ -658,7 +658,7 @@
                 total: kelasAktif === null ? '-' : 'siswa di ' + kelasAktif,
                 hadir: 'dari ' + total + ' siswa',
                 izinSakit: izinSakit === 0 ? 'tidak ada' : izinSakit + ' siswa tercatat',
-                belum: total > 0 ? Math.round((stat.belum / total) * 100) + '% belum absen' : '-',
+                belum: total > 0 ? Math.round((stat.belum / total) * 100) + '% belum presen' : '-',
                 alpha: total > 0 ? Math.round((stat.alpha / total) * 100) + '% dari total siswa' : '-'
             };
 
@@ -734,7 +734,7 @@
             setTeks('[data-donut-persen]', persen(stat.hadir, total) + '%');
             setTeks('[data-ringkasanKelas]', kelasAktif === null
                 ? 'Belum ada kelas yang diampu'
-                : kelasAktif + ' · ' + stat.hadir + ' dari ' + total + ' sudah absen');
+                : kelasAktif + ' · ' + stat.hadir + ' dari ' + total + ' sudah presen');
 
             if (!donut) return;
 
@@ -825,9 +825,9 @@
                     '</td>' +
                     '<td class="px-4 py-3 text-sm text-gray-600">' + formatWaktu(baris.waktu) + '</td>' +
                     '<td class="px-4 py-3"><span class="' + metode + '">' +
-                        (baris.metode || 'Belum absen') + '</span></td>' +
+                        (baris.metode || 'Belum presen') + '</span></td>' +
                     '<td class="px-4 py-3 text-right"><span class="' + badge + '">' +
-                        (baris.status || 'Belum Absen') + '</span></td>';
+                        (baris.status || 'Belum Presen') + '</span></td>';
 
                 tbody.appendChild(tr);
             });
@@ -876,9 +876,9 @@
                     '<div class="flex h-full min-h-[16rem] flex-col items-center justify-center px-6 py-10 text-center">' +
                     '<span class="mb-3 grid h-14 w-14 place-items-center rounded-full bg-gray-100 text-gray-400">' +
                     '<i class="fas fa-inbox text-xl"></i></span>' +
-                    '<p class="text-sm font-semibold text-gray-700">Belum ada absensi masuk</p>' +
+                    '<p class="text-sm font-semibold text-gray-700">Belum ada presensi masuk</p>' +
                     '<p class="mt-1 max-w-xs text-xs leading-relaxed text-gray-500">' +
-                    'Siswa yang absen di kelas akan langsung muncul di sini tanpa perlu reload halaman.' +
+                    'Siswa yang presen di kelas akan langsung muncul di sini tanpa perlu reload halaman.' +
                     '</p></div>';
                 return;
             }
@@ -899,7 +899,7 @@
                             (baris.kelas || '-') + ' · ' + formatWaktu(baris.waktu) +
                             (baris.dariServer ? '' : ' · dari perangkat siswa') + '</span>' +
                     '</span>' +
-                    '<span class="shrink-0 ' + badge + '">' + (baris.status || 'Belum Absen') + '</span>';
+                    '<span class="shrink-0 ' + badge + '">' + (baris.status || 'Belum Presen') + '</span>';
 
                 container.appendChild(item);
             });
@@ -1023,7 +1023,7 @@
         }
 
         /**
-         * Kunci unik satu catatan absensi.
+         * Kunci unik satu catatan presensi.
          *
          * Catatan dari database selalu punya `waktu` presisi, sedangkan catatan
          * dari storage bisa lebih kasar, jadi nama + kelas + waktu dipakai
@@ -1143,7 +1143,7 @@
                     '<i class="fas fa-circle-check text-sm"></i></span>' +
                 '<span class="min-w-0 flex-1">' +
                     '<span class="block truncate text-sm font-semibold text-gray-800">' +
-                        (baris.nama || 'Siswa') + ' sudah absen</span>' +
+                        (baris.nama || 'Siswa') + ' sudah presen</span>' +
                     '<span class="block text-xs text-gray-500">' +
                         (baris.kelas || '-') + ' · ' + formatWaktu(baris.waktu) + '</span>' +
                 '</span>' +
