@@ -30,7 +30,7 @@ test('halaman manajemen pengguna menampilkan data dari database', function () {
         ->assertSee('Perempuan');
 });
 
-test('pengguna baru dapat ditambahkan melalui modal tambah', function () {
+test('pengguna baru dapat ditambahkan melalui halaman tambah', function () {
     $response = $this->post(route('cms.users.store'), [
         'name' => 'Dewi Lestari',
         'email' => 'dewi.lestari@kampus.ac.id',
@@ -348,46 +348,40 @@ test('pilihan dropdown baru berlaku setelah tombol terapkan ditekan', function (
         ->assertSee('Filter aktif:');
 });
 
-test('modal tambah pengguna mengirim ke endpoint simpan pengguna', function () {
-    $this->get(route('cms.users'))
+test('tombol tambah pengguna membuka halaman tersendiri, bukan modal', function () {
+    // Form tambah punya halaman sendiri seperti bagian tambah lainnya, jadi
+    // tombol di halaman daftar harus menautkan ke halaman itu dan modal
+    // mengambang tidak boleh ikut terender lagi.
+    $html = $this->get(route('cms.users'))->assertOk()->getContent();
+
+    expect($html)->toContain('href="'.route('cms.users.tambah').'"')
+        ->and($html)->not->toContain('id="modal-tambah"');
+});
+
+test('halaman tambah pengguna mengirim ke endpoint simpan pengguna', function () {
+    $this->get(route('cms.users.tambah'))
         ->assertOk()
         ->assertSee(route('cms.users.store'), false);
 });
 
-test('tombol tambah pengguna benar-benar terhubung ke modalnya', function () {
-    // Tombol memakai `data-modal-open`, jadi id yang ditujunya harus benar-benar
-    // ada di halaman. Kalau modal hilang dari DOM, tombolnya diam-diam tidak
-    // melakukan apa-apa karena `getElementById` mengembalikan null.
-    $html = $this->get(route('cms.users'))->assertOk()->getContent();
-
-    preg_match('/data-modal-open="([^"]+)"/', $html, $tombol);
-
-    expect($tombol)->not->toBeEmpty();
-
-    $idModal = $tombol[1];
-
-    expect($html)->toContain('id="'.$idModal.'"');
-});
-
-test('modal tambah dan modal hapus ikut terender di halaman pengguna', function () {
+test('modal hapus ikut terender di halaman pengguna', function () {
     // `{{--` yang tidak ditutup akan menelan markup berikutnya sebagai isi
     // komentar, sehingga bagian halaman hilang tanpa error apa pun. Itulah yang
-    // membuat modal tambah diam-diam tidak pernah muncul di DOM.
+    // sebelumnya membuat modal diam-diam tidak pernah muncul di DOM.
     $html = $this->get(route('cms.users'))->assertOk()->getContent();
 
-    expect($html)->toContain('id="modal-tambah"')
-        ->and($html)->toContain('id="modal-hapus"')
-        ->and($html)->toContain('id="tambah-user-title"');
+    expect($html)->toContain('id="modal-hapus"')
+        ->and($html)->toContain('id="delete-user-form"');
 });
 
-test('form pada modal tambah memuat seluruh kolom yang diminta endpoint simpan', function () {
-    // Modal dan form /tambahuser harus mengirim kolom yang sama. Kalau modal
-    // kehilangan satu kolom yang menjadi wajib, setiap penyimpanan dari /users
+test('form pada halaman tambah memuat seluruh kolom yang diminta endpoint simpan', function () {
+    // Form /tambahuser dan endpoint simpan harus mengirim kolom yang sama.
+    // Kalau form kehilangan satu kolom yang menjadi wajib, setiap penyimpanan
     // akan gagal saat validasi.
-    $html = $this->get(route('cms.users'))->assertOk()->getContent();
+    $html = $this->get(route('cms.users.tambah'))->assertOk()->getContent();
 
-    preg_match('/id="modal-tambah".*?<\/form>/s', $html, $modal);
-    $form = $modal[0] ?? '';
+    preg_match('/<form[^>]*action="'.preg_quote(route('cms.users.store'), '/').'".*?<\/form>/s', $html, $formulir);
+    $form = $formulir[0] ?? '';
 
     expect($form)->not->toBe('');
 
@@ -396,9 +390,9 @@ test('form pada modal tambah memuat seluruh kolom yang diminta endpoint simpan',
     }
 });
 
-test('data yang dikirim form modal bisa disimpan tanpa error validasi', function () {
-    // Kirim persis kolom yang ada di modal, supaya kolom yang diwajibkan di
-    // backend tidak luput dari view.
+test('data yang dikirim form tambah bisa disimpan tanpa error validasi', function () {
+    // Kirim persis kolom yang ada di form tambah, supaya kolom yang diwajibkan
+    // di backend tidak luput dari view.
     $this->post(route('cms.users.store'), [
         'name' => 'Dewi Lestari',
         'email' => 'dewi.lestari@kampus.ac.id',

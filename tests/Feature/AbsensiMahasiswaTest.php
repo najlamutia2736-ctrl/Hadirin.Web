@@ -1,9 +1,13 @@
 <?php
 
 use App\Models\Absensi;
-use App\Models\SesiAbsensi;
+use App\Models\Dosen;
+use App\Models\Jadwal;
+use App\Models\Kelas;
 use App\Models\Mahasiswa;
+use App\Models\SesiAbsensi;
 use App\Models\User;
+use App\Services\SesiAbsensiService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -135,7 +139,7 @@ test('rekap bulan ini menghitung hadir izin sakit dan alpha', function () {
 
     // 3 hadir dari 6 catatan = 50%.
     $response->assertSee('50', false);
-    $response->assertSee('6 hari tercatat');
+    $response->assertSee('6 catatan presensi');
 });
 
 test('menu pada halaman absensi menuju ke enam halaman lain', function () {
@@ -242,6 +246,12 @@ test('halaman metode menampilkan waktu absen saat sudah presen hari ini', functi
 | di dashboard dosen dan rekap admin.
 */
 
+/**
+ * Sesi absensi yang sedang berjalan.
+ *
+ * Dipakai tes yang hanya butuh baris sesi untuk menempel absensi (rekap,
+ * riwayat, notifikasi), jadi tidak perlu repot membuat jadwal lebih dulu.
+ */
 function sesiBerjalan(): SesiAbsensi
 {
     return SesiAbsensi::create([
@@ -252,6 +262,56 @@ function sesiBerjalan(): SesiAbsensi
     ]);
 }
 
+/**
+ * Jadwal hari ini untuk kelas mahasiswa ini, dengan jam yang mencakup waktu
+ * sekarang supaya sesinya langsung berjalan.
+ *
+ * `geserMenit` menggeser rentangnya untuk membuat sesi kedua pada hari yang
+ * sama. Jamnya dipangkas supaya tidak melewati batas hari: kalau tes dijalankan
+ * tepat setelah tengah malam, `now()->subHour()` bisa jatuh ke hari kemarin
+ * dan sesi justru belum dimulai.
+ */
+function jadwalBerjalan(Mahasiswa $mahasiswa, array $atributJadwal = [], int $geserMenit = 0): Jadwal
+{
+    $kelas = Kelas::query()->where('nama_kelas', $mahasiswa->kelas)->first()
+        ?? Kelas::factory()->create(['nama_kelas' => $mahasiswa->kelas]);
+
+    $mulai = now()->subHour()->addMinutes($geserMenit);
+    $selesai = now()->addHour()->addMinutes($geserMenit);
+
+    if ($mulai->lt(today())) {
+        $mulai = today()->copy()->setTime(0, 5);
+    }
+
+    if ($selesai->gt(today()->endOfDay())) {
+        $selesai = today()->copy()->setTime(23, 55);
+    }
+
+    return Jadwal::create([
+        'kelas_id' => $kelas->getKey(),
+        'dosen_id' => Dosen::factory()->create()->getKey(),
+        'mata_kuliah' => 'Informatika',
+        'hari' => SesiAbsensiService::namaHari(today()),
+        'jam_mulai' => $mulai->format('H:i'),
+        'jam_selesai' => $selesai->format('H:i'),
+        'tahun_akademik' => now()->year,
+        'status' => 'Aktif',
+        ...$atributJadwal,
+    ]);
+}
+
+/**
+ * Sesi berjalan untuk kelas mahasiswa, dibuat lewat service yang sama dengan
+ * aplikasi supaya kode dan waktunya persis seperti produksi.
+ */
+function sesiUntuk(Mahasiswa $mahasiswa, array $atributJadwal = [], int $geserMenit = 0): SesiAbsensi
+{
+    $jadwal = jadwalBerjalan($mahasiswa, $atributJadwal, $geserMenit);
+
+    return app(SesiAbsensiService::class)->pastikanSesiHariIni()
+        ->firstWhere('jadwal_id', $jadwal->getKey());
+}
+
 /*
 | ID Unik dicatat dengan kode milik mahasiswa yang sedang login, bukan kode yang
 | dicari dari database. Kalau kodenya dicari, siapa pun bisa mengetik NIM
@@ -260,6 +320,7 @@ function sesiBerjalan(): SesiAbsensi
 
 test('halaman id unik menampilkan formulir dan kode kartu mahasiswa', function () {
     $mahasiswa = mahasiswaDenganAkun(['nim' => '20240101', 'kelas' => 'Kelas RPL']);
+    sesiUntuk($mahasiswa);
 
     $this->actingAs($mahasiswa->user)
         ->get(route('absensi.id-unik'))
@@ -273,6 +334,27 @@ test('halaman id unik menampilkan formulir dan kode kartu mahasiswa', function (
         ->assertSee(route('absensi.id-unik.store'), false);
 });
 
+test('halaman id unik menawarkan sesi hari ini sebagai pilihan mata kuliah', function () {
+    $mahasiswa = mahasiswaDenganAkun(['nim' => '20240101']);
+    sesiUntuk($mahasiswa, ['mata_kuliah' => 'Informatika']);
+
+    $this->actingAs($mahasiswa->user)
+        ->get(route('absensi.id-unik'))
+        ->assertOk()
+        ->assertSee('Mata kuliah')
+        ->assertSee('Informatika');
+});
+
+test('halaman id unik menampilkan panel tanpa jadwal saat kelas belum punya jadwal', function () {
+    $mahasiswa = mahasiswaDenganAkun(['nim' => '20240101']);
+
+    $this->actingAs($mahasiswa->user)
+        ->get(route('absensi.id-unik'))
+        ->assertOk()
+        ->assertSee('Belum ada jadwal kuliah hari ini')
+        ->assertDontSee('Masukkan Kode');
+});
+
 test('halaman id unik hanya untuk akun mahasiswa', function () {
     $this->get(route('absensi.id-unik'))
         ->assertRedirect(route('login'));
@@ -284,10 +366,10 @@ test('halaman id unik hanya untuk akun mahasiswa', function () {
 
 test('kode id unik yang benar mencatat kehadiran sebagai hadir', function () {
     $mahasiswa = mahasiswaDenganAkun(['nim' => '20240101']);
-    $sesi = sesiBerjalan();
+    $sesi = sesiUntuk($mahasiswa);
 
     $this->actingAs($mahasiswa->user)
-        ->post(route('absensi.id-unik.store'), ['kode' => '20240101'])
+        ->post(route('absensi.id-unik.store'), ['kode' => '20240101', 'sesi' => $sesi->id])
         ->assertRedirect(route('absensi.id-unik'))
         ->assertSessionHas('sukses');
 
@@ -299,10 +381,10 @@ test('kode id unik yang benar mencatat kehadiran sebagai hadir', function () {
 
 test('kode id unik diterima walau ada spasi dan tanda hubung', function () {
     $mahasiswa = mahasiswaDenganAkun(['nim' => '20240101']);
-    sesiBerjalan();
+    $sesi = sesiUntuk($mahasiswa);
 
     $this->actingAs($mahasiswa->user)
-        ->post(route('absensi.id-unik.store'), ['kode' => '2024 0101'])
+        ->post(route('absensi.id-unik.store'), ['kode' => '2024 0101', 'sesi' => $sesi->id])
         ->assertRedirect(route('absensi.id-unik'))
         ->assertSessionHas('sukses');
 
@@ -312,11 +394,11 @@ test('kode id unik diterima walau ada spasi dan tanda hubung', function () {
 test('kode id unik milik mahasiswa lain tidak bisa dipakai', function () {
     $mahasiswa = mahasiswaDenganAkun(['nim' => '20240101']);
     $teman = mahasiswaDenganAkun(['nim' => '20249999']);
-    sesiBerjalan();
+    $sesi = sesiUntuk($mahasiswa);
 
     // Mahasiswa mengetik NIM temannya.
     $this->actingAs($mahasiswa->user)
-        ->post(route('absensi.id-unik.store'), ['kode' => $teman->nim])
+        ->post(route('absensi.id-unik.store'), ['kode' => $teman->nim, 'sesi' => $sesi->id])
         ->assertRedirect(route('absensi.id-unik'))
         ->assertSessionHas('gagal');
 
@@ -326,16 +408,27 @@ test('kode id unik milik mahasiswa lain tidak bisa dipakai', function () {
 
 test('kode id unik kosong ditolak', function () {
     $mahasiswa = mahasiswaDenganAkun(['nim' => '20240101']);
-    sesiBerjalan();
+    $sesi = sesiUntuk($mahasiswa);
 
     $this->actingAs($mahasiswa->user)
-        ->post(route('absensi.id-unik.store'), ['kode' => ''])
+        ->post(route('absensi.id-unik.store'), ['kode' => '', 'sesi' => $sesi->id])
         ->assertSessionHasErrors('kode');
 });
 
-test('tidak bisa absen id unik dua kali di hari yang sama', function () {
+test('id unik tanpa sesi yang dipilih ditolak', function () {
     $mahasiswa = mahasiswaDenganAkun(['nim' => '20240101']);
-    $sesi = sesiBerjalan();
+    sesiUntuk($mahasiswa);
+
+    $this->actingAs($mahasiswa->user)
+        ->post(route('absensi.id-unik.store'), ['kode' => '20240101'])
+        ->assertSessionHasErrors('sesi');
+
+    expect(Absensi::where('mahasiswa_id', $mahasiswa->id)->count())->toBe(0);
+});
+
+test('tidak bisa absen id unik dua kali untuk mata kuliah yang sama', function () {
+    $mahasiswa = mahasiswaDenganAkun(['nim' => '20240101']);
+    $sesi = sesiUntuk($mahasiswa);
 
     Absensi::create([
         'mahasiswa_id' => $mahasiswa->id,
@@ -345,18 +438,61 @@ test('tidak bisa absen id unik dua kali di hari yang sama', function () {
     ]);
 
     $this->actingAs($mahasiswa->user)
-        ->post(route('absensi.id-unik.store'), ['kode' => '20240101'])
+        ->post(route('absensi.id-unik.store'), ['kode' => '20240101', 'sesi' => $sesi->id])
         ->assertRedirect(route('absensi.id-unik'))
         ->assertSessionHas('gagal');
 
     expect(Absensi::where('mahasiswa_id', $mahasiswa->id)->count())->toBe(1);
 });
 
-test('id unik ditolak saat tidak ada sesi absensi yang berjalan', function () {
+test('mahasiswa bisa absen lagi di hari yang sama untuk mata kuliah berikutnya', function () {
     $mahasiswa = mahasiswaDenganAkun(['nim' => '20240101']);
+    $sesiPagi = sesiUntuk($mahasiswa, ['mata_kuliah' => 'Informatika']);
 
     $this->actingAs($mahasiswa->user)
-        ->post(route('absensi.id-unik.store'), ['kode' => '20240101'])
+        ->post(route('absensi.id-unik.store'), ['kode' => '20240101', 'sesi' => $sesiPagi->id])
+        ->assertSessionHas('sukses');
+
+    // Sesi kedua dibuat pada kelas dan hari yang sama, tapi rentangnya digeser
+    // supaya menjadi sesi mata kuliah terpisah yang juga sedang berjalan.
+    $sesiSiang = sesiUntuk($mahasiswa, ['mata_kuliah' => 'Matematika'], 30);
+
+    $this->actingAs($mahasiswa->user)
+        ->post(route('absensi.id-unik.store'), ['kode' => '20240101', 'sesi' => $sesiSiang->id])
+        ->assertSessionHas('sukses');
+
+    $absensi = Absensi::where('mahasiswa_id', $mahasiswa->id)->get();
+
+    expect($absensi)->toHaveCount(2)
+        ->and($absensi->pluck('sesi_absensi_id')->sort()->values()->all())
+        ->toBe(collect([$sesiPagi->id, $sesiSiang->id])->sort()->values()->all());
+});
+
+test('sesi milik kelas lain tidak bisa dipakai untuk absen', function () {
+    $mahasiswa = mahasiswaDenganAkun(['nim' => '20240101']);
+    $teman = mahasiswaDenganAkun(['nim' => '20249999']);
+    $sesiKelasLain = sesiUntuk($teman);
+
+    $this->actingAs($mahasiswa->user)
+        ->post(route('absensi.id-unik.store'), ['kode' => '20240101', 'sesi' => $sesiKelasLain->id])
+        ->assertRedirect(route('absensi.id-unik'))
+        ->assertSessionHas('gagal');
+
+    expect(Absensi::where('mahasiswa_id', $mahasiswa->id)->count())->toBe(0);
+});
+
+test('id unik ditolak saat sesi sudah berakhir', function () {
+    $mahasiswa = mahasiswaDenganAkun(['nim' => '20240101']);
+    $sesi = sesiUntuk($mahasiswa);
+
+    // Sesi dimundurkan supaya sudah lewat, apa pun jam tes dijalankan.
+    $sesi->forceFill([
+        'waktu_mulai' => now()->subHours(2),
+        'waktu_selesai' => now()->subHour(),
+    ])->save();
+
+    $this->actingAs($mahasiswa->user)
+        ->post(route('absensi.id-unik.store'), ['kode' => '20240101', 'sesi' => $sesi->id])
         ->assertRedirect(route('absensi.id-unik'))
         ->assertSessionHas('gagal');
 
@@ -365,7 +501,7 @@ test('id unik ditolak saat tidak ada sesi absensi yang berjalan', function () {
 
 test('halaman id unik menyembunyikan formulir saat sudah presen', function () {
     $mahasiswa = mahasiswaDenganAkun(['nim' => '20240101']);
-    $sesi = sesiBerjalan();
+    $sesi = sesiUntuk($mahasiswa);
 
     Absensi::create([
         'mahasiswa_id' => $mahasiswa->id,
@@ -426,7 +562,7 @@ test('halaman identitas menampilkan rekap kehadiran bulan ini', function () {
         ->assertOk()
         // 3 hadir dari 4 catatan = 75%.
         ->assertSee('75', false)
-        ->assertSee('4 hari tercatat');
+        ->assertSee('4 catatan presensi');
 });
 
 test('mahasiswa bisa mengubah nama jenis kelamin dan kontak orang tua', function () {
@@ -620,6 +756,7 @@ test('halaman notifikasi hanya untuk akun mahasiswa', function () {
 
 test('halaman izin sakit menampilkan formulir dan identitas mahasiswa', function () {
     $mahasiswa = mahasiswaDenganAkun(['kelas' => 'Kelas RPL']);
+    sesiUntuk($mahasiswa, ['mata_kuliah' => 'Informatika']);
 
     $this->actingAs($mahasiswa->user)
         ->get(route('absensi.izin-sakit'))
@@ -628,10 +765,22 @@ test('halaman izin sakit menampilkan formulir dan identitas mahasiswa', function
         ->assertSee('Formulir Pengajuan')
         ->assertSee($mahasiswa->user->name)
         ->assertSee('Kelas RPL')
+        // Pengajuan melekat pada sesi, jadi jadwal hari ini ikut ditawarkan.
+        ->assertSee('Informatika')
         ->assertSee(route('absensi.izin-sakit.store'), false)
         // Dua jenis pengajuan harus selectable.
         ->assertSee('value="izin"', false)
         ->assertSee('value="sakit"', false);
+});
+
+test('halaman izin sakit menampilkan panel tanpa jadwal saat kelas belum punya jadwal', function () {
+    $mahasiswa = mahasiswaDenganAkun();
+
+    $this->actingAs($mahasiswa->user)
+        ->get(route('absensi.izin-sakit'))
+        ->assertOk()
+        ->assertSee('Belum ada jadwal kuliah hari ini')
+        ->assertDontSee('Formulir Pengajuan');
 });
 
 test('halaman izin sakit hanya untuk akun mahasiswa', function () {
@@ -645,13 +794,13 @@ test('halaman izin sakit hanya untuk akun mahasiswa', function () {
 
 test('pengajuan izin tersimpan sebagai absensi berstatus izin', function () {
     $mahasiswa = mahasiswaDenganAkun();
-    $sesi = sesiBerjalan();
+    $sesi = sesiUntuk($mahasiswa);
 
     $this->actingAs($mahasiswa->user)
         ->post(route('absensi.izin-sakit.store'), [
             'jenis' => 'izin',
             'alasan' => 'Ada acara nikah vina di luar kota hari ini.',
-            'tanggal' => now()->toDateString(),
+            'sesi' => $sesi->id,
         ])
         ->assertRedirect(route('absensi.izin-sakit'))
         ->assertSessionHas('sukses');
@@ -665,13 +814,13 @@ test('pengajuan izin tersimpan sebagai absensi berstatus izin', function () {
 
 test('pengajuan sakit tersimpan sebagai absensi berstatus sakit', function () {
     $mahasiswa = mahasiswaDenganAkun();
-    sesiBerjalan();
+    $sesi = sesiUntuk($mahasiswa);
 
     $this->actingAs($mahasiswa->user)
         ->post(route('absensi.izin-sakit.store'), [
             'jenis' => 'sakit',
             'alasan' => 'Demam sejak semalam dan sudah minum obat.',
-            'tanggal' => now()->toDateString(),
+            'sesi' => $sesi->id,
         ])
         ->assertRedirect(route('absensi.izin-sakit'));
 
@@ -680,13 +829,13 @@ test('pengajuan sakit tersimpan sebagai absensi berstatus sakit', function () {
 
 test('pengajuan tanpa alasan yang jelas ditolak', function () {
     $mahasiswa = mahasiswaDenganAkun();
-    sesiBerjalan();
+    $sesi = sesiUntuk($mahasiswa);
 
     $this->actingAs($mahasiswa->user)
         ->post(route('absensi.izin-sakit.store'), [
             'jenis' => 'izin',
             'alasan' => 'sakit',
-            'tanggal' => now()->toDateString(),
+            'sesi' => $sesi->id,
         ])
         ->assertSessionHasErrors('alasan');
 
@@ -695,37 +844,62 @@ test('pengajuan tanpa alasan yang jelas ditolak', function () {
 
 test('jenis pengajuan di luar izin dan sakit ditolak', function () {
     $mahasiswa = mahasiswaDenganAkun();
-    sesiBerjalan();
+    $sesi = sesiUntuk($mahasiswa);
 
     $this->actingAs($mahasiswa->user)
         ->post(route('absensi.izin-sakit.store'), [
             'jenis' => 'hadir',
             'alasan' => 'Mau absen biasa saja hari ini.',
-            'tanggal' => now()->toDateString(),
+            'sesi' => $sesi->id,
         ])
         ->assertSessionHasErrors('jenis');
 
     expect(Absensi::where('mahasiswa_id', $mahasiswa->id)->count())->toBe(0);
 });
 
-test('tanggal yang sudah lewat ditolak', function () {
+test('pengajuan untuk sesi yang sudah berakhir ditolak', function () {
     $mahasiswa = mahasiswaDenganAkun();
-    sesiBerjalan();
+    $sesi = sesiUntuk($mahasiswa);
+
+    $sesi->forceFill([
+        'waktu_mulai' => now()->subHours(2),
+        'waktu_selesai' => now()->subHour(),
+    ])->save();
 
     $this->actingAs($mahasiswa->user)
         ->post(route('absensi.izin-sakit.store'), [
             'jenis' => 'izin',
-            'alasan' => 'Izin sudahLewat tapi tetap dikirim.',
-            'tanggal' => now()->subDay()->toDateString(),
+            'alasan' => 'Izin untuk jam pelajaran yang sudah lewat.',
+            'sesi' => $sesi->id,
         ])
-        ->assertSessionHasErrors('tanggal');
+        ->assertRedirect(route('absensi.izin-sakit'))
+        ->assertSessionHas('gagal');
+
+    expect(Absensi::where('mahasiswa_id', $mahasiswa->id)->count())->toBe(0);
 });
 
-test('tidak bisa mengirim pengajuan kedua di hari yang sama', function () {
+test('pengajuan ditolak untuk sesi milik kelas lain', function () {
     $mahasiswa = mahasiswaDenganAkun();
-    $sesi = sesiBerjalan();
+    $teman = mahasiswaDenganAkun();
+    $sesiKelasLain = sesiUntuk($teman);
 
-    // Kehadiran sudah tercatat di pagi hari.
+    $this->actingAs($mahasiswa->user)
+        ->post(route('absensi.izin-sakit.store'), [
+            'jenis' => 'izin',
+            'alasan' => 'Mau izin di sesi kelas orang lain.',
+            'sesi' => $sesiKelasLain->id,
+        ])
+        ->assertRedirect(route('absensi.izin-sakit'))
+        ->assertSessionHas('gagal');
+
+    expect(Absensi::where('mahasiswa_id', $mahasiswa->id)->count())->toBe(0);
+});
+
+test('tidak bisa mengirim pengajuan kedua untuk sesi yang sama', function () {
+    $mahasiswa = mahasiswaDenganAkun();
+    $sesi = sesiUntuk($mahasiswa);
+
+    // Kehadiran sudah tercatat di sesi itu.
     Absensi::create([
         'mahasiswa_id' => $mahasiswa->id,
         'sesi_absensi_id' => $sesi->id,
@@ -736,8 +910,8 @@ test('tidak bisa mengirim pengajuan kedua di hari yang sama', function () {
     $this->actingAs($mahasiswa->user)
         ->post(route('absensi.izin-sakit.store'), [
             'jenis' => 'izin',
-            'alasan' => 'Mau izin padahal sudah presen pagi tadi.',
-            'tanggal' => now()->toDateString(),
+            'alasan' => 'Mau izin padahal sudah presen di sesi ini.',
+            'sesi' => $sesi->id,
         ])
         ->assertRedirect(route('absensi.izin-sakit'))
         ->assertSessionHas('gagal');
@@ -745,17 +919,16 @@ test('tidak bisa mengirim pengajuan kedua di hari yang sama', function () {
     expect(Absensi::where('mahasiswa_id', $mahasiswa->id)->count())->toBe(1);
 });
 
-test('pengajuan ditolak saat tidak ada sesi absensi yang berjalan', function () {
+test('pengajuan tanpa sesi yang dipilih ditolak', function () {
     $mahasiswa = mahasiswaDenganAkun();
+    sesiUntuk($mahasiswa);
 
     $this->actingAs($mahasiswa->user)
         ->post(route('absensi.izin-sakit.store'), [
             'jenis' => 'izin',
-            'alasan' => 'Izin tapi tidak ada sesi yang sedang berjalan.',
-            'tanggal' => now()->toDateString(),
+            'alasan' => 'Izin tapi tidak memilih mata kuliahnya.',
         ])
-        ->assertRedirect(route('absensi.izin-sakit'))
-        ->assertSessionHas('gagal');
+        ->assertSessionHasErrors('sesi');
 
     expect(Absensi::where('mahasiswa_id', $mahasiswa->id)->count())->toBe(0);
 });
@@ -781,8 +954,10 @@ test('halaman izin sakit menampilkan riwayat pengajuan', function () {
 
 test('halaman izin sakit menampilkan pesan saat kehadiran sudah tercatat', function () {
     $mahasiswa = mahasiswaDenganAkun();
-    $sesi = sesiBerjalan();
+    $sesi = sesiUntuk($mahasiswa);
 
+    // Satu-satunya jadwal hari ini sudah punya catatan, jadi tidak ada sesi
+    // yang bisa diajukan lagi.
     Absensi::create([
         'mahasiswa_id' => $mahasiswa->id,
         'sesi_absensi_id' => $sesi->id,
@@ -793,7 +968,8 @@ test('halaman izin sakit menampilkan pesan saat kehadiran sudah tercatat', funct
     $this->actingAs($mahasiswa->user)
         ->get(route('absensi.izin-sakit'))
         ->assertOk()
-        ->assertSee('Kehadiran hari ini sudah tercatat');
+        ->assertSee('Kehadiran hari ini sudah tercatat')
+        ->assertDontSee('Formulir Pengajuan');
 });
 
 test('halaman metode hanya bisa dibuka oleh akun mahasiswa', function () {

@@ -19,6 +19,8 @@
 /storage/*.key
 /storage/pail
 /vendor
+# Dump database buatan dump-untuk-hosting.ps1 berisi data & hash password pengguna
+/*.sql
 Homestead.json
 Homestead.yaml
 Thumbs.db

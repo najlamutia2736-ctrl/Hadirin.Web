@@ -36,7 +36,7 @@
     const IDENTITAS_KOSONG = {
         nama: 'Dosen',
         nidn: '-',
-        mata kuliah: '-',
+        mataKuliah: '-',
         kodeMataKuliah: '-',
         kelasLengkap: '-'
     };
@@ -114,7 +114,7 @@
             identitasDosen = {
                 nama: SERVER_DATA.dosen.nama || IDENTITAS_KOSONG.nama,
                 nidn: SERVER_DATA.dosen.nidn || IDENTITAS_KOSONG.nidn,
-                mata kuliah: SERVER_DATA.dosen.mataKuliah || IDENTITAS_KOSONG.mataKuliah,
+                mataKuliah: SERVER_DATA.dosen.mataKuliah || IDENTITAS_KOSONG.mataKuliah,
                 kodeMataKuliah: SERVER_DATA.dosen.kodeMataKuliah || IDENTITAS_KOSONG.kodeMataKuliah,
                 // Dosen yang belum diampu kelas tampil sebagai "-", bukan kelas
                 // hardcode. Kondisinya sudah ditangani tiap halaman.
@@ -158,10 +158,16 @@
     /**
      * Susun `presensiList` untuk satu kelas.
      *
-     * Semua baris berasal dari database. Mahasiswa yang belum punya catatan presensi
-     * hari ini tetap ikut masuk dengan status null supaya tidak salah
-     * dihitung sebagai alpha. Kelas yang tidak ada di database dosen ini
-     * menghasilkan daftar kosong, bukan data contoh.
+     * Presensi dihitung per mata kuliah: kalau server mengirim `sesi` (daftar
+     * sesi hari ini), satu baris dibuat untuk tiap pasangan mahasiswa × sesi,
+     * jadi satu mahasiswa bisa muncul beberapa kali — sekali per jam pelajaran.
+     * Status tiap baris diambil dari catatan pada sesi itu saja, bukan dari
+     * absensi terakhir hari ini, supaya kehadiran di mata kuliah pagi tidak
+     * menutupi ketidakhadiran di mata kuliah siang.
+     *
+     * Kalau kelas itu tidak punya jadwal hari ini, daftar jatuh ke bentuk lama:
+     * satu baris per mahasiswa dengan status terakhir hari ini, jadi tampilan
+     * tetap masuk akal walau jadwal mengajarnya belum diisi.
      */
     function loadDataKelas(kelas) {
         presensiList = [];
@@ -170,6 +176,35 @@
         const server = dataKelasServer(kelas);
 
         if (!server) return presensiList;
+
+        const daftarSesi = Array.isArray(server.sesi) ? server.sesi : [];
+
+        if (daftarSesi.length > 0) {
+            daftarSesi.forEach(function (sesi) {
+                const catatan = sesi.absensi || {};
+
+                (server.mahasiswa || []).forEach(function (mahasiswa) {
+                    const absen = catatan[mahasiswa.id] || null;
+
+                    presensiList.push({
+                        id: nextId++,
+                        nama: mahasiswa.nama,
+                        nim: mahasiswa.nim,
+                        kelas: kelas,
+                        waktu: absen && absen.waktu ? new Date(absen.waktu) : null,
+                        metode: absen ? (absen.metode || 'Scan QR') : null,
+                        status: toLabelStatus(absen ? absen.status : null),
+                        // Konteks sesi, dipakai filter mata kuliah di dashboard.
+                        sesiId: sesi.id,
+                        mataKuliah: sesi.mata_kuliah,
+                        jam: sesi.jam,
+                        kondisiSesi: sesi.kondisi
+                    });
+                });
+            });
+
+            return presensiList;
+        }
 
         (server.mahasiswa || []).forEach(function (mahasiswa) {
             presensiList.push({

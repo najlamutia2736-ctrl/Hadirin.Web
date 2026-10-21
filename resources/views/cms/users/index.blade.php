@@ -44,11 +44,11 @@
             <h2 class="text-2xl font-bold text-gray-800">Manajemen Pengguna</h2>
             <p class="mt-1 text-gray-600">Kelola akun, peran, dan status pengguna kampus.</p>
         </div>
-        <button type="button" data-modal-open="modal-tambah"
-            class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700">
+        <a href="{{ route('cms.users.tambah') }}"
+            class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
             <i class="fas fa-user-plus"></i>
             Tambah Pengguna
-        </button>
+        </a>
     </div>
 
     {{-- tabel pengguna --}}
@@ -198,90 +198,6 @@
                 @endif
             </div>
             {{ $users->links() }}
-        </div>
-    </div>
-
-    {{-- modal: tambah pengguna --}}
-    <div id="modal-tambah" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4"
-        role="dialog" aria-modal="true" aria-labelledby="tambah-user-title">
-        <div class="w-full max-w-md rounded-xl bg-white shadow-xl">
-            <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-                <h3 id="tambah-user-title" class="font-semibold text-gray-800">Tambah Pengguna</h3>
-                <button type="button" data-modal-close aria-label="Tutup modal tambah"
-                    class="text-gray-400 hover:text-gray-600">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <form class="px-6 py-4" method="POST" action="{{ route('cms.users.store') }}">
-                @csrf
-                <div class="mb-4">
-                    <label class="mb-1.5 block text-sm font-medium text-gray-700" for="name">Nama Lengkap</label>
-                    <input id="name" name="name" type="text" required placeholder="Nama pengguna"
-                        value="{{ old('name') }}"
-                        class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                    @error('name')
-                        <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
-                    @enderror
-                </div>
-                <div class="mb-4">
-                    <label class="mb-1.5 block text-sm font-medium text-gray-700" for="email">Email</label>
-                    <input id="email" name="email" type="email" required placeholder="nama@kampus.ac.id"
-                        value="{{ old('email') }}"
-                        class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                    @error('email')
-                        <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
-                    @enderror
-                </div>
-                <div class="mb-4">
-                    <label class="mb-1.5 block text-sm font-medium text-gray-700" for="role">Peran</label>
-                    <select id="role" name="role"
-                        class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                        @foreach ($daftarPeran as $peran)
-                            <option value="{{ $peran }}" @selected(old('role') === $peran)>{{ $peran }}</option>
-                        @endforeach
-                    </select>
-                    @error('role')
-                        <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
-                    @enderror
-                </div>
-                <div class="mb-4">
-                    <label class="mb-1.5 block text-sm font-medium text-gray-700" for="status">Status</label>
-                    <select id="status" name="status"
-                        class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                        <option value="Aktif" @selected(old('status', 'Aktif') === 'Aktif')>Aktif</option>
-                        <option value="Nonaktif" @selected(old('status') === 'Nonaktif')>Nonaktif</option>
-                    </select>
-                    @error('status')
-                        <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
-                    @enderror
-                </div>
-                <div class="mb-4">
-                    <label class="mb-1.5 block text-sm font-medium text-gray-700" for="password">Password</label>
-                    <input id="password" name="password" type="password" required minlength="8"
-                        placeholder="Minimal 8 karakter"
-                        class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                    @error('password')
-                        <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
-                    @enderror
-                </div>
-                <div class="mb-6">
-                    <label class="mb-1.5 block text-sm font-medium text-gray-700" for="password_confirmation">
-                        Ulangi Password
-                    </label>
-                    <input id="password_confirmation" name="password_confirmation" type="password" required
-                        minlength="8" placeholder="Ketik ulang password"
-                        class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                    @error('password_confirmation')
-                        <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
-                    @enderror
-                </div>
-                <div class="flex justify-end gap-3">
-                    <button type="button" data-modal-close
-                        class="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50">Batal</button>
-                    <button type="submit"
-                        class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">Simpan</button>
-                </div>
-            </form>
         </div>
     </div>
 

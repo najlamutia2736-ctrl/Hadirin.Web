@@ -125,9 +125,9 @@
                             </p>
                             @if ($hariIni->sesiAbsensi?->kode_sesi)
                                 <p class="mt-0.5">
-                                    <span class="text-slate-500">Sesi: </span>
+                                    <span class="text-slate-500">Mata kuliah: </span>
                                     <span class="font-semibold text-slate-800">
-                                        {{ $hariIni->sesiAbsensi->kode_sesi }}
+                                        {{ $hariIni->sesiAbsensi->judul() }}
                                     </span>
                                 </p>
                             @endif
@@ -207,7 +207,7 @@
                     <p class="text-3xl font-bold tracking-tight text-slate-800">
                         {{ $rekap['persentase'] }}<span class="text-lg text-slate-400">%</span>
                     </p>
-                    <p class="text-xs text-slate-500">{{ $rekap['total'] }} hari tercatat</p>
+                    <p class="text-xs text-slate-500">{{ $rekap['total'] }} catatan presensi</p>
                 </div>
 
                 <div class="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-100">
@@ -272,7 +272,7 @@
                                     <th class="px-5 py-3 font-medium">Tanggal</th>
                                     <th class="px-5 py-3 font-medium">Hari</th>
                                     <th class="px-5 py-3 font-medium">Waktu</th>
-                                    <th class="px-5 py-3 font-medium">Sesi</th>
+                                    <th class="px-5 py-3 font-medium">Mata Kuliah</th>
                                     <th class="px-5 py-3 font-medium">Status</th>
                                     <th class="px-5 py-3 font-medium">Keterangan</th>
                                 </tr>
@@ -291,7 +291,7 @@
                                             {{ $item->waktu_absen->format('H:i') }}
                                         </td>
                                         <td class="whitespace-nowrap px-5 py-3 text-slate-500">
-                                            {{ $item->sesiAbsensi?->kode_sesi ?? '-' }}
+                                            {{ $item->sesiAbsensi?->judul() ?? '-' }}
                                         </td>
                                         <td class="whitespace-nowrap px-5 py-3">
                                             <span
@@ -322,7 +322,7 @@
                                         <p class="text-xs text-slate-500">
                                             {{ $item->waktu_absen->format('H:i') }} WIB
                                             @if ($item->sesiAbsensi?->kode_sesi)
-                                                &middot; {{ $item->sesiAbsensi->kode_sesi }}
+                                                &middot; {{ $item->sesiAbsensi->judul() }}
                                             @endif
                                         </p>
                                     </div>

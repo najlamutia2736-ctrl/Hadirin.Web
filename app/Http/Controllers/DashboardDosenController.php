@@ -4,9 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Absensi;
 use App\Models\Dosen;
+use App\Models\Jadwal;
 use App\Models\Kelas;
 use App\Models\Mahasiswa;
+use App\Models\SesiAbsensi;
 use App\Models\User;
+use App\Services\SesiAbsensiService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -64,6 +67,16 @@ class DashboardDosenController extends Controller
      * Periode yang dipakai kalau dosen belum memilih atau memilih nilai aneh.
      */
     private const PERIODE_BAWAAN = '30';
+
+    /**
+     * Sesi presensi dibuat sebelum payload disusun.
+     *
+     * Dashboard adalah pembaca terbanyak, jadi sesi tiap jadwal hari ini dibuat
+     * di sini kalau belum ada — dosen bisa melihat daftar mata kuliah yang sedang
+     * berlangsung tanpa harus menunggu satu mahasiswa membuka halaman absensi
+     * lebih dulu.
+     */
+    public function __construct(protected SesiAbsensiService $sesiAbsensi) {}
 
     /**
      * Dashboard dosen: ringkasan hari ini sekaligus pemantauan real-time.
@@ -238,7 +251,7 @@ class DashboardDosenController extends Controller
                 'Izin',
                 'Sakit',
                 'Alpa',
-                'Hari Tercatat',
+                'Catatan Presensi',
                 'Persentase (%)',
             ], ';');
 
@@ -414,6 +427,11 @@ class DashboardDosenController extends Controller
     {
         $dosen = $request->user()?->dosen?->load('mataKuliah');
 
+        // Sesi hari ini dibuat lebih dulu supaya payload selalu memuat daftar
+        // mata kuliah yang sedang berlangsung, walau belum ada mahasiswa yang
+        // membuka halaman absensi hari ini.
+        $this->sesiAbsensi->pastikanSesiHariIni();
+
         $kelas = $this->kelasYangDiampu($dosen)
             ->map(fn (Kelas $kelas): array => $this->payloadKelas($kelas))
             ->values()
@@ -567,7 +585,70 @@ class DashboardDosenController extends Controller
             'nama' => $kelas->nama_kelas,
             'total' => count($baris),
             'mahasiswa' => $baris,
+            // Presensi per mata kuliah: satu entri per sesi hari ini, lengkap
+            // dengan catatan tiap mahasiswanya di sesi itu.
+            'sesi' => $this->sesiHariIni($kelas),
         ];
+    }
+
+    /**
+     * Sesi presensi hari ini untuk satu kelas, beserta absensinya per sesi.
+     *
+     * Presensi dihitung per mata kuliah, jadi dashboard dosen butuh daftar ini
+     * untuk menampilkan siapa hadir di jam pelajaran mana. Sesi yang belum
+     * dimulai tetap dikirim supaya mahasiswa yang belum absen terlihat sebagai
+     * "belum", bukan hilang dari layar.
+     *
+     * @return list<array<string, mixed>>
+     */
+    protected function sesiHariIni(Kelas $kelas): array
+    {
+        $jadwalIds = Jadwal::query()
+            ->where('kelas_id', $kelas->getKey())
+            ->where('status', 'Aktif')
+            ->where('hari', SesiAbsensiService::namaHari(today()))
+            ->pluck('id');
+
+        if ($jadwalIds->isEmpty()) {
+            return [];
+        }
+
+        $sesi = SesiAbsensi::query()
+            ->with('jadwal:id,kelas_id,mata_kuliah,ruang')
+            ->whereIn('jadwal_id', $jadwalIds)
+            ->whereDate('waktu_mulai', today())
+            ->orderBy('waktu_mulai')
+            ->get();
+
+        if ($sesi->isEmpty()) {
+            return [];
+        }
+
+        $absensi = Absensi::query()
+            ->whereIn('sesi_absensi_id', $sesi->pluck('id'))
+            ->get()
+            ->groupBy('sesi_absensi_id');
+
+        return $sesi->map(function (SesiAbsensi $sesi) use ($absensi): array {
+            $catatan = $absensi->get($sesi->getKey(), collect());
+
+            return [
+                'id' => $sesi->getKey(),
+                'mata_kuliah' => $sesi->judul(),
+                'jam' => $sesi->waktu_mulai->format('H:i').' - '.$sesi->waktu_selesai->format('H:i'),
+                'ruang' => $sesi->jadwal?->ruang,
+                // Kondisi terhadap waktu sekarang: `belum`, `berjalan`, `selesai`.
+                'kondisi' => $sesi->kondisiSekarang(),
+                // Catatan per mahasiswa pada sesi ini saja, supaya status mahasiswa
+                // di satu mata kuliah tidak tertimpa oleh mata kuliah lain.
+                'absensi' => $catatan->mapWithKeys(fn (Absensi $absen): array => [
+                    $absen->mahasiswa_id => [
+                        'status' => $absen->status,
+                        'waktu' => $absen->waktu_absen?->toIso8601String(),
+                    ],
+                ])->all(),
+            ];
+        })->values()->all();
     }
 
     /**
@@ -607,6 +688,9 @@ class DashboardDosenController extends Controller
         return Absensi::query()
             ->whereIn('mahasiswa_id', $mahasiswaIds)
             ->whereDate('waktu_absen', today())
+            // Satu mahasiswa bisa punya banyak catatan hari ini (per mata
+            // kuliah), jadi urutannya dibalik supaya yang terbaru yang menang.
+            ->orderByDesc('waktu_absen')
             ->get()
             ->keyBy('mahasiswa_id');
     }

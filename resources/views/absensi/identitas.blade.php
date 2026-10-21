@@ -248,7 +248,7 @@
                             <p class="text-3xl font-bold tracking-tight text-slate-800">
                                 {{ $rekap['persentase'] }}<span class="text-lg text-slate-400">%</span>
                             </p>
-                            <p class="text-xs text-slate-500">{{ $rekap['total'] }} hari tercatat</p>
+                            <p class="text-xs text-slate-500">{{ $rekap['total'] }} catatan presensi</p>
                         </div>
 
                         <div class="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-100">

@@ -149,8 +149,8 @@
                                     </div>
                                     @if ($hariIni->sesiAbsensi?->kode_sesi)
                                         <div>
-                                            <dt class="inline opacity-75">Sesi: </dt>
-                                            <dd class="inline font-semibold">{{ $hariIni->sesiAbsensi->kode_sesi }}</dd>
+                                            <dt class="inline opacity-75">Mata kuliah: </dt>
+                                            <dd class="inline font-semibold">{{ $hariIni->sesiAbsensi->judul() }}</dd>
                                         </div>
                                     @endif
                                     @if ($hariIni->keterangan)
@@ -191,7 +191,7 @@
                         <p class="text-3xl font-bold tracking-tight text-slate-800">
                             {{ $rekap['persentase'] }}<span class="text-lg text-slate-400">%</span>
                         </p>
-                        <p class="text-xs text-slate-500">{{ $rekap['total'] }} hari tercatat</p>
+                        <p class="text-xs text-slate-500">{{ $rekap['total'] }} catatan presensi</p>
                     </div>
 
                     <div class="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-100">
@@ -209,6 +209,98 @@
                 </div>
             </section>
 
+            {{-- Presensi per mata kuliah hari ini --}}
+            <section>
+                <div class="flex flex-wrap items-end justify-between gap-2">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-800">Jadwal Kuliah Hari Ini</h2>
+                        <p class="mt-0.5 text-sm text-slate-500">
+                            Presensi dihitung per mata kuliah: setiap jam pelajaran baru, absen kembali.
+                        </p>
+                    </div>
+
+                    @if (count($presensiHariIni) > 0)
+                        <span class="shrink-0 rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-600">
+                            {{ count(array_filter($presensiHariIni, fn (array $baris) => $baris['kondisi'] === 'sudah')) }}
+                            dari {{ count($presensiHariIni) }} mata kuliah sudah diabsen
+                        </span>
+                    @endif
+                </div>
+
+                @if (count($presensiHariIni) === 0)
+                    <div class="mt-4 rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center">
+                        <i class="fas fa-calendar-xmark text-2xl text-slate-300"></i>
+                        <p class="mt-2 text-sm font-semibold text-slate-700">
+                            Belum ada jadwal kuliah untuk kelasmu hari ini
+                        </p>
+                        <p class="mt-1 text-xs leading-relaxed text-slate-500">
+                            Sesi presensi dibuka otomatis mengikuti jadwal mata kuliah, jadi daftarnya muncul
+                            sendiri begitu jadwal mengajar kelasmu diisi.
+                        </p>
+                    </div>
+                @else
+                    <ul class="mt-4 space-y-3">
+                        @foreach ($presensiHariIni as $baris)
+                            @php
+                                $sesi = $baris['sesi'];
+                                $batas = [
+                                    'sudah' => 'border-emerald-200 bg-emerald-50/60',
+                                    'berjalan' => 'border-indigo-300 bg-indigo-50/60 ring-1 ring-indigo-200',
+                                ][$baris['kondisi']] ?? 'border-slate-200 bg-white';
+
+                                $lencana = [
+                                    'sudah' => 'bg-emerald-100 text-emerald-700',
+                                    'berjalan' => 'bg-indigo-600 text-white',
+                                    'selesai' => 'bg-rose-50 text-rose-600',
+                                    'belum' => 'bg-slate-100 text-slate-600',
+                                ][$baris['kondisi']] ?? 'bg-slate-100 text-slate-600';
+                            @endphp
+
+                            <li class="flex flex-col gap-3 rounded-2xl border p-4 sm:flex-row sm:items-center sm:justify-between {{ $batas }}">
+                                <div class="min-w-0">
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <p class="font-semibold text-slate-800">{{ $baris['jadwal']->mata_kuliah }}</p>
+                                        @if ($sesi)
+                                            <span
+                                                class="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
+                                                {{ $sesi->waktu_mulai->format('H:i') }} -
+                                                {{ $sesi->waktu_selesai->format('H:i') }} WIB
+                                            </span>
+                                        @endif
+                                    </div>
+                                    <p class="mt-1 text-xs text-slate-500">
+                                        Ruang {{ $baris['jadwal']->ruang ?? '-' }}
+                                        @if ($baris['jadwal']->dosen?->user?->name)
+                                            · {{ $baris['jadwal']->dosen->user->name }}
+                                        @endif
+                                        @if ($baris['absensi']?->keterangan)
+                                            · {{ $baris['absensi']->keterangan }}
+                                        @endif
+                                    </p>
+                                </div>
+
+                                <div class="flex shrink-0 items-center gap-3">
+                                    <span class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold {{ $lencana }}">
+                                        @if ($baris['kondisi'] === 'sudah')
+                                            <i class="fas fa-circle-check text-[10px]"></i>
+                                        @endif
+                                        {{ $baris['label'] }}
+                                    </span>
+
+                                    @if ($baris['kondisi'] === 'berjalan' && $sesi)
+                                        <a href="{{ route('absensi.id-unik', ['sesi' => $sesi->id]) }}"
+                                            class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-indigo-700">
+                                            <i class="fas fa-check text-[10px]"></i>
+                                            Presen
+                                        </a>
+                                    @endif
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+            </section>
+
             {{-- Pilihan cara absen --}}
             <section>
                 <div class="flex flex-wrap items-end justify-between gap-2">
@@ -216,9 +308,9 @@
                         <h2 class="text-lg font-bold text-slate-800">Pilih Cara Presen</h2>
                         <p class="mt-0.5 text-sm text-slate-500">
                             @if ($hariIni)
-                                Kehadiran hari ini sudah tercatat. Kamu masih bisa mengganti lewat izin atau sakit.
+                                Presensi yang sudah tercatat tetap bisa ditambah untuk mata kuliah berikutnya.
                             @else
-                                Gunakan salah satu cara di bawah ini untuk mencatat kehadiranmu.
+                                Gunakan salah satu cara di bawah ini untuk mencatat kehadiranmu per mata kuliah.
                             @endif
                         </p>
                     </div>

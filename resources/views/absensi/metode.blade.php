@@ -109,21 +109,23 @@
                             </p>
                             @if ($hariIni->sesiAbsensi?->kode_sesi)
                                 <p class="mt-0.5">
-                                    <span class="opacity-70">Sesi: </span>
-                                    <span class="font-semibold">{{ $hariIni->sesiAbsensi->kode_sesi }}</span>
+                                    <span class="opacity-70">Mata kuliah: </span>
+                                    <span class="font-semibold">{{ $hariIni->sesiAbsensi->judul() }}</span>
                                 </p>
                             @endif
                         </div>
+                    @endif
 
-                        <a href="{{ route('absensi.index') }}"
-                            class="inline-flex items-center gap-2 rounded-xl bg-white/70 px-4 py-2.5 text-sm font-semibold transition-colors hover:bg-white">
-                            Kembali
-                            <i class="fas fa-arrow-right text-xs"></i>
-                        </a>
-                    @else
+                    @if ($sisaSesi > 0 || $hariIni === null)
                         <a href="{{ route('absensi.scan-qr') }}"
                             class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700">
                             Presen Sekarang
+                            <i class="fas fa-arrow-right text-xs"></i>
+                        </a>
+                    @else
+                        <a href="{{ route('absensi.index') }}"
+                            class="inline-flex items-center gap-2 rounded-xl bg-white/70 px-4 py-2.5 text-sm font-semibold transition-colors hover:bg-white">
+                            Kembali
                             <i class="fas fa-arrow-right text-xs"></i>
                         </a>
                     @endif
@@ -236,7 +238,7 @@
                     <ul class="mt-2.5 space-y-1.5 text-xs leading-relaxed text-slate-600">
                         <li class="flex gap-2">
                             <i class="fas fa-circle-check mt-0.5 text-[10px] text-slate-400"></i>
-                            Hanya perlu presen sekali perpelajaran, tidak perlu diulang.
+                            Presensi dihitung per mata kuliah, jadi absen kembali tiap jam pelajaran baru.
                         </li>
                         <li class="flex gap-2">
                             <i class="fas fa-circle-check mt-0.5 text-[10px] text-slate-400"></i>

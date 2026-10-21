@@ -14,9 +14,10 @@ class DatabaseSeeder extends Seeder
     /**
      * Seed the application's database.
      *
-     * Sesi absensi hari ikut dibuat di sini supaya instalasi baru langsung bisa
-     * dipakai absen tanpa menunggu scheduler berjalan. Pada server sebenarnya
-     * sesi dibuat otomatis oleh command `sesi:absensi` setiap hari.
+     * Sesi presensi ikut dibuat di sini supaya instalasi baru langsung bisa
+     * dipakai absen tanpa menunggu scheduler berjalan. Satu sesi dibuat per
+     * jadwal mengajar hari ini. Pada server sebenarnya sesi dibuat otomatis
+     * oleh command `sesi:absensi` dan oleh halaman absensinya sendiri.
      */
     public function run(): void
     {
@@ -27,6 +28,6 @@ class DatabaseSeeder extends Seeder
             'email' => 'test@example.com',
         ]);
 
-        app(SesiAbsensiService::class)->buatSesiHarian(today());
+        app(SesiAbsensiService::class)->pastikanSesiHariIni(today());
     }
 }

@@ -81,4 +81,17 @@ class Kelas extends Model
     {
         return $this->belongsToMany(Dosen::class, 'dosen_kelas')->using(DosenKelas::class);
     }
+
+    /**
+     * Jadwal mengajar yang berlaku untuk kelas ini.
+     *
+     * Sesi presensi dibuat dari jadwal inilah yang membuat presensi jadi per
+     * mata kuliah, bukan per hari.
+     *
+     * @return HasMany<Jadwal, $this>
+     */
+    public function jadwal(): HasMany
+    {
+        return $this->hasMany(Jadwal::class);
+    }
 }

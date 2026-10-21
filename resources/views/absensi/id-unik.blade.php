@@ -68,8 +68,40 @@
             <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
                 {{-- Formulir --}}
                 <section class="lg:col-span-2">
-                    @if ($hariIni)
-                        {{-- Sudah absen: form disembunyikan supaya tidak ada yang terkirim dua kali --}}
+                    @if ($daftarSesi->isEmpty())
+                        {{-- Belum ada jadwal kuliah hari ini, jadi belum ada sesi yang bisa dipilih --}}
+                        <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                            <div class="flex items-start gap-4">
+                                <span
+                                    class="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-slate-100 text-xl text-slate-400">
+                                    <i class="fas fa-calendar-xmark"></i>
+                                </span>
+                                <div>
+                                    <h2 class="text-lg font-semibold text-slate-800">
+                                        Belum ada jadwal kuliah hari ini
+                                    </h2>
+                                    <p class="mt-1 text-sm text-slate-600">
+                                        Presensi dibuka otomatis mengikuti jadwal mata kuliah kelasmu, jadi
+                                        tidak ada sesi yang bisa dipilih sampai jadwal mengajarnya diisi.
+                                    </p>
+
+                                    <div class="mt-5 flex flex-wrap gap-3">
+                                        <a href="{{ route('absensi.index') }}"
+                                            class="inline-flex items-center gap-2 rounded-xl bg-slate-800 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-900">
+                                            Kembali ke presensi
+                                            <i class="fas fa-arrow-right text-xs"></i>
+                                        </a>
+                                        <a href="{{ route('absensi.metode') }}"
+                                            class="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50">
+                                            <i class="fas fa-list-check text-xs"></i>
+                                            Lihat metode
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @elseif ($absensiSesi !== null)
+                        {{-- Sudah absen untuk sesi terpilih: form disembunyikan supaya tidak terkirim dua kali --}}
                         <div class="rounded-2xl border border-emerald-200 bg-white p-6 shadow-sm">
                             <div class="flex items-start gap-4">
                                 <span
@@ -78,16 +110,28 @@
                                 </span>
                                 <div>
                                     <h2 class="text-lg font-semibold text-slate-800">
-                                        Kehadiran hari ini sudah tercatat
+                                        @if ($pilihanSesi->isEmpty())
+                                            Kehadiran hari ini sudah tercatat
+                                        @else
+                                            Presensi {{ $sesiTerpilih->judul() }} sudah tercatat
+                                        @endif
                                     </h2>
                                     <p class="mt-1 text-sm text-slate-600">
-                                        Dicatat pada {{ $hariIni->waktu_absen->format('H:i') }} WIB
-                                        @if ($hariIni->sesiAbsensi?->kode_sesi)
-                                            di sesi {{ $hariIni->sesiAbsensi->kode_sesi }}
+                                        Dicatat pada {{ $absensiSesi->waktu_absen->format('H:i') }} WIB
+                                        untuk {{ $sesiTerpilih->judul() }}
+                                        @if ($absensiSesi->keterangan)
+                                            · {{ $absensiSesi->keterangan }}
                                         @endif
                                     </p>
 
                                     <div class="mt-5 flex flex-wrap gap-3">
+                                        @if ($pilihanSesi->isNotEmpty())
+                                            <a href="{{ route('absensi.index') }}"
+                                                class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700">
+                                                Presensi mata kuliah lain
+                                                <i class="fas fa-arrow-right text-xs"></i>
+                                            </a>
+                                        @endif
                                         <a href="{{ route('absensi.index') }}"
                                             class="inline-flex items-center gap-2 rounded-xl bg-slate-800 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-900">
                                             Kembali ke presensi
@@ -97,6 +141,47 @@
                                             class="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50">
                                             <i class="fas fa-bell text-xs"></i>
                                             Lihat riwayat
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @elseif ($sesiTerpilih === null || $sesiTerpilih->kondisiSekarang() !== 'berjalan')
+                        {{-- Sesi yang dipilih belum berjalan atau sudah berakhir, jadi form disembunyikan --}}
+                        <div class="rounded-2xl border border-amber-200 bg-white p-6 shadow-sm">
+                            <div class="flex items-start gap-4">
+                                <span
+                                    class="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-amber-50 text-xl text-amber-600">
+                                    <i class="fas fa-clock"></i>
+                                </span>
+                                <div>
+                                    <h2 class="text-lg font-semibold text-slate-800">
+                                        Belum ada sesi yang sedang berlangsung
+                                    </h2>
+                                    <p class="mt-1 text-sm text-slate-600">
+                                        @if ($sesiTerpilih?->kondisiSekarang() === 'belum')
+                                            Sesi {{ $sesiTerpilih->judul() }} dimulai pukul
+                                            {{ $sesiTerpilih->waktu_mulai->format('H:i') }} WIB. Kembali lagi
+                                            saat jam pelajarannya sudah berjalan.
+                                        @elseif ($sesiTerpilih !== null)
+                                            Sesi {{ $sesiTerpilih->judul() }} sudah berakhir pukul
+                                            {{ $sesiTerpilih->waktu_selesai->format('H:i') }} WIB, jadi
+                                            kehadiran belum bisa dicatat lewat halaman ini.
+                                        @else
+                                            Presensi dibuka otomatis mengikuti jadwal mata kuliah kelasmu.
+                                        @endif
+                                    </p>
+
+                                    <div class="mt-5 flex flex-wrap gap-3">
+                                        <a href="{{ route('absensi.index') }}"
+                                            class="inline-flex items-center gap-2 rounded-xl bg-slate-800 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-900">
+                                            Lihat jadwal hari ini
+                                            <i class="fas fa-arrow-right text-xs"></i>
+                                        </a>
+                                        <a href="{{ route('absensi.izin-sakit') }}"
+                                            class="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50">
+                                            <i class="fas fa-file-signature text-xs"></i>
+                                            Izin / Sakit
                                         </a>
                                     </div>
                                 </div>
@@ -131,28 +216,41 @@
                             @endif
 
                             <div class="space-y-6 px-6 py-6">
-                                {{-- Sesi berjalan --}}
-                                @if ($sesiBerjalan)
-                                    <div class="flex items-center gap-3 rounded-xl bg-emerald-50 p-3.5">
-                                        <i class="fas fa-clock text-emerald-600"></i>
-                                        <p class="text-xs leading-relaxed text-emerald-800">
-                                            Sesi {{ $sesiBerjalan->kode_sesi }} sedang berjalan
-                                            ({{ $sesiBerjalan->waktu_mulai->format('H:i') }} -
-                                            {{ $sesiBerjalan->waktu_selesai->format('H:i') }}). Kehadiranmu akan
-                                            masuk ke sesi ini.
-                                        </p>
-                                    </div>
-                                @else
-                                    <div class="flex items-center gap-3 rounded-xl bg-amber-50 p-3.5">
-                                        <i class="fas fa-triangle-exclamation text-amber-600"></i>
-                                        <p class="text-xs leading-relaxed text-amber-800">
-                                            Sekarang di luar jam presensi
-                                            ({{ config('sesi-absensi.jam_buka') }} -
-                                            {{ config('sesi-absensi.jam_tutup') }} WIB), jadi kode yang kamu
-                                            masukkan belum bisa disimpan. Coba lagi saat jam presensi dibuka.
-                                        </p>
-                                    </div>
-                                @endif
+                                {{-- Pilih mata kuliah yang sedang berlangsung --}}
+                                <div>
+                                    <label for="sesi" class="block text-sm font-medium text-slate-700">
+                                        Mata kuliah
+                                        <span class="text-red-500">*</span>
+                                    </label>
+                                    <select id="sesi" name="sesi" required
+                                        class="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-200">
+                                        @foreach ($pilihanSesi as $opsi)
+                                            <option value="{{ $opsi->id }}"
+                                                @selected((string) old('sesi', $sesiTerpilih?->id) === (string) $opsi->id)>
+                                                {{ $opsi->judul() }} ·
+                                                {{ $opsi->waktu_mulai->format('H:i') }} -
+                                                {{ $opsi->waktu_selesai->format('H:i') }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <p class="mt-1.5 text-xs text-slate-500">
+                                        Presensi berlaku per mata kuliah, jadi pilih jam pelajaran yang sedang berjalan.
+                                    </p>
+                                    @error('sesi')
+                                        <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
+
+                                {{-- Sesi yang dipilih --}}
+                                <div class="flex items-center gap-3 rounded-xl bg-emerald-50 p-3.5">
+                                    <i class="fas fa-clock text-emerald-600"></i>
+                                    <p class="text-xs leading-relaxed text-emerald-800">
+                                        Sesi {{ $sesiTerpilih->judul() }} sedang berjalan
+                                        ({{ $sesiTerpilih->waktu_mulai->format('H:i') }} -
+                                        {{ $sesiTerpilih->waktu_selesai->format('H:i') }}).
+                                        Kehadiranmu akan masuk ke mata kuliah ini.
+                                    </p>
+                                </div>
 
                                 {{-- Input kode --}}
                                 <div>
@@ -253,7 +351,7 @@
                             </li>
                             <li class="flex gap-2">
                                 <i class="fas fa-circle-check mt-0.5 text-[10px] text-indigo-500"></i>
-                                Cukup satu kali pencatatan per hari.
+                                Satu kali presen untuk tiap mata kuliah yang diikuti.
                             </li>
                             <li class="flex gap-2">
                                 <i class="fas fa-circle-check mt-0.5 text-[10px] text-indigo-500"></i>

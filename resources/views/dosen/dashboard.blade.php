@@ -196,7 +196,8 @@
 
                 <div class="mt-4 flex items-end justify-between gap-3">
                     <div class="min-w-0">
-                        <p class="truncate text-sm font-medium text-gray-500">{{ $card['label'] }}</p>
+                        <p class="truncate text-sm font-medium text-gray-500"
+                            data-labelStat="{{ $card['key'] }}">{{ $card['label'] }}</p>
                         <p class="mt-0.5 text-2xl font-bold tracking-tight {{ $tone['value'] }}"
                             data-nilaiStat="{{ $card['key'] }}">0</p>
                     </div>
@@ -395,6 +396,12 @@
                     <span data-absensiQrCount>0</span> presensi masuk
                 </span>
 
+                <label for="filterSesi" class="sr-only">Saring mata kuliah</label>
+                <select id="filterSesi"
+                    class="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                    <option value="semua">Semua mata kuliah</option>
+                </select>
+
                 <label for="filterStatus" class="sr-only">Saring status</label>
                 <select id="filterStatus"
                     class="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
@@ -413,7 +420,7 @@
                 <thead class="bg-gray-50 text-[11px] uppercase tracking-wide text-gray-400">
                     <tr>
                         <th class="px-6 py-3 font-semibold">Mahasiswa</th>
-                        <th class="px-4 py-3 font-semibold">Kelas</th>
+                        <th class="px-4 py-3 font-semibold" data-kolomKedua>Kelas</th>
                         <th class="px-4 py-3 font-semibold">Waktu</th>
                         <th class="px-4 py-3 font-semibold">Metode</th>
                         <th class="px-4 py-3 text-right font-semibold">Status</th>
@@ -425,7 +432,8 @@
 
         <div class="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-6 py-3">
             <span class="text-xs text-gray-500">
-                <span data-jumlahTampil>0</span> dari <span data-jumlahTotal>0</span> mahasiswa ditampilkan
+                <span data-jumlahTampil>0</span> dari <span data-jumlahTotal>0</span>
+                <span data-satuanTampil>baris presensi</span> ditampilkan
             </span>
             <a href="{{ route('dosen.laporan') }}"
                 class="text-xs font-semibold text-indigo-600 transition-colors hover:text-indigo-700">
@@ -547,6 +555,8 @@
         let kelasAktif = null;
         let daftarKelas = [];
         let filterStatus = 'semua';
+        // Sesi yang sedang ditampilkan di tabel: `semua` atau id sesi mata kuliah.
+        let filterSesi = 'semua';
         let autoRefresh = true;
         let timerPolling = null;
         let trenChart = null;
@@ -637,6 +647,51 @@
         }
 
         // ============================================================
+        // PEMILIH MATA KULIAH (SESI HARI INI)
+        // ============================================================
+
+        /**
+         * Isi select penyaring mata kuliah dari sesi hari ini milik kelas aktif.
+         *
+         * Presensi dihitung per mata kuliah, jadi satu kelas bisa punya
+         * beberapa sesi dalam sehari. Dosen bisa menyaring tabel ke satu sesi
+         * saja, atau membiarkan `semua` untuk melihat seluruh catatan hari ini.
+         * Pilihan yang tidak berlaku lagi (misalnya setelah ganti kelas)
+         * dikembalikan ke `semua`, bukan disimpan sebagai nilai asing.
+         */
+        function renderFilterSesi() {
+            const select = document.getElementById('filterSesi');
+            if (!select) return;
+
+            const server = kelasAktif !== null ? dataKelasServer(kelasAktif) : null;
+            const daftarSesi = server && Array.isArray(server.sesi) ? server.sesi : [];
+
+            select.classList.toggle('hidden', daftarSesi.length === 0);
+
+            const masihBerlaku = daftarSesi.some(function (sesi) {
+                return String(sesi.id) === String(filterSesi);
+            });
+
+            if (!masihBerlaku) filterSesi = 'semua';
+
+            select.innerHTML = '';
+
+            const opsiSemua = document.createElement('option');
+            opsiSemua.value = 'semua';
+            opsiSemua.textContent = 'Semua mata kuliah';
+            select.appendChild(opsiSemua);
+
+            daftarSesi.forEach(function (sesi) {
+                const opsi = document.createElement('option');
+                opsi.value = String(sesi.id);
+                opsi.textContent = sesi.mata_kuliah + ' · ' + sesi.jam;
+                select.appendChild(opsi);
+            });
+
+            select.value = String(filterSesi);
+        }
+
+        // ============================================================
         // KARTU STATISTIK
         // ============================================================
         const POLA_GELOMBANG = [0.82, 0.95, 0.7, 1, 0.88, 0.98, 0.78];
@@ -645,6 +700,14 @@
             const stat = hitungStatAbsensi(list);
             const total = list.length;
             const izinSakit = stat.izin + stat.sakit;
+
+            // Presensi per mata kuliah menghasilkan banyak baris untuk satu
+            // mahasiswa, jadi satuannya ikut menyesap supaya angka tidak lagi
+            // disebut "mahasiswa" padahal isinya catatan per sesi.
+            const perSesi = list.some(function (baris) { return baris.sesiId !== undefined; });
+            const satuan = perSesi ? 'catatan' : 'mahasiswa';
+            const jumlahSesi = new Set(list.map(function (baris) { return baris.sesiId; }).filter(function (v) { return v !== undefined; })).size;
+            const jumlahMahasiswa = new Set(list.map(function (baris) { return baris.nim; })).size;
 
             const nilai = {
                 total: total,
@@ -655,11 +718,15 @@
             };
 
             const keterangan = {
-                total: kelasAktif === null ? '-' : 'mahasiswa di ' + kelasAktif,
-                hadir: 'dari ' + total + ' mahasiswa',
-                izinSakit: izinSakit === 0 ? 'tidak ada' : izinSakit + ' mahasiswa tercatat',
+                total: kelasAktif === null
+                    ? '-'
+                    : (perSesi
+                        ? jumlahSesi + ' sesi · ' + jumlahMahasiswa + ' mahasiswa'
+                        : 'mahasiswa di ' + kelasAktif),
+                hadir: 'dari ' + total + ' ' + satuan,
+                izinSakit: izinSakit === 0 ? 'tidak ada' : izinSakit + ' ' + satuan + ' tercatat',
                 belum: total > 0 ? Math.round((stat.belum / total) * 100) + '% belum presen' : '-',
-                alpha: total > 0 ? Math.round((stat.alpha / total) * 100) + '% dari total mahasiswa' : '-'
+                alpha: total > 0 ? Math.round((stat.alpha / total) * 100) + '% dari total ' + satuan : '-'
             };
 
             Object.keys(nilai).forEach(function (key) {
@@ -668,7 +735,9 @@
                 setTeks('[data-keteranganStat="' + key + '"]', keterangan[key]);
             });
 
-            renderBadgeStatistik('total', total);
+            setTeks('[data-labelStat="total"]', perSesi ? 'Total Presensi' : 'Total Mahasiswa');
+
+            renderBadgeStatistik('total', total, undefined, satuan);
             renderBadgeStatistik('hadir', stat.hadir, total);
             renderBadgeStatistik('izinSakit', izinSakit, total);
             renderBadgeStatistik('belum', stat.belum, total);
@@ -682,15 +751,16 @@
             renderSpark('alpha', persen(stat.alpha, total));
         }
 
-        function renderBadgeStatistik(key, jumlah, total) {
+        function renderBadgeStatistik(key, jumlah, total, satuan) {
             const badge = document.querySelector('[data-persenStat="' + key + '"]');
             if (!badge) return;
 
             // Kartu total mahasiswa tidak punya rasio yang masuk akal, jadi
-            // menampilkan kata "mahasiswa" sebagai gantinya.
+            // menampilkan satuannya sebagai gantinya: "mahasiswa" kalau masih
+            // per hari, "catatan" kalau sudah dihitung per sesi mata kuliah.
             if (total === undefined) {
                 badge.className = 'inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-600';
-                badge.textContent = 'mahasiswa';
+                badge.textContent = satuan || 'mahasiswa';
                 return;
             }
 
@@ -734,7 +804,9 @@
             setTeks('[data-donut-persen]', persen(stat.hadir, total) + '%');
             setTeks('[data-ringkasanKelas]', kelasAktif === null
                 ? 'Belum ada kelas yang diampu'
-                : kelasAktif + ' · ' + stat.hadir + ' dari ' + total + ' sudah presen');
+                : kelasAktif + ' · ' + stat.hadir + ' dari ' + total + ' ' +
+                    (list.some(function (baris) { return baris.sesiId !== undefined; }) ? 'catatan' : 'mahasiswa') +
+                    ' sudah presen');
 
             if (!donut) return;
 
@@ -763,23 +835,37 @@
         // ============================================================
         function renderTabelAbsensi(list) {
             const tbody = document.getElementById('tabelAbsensi');
-            const visible = list.filter(function (baris) {
+            const perSesi = list.some(function (baris) { return baris.sesiId !== undefined; });
+
+            // Baris dulu disaring per sesi (mata kuliah), baru per status.
+            const barisSesi = filterSesi === 'semua'
+                ? list
+                : list.filter(function (baris) { return String(baris.sesiId) === String(filterSesi); });
+
+            const visible = barisSesi.filter(function (baris) {
                 if (filterStatus === 'semua') return true;
                 if (filterStatus === 'Belum') return !baris.status;
 
                 return baris.status === filterStatus;
             });
 
+            const sesiTerpilih = filterSesi === 'semua' ? null : barisSesi[0] || null;
+            const judulSesi = sesiTerpilih ? sesiTerpilih.mataKuliah + ' · ' + sesiTerpilih.jam : null;
+
             setTeks('[data-tabelSubtitle]', kelasAktif === null
                 ? 'Pilih kelas terlebih dahulu'
-                : kelasAktif + ' · ' + visible.length + ' dari ' + list.length + ' mahasiswa');
+                : kelasAktif + (judulSesi ? ' · ' + judulSesi : '') + ' · ' +
+                    visible.length + ' dari ' + barisSesi.length + ' ' + (perSesi ? 'catatan' : 'mahasiswa'));
+
+            setTeks('[data-kolomKedua]', perSesi ? 'Mata Kuliah' : 'Kelas');
+            setTeks('[data-satuanTampil]', perSesi ? 'baris presensi' : 'mahasiswa');
 
             setTeks('[data-kelasAktif]', kelasAktif === null
                 ? 'Belum ada kelas yang diampu'
                 : 'Memantau ' + kelasAktif);
 
             setTeks('[data-jumlahTampil]', visible.length);
-            setTeks('[data-jumlahTotal]', list.length);
+            setTeks('[data-jumlahTotal]', barisSesi.length);
 
             renderBadgeAbsensiMasuk();
 
@@ -796,15 +882,21 @@
 
             if (visible.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-10 text-center text-sm text-gray-400">' +
-                    'Tidak ada mahasiswa dengan status "' + filterStatus + '".</td></tr>';
+                    'Tidak ada ' + (perSesi ? 'catatan' : 'mahasiswa') +
+                    ' dengan status "' + filterStatus + '".</td></tr>';
                 return;
             }
 
             // Terlama masuk di atas supaya tabel ikut mengalir seiring absensi.
-            visible.slice().reverse().forEach(function (baris) {
+            // Baris per sesi sudah terurut dari jam paling awal, jadi urutannya
+            // dipertahankan supaya tiap mata kuliah terlihat sebagai satu blok.
+            (perSesi ? visible : visible.slice().reverse()).forEach(function (baris) {
                 const inisial = (baris.nama || '?').charAt(0).toUpperCase();
                 const badge = baris.status ? (BADGE_STATUS[baris.status] || 'badge-alpha') : 'badge-belum';
                 const metode = baris.metode ? (BADGE_METODE[baris.metode] || 'badge-id') : 'badge-belum';
+                const kolomKedua = baris.mataKuliah
+                    ? baris.mataKuliah + ' · ' + (baris.jam || '')
+                    : (baris.kelas || '-');
 
                 const tr = document.createElement('tr');
                 tr.className = 'absensi-row';
@@ -821,7 +913,7 @@
                     '</td>' +
                     '<td class="px-4 py-3">' +
                         '<span class="inline-block rounded-full bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-600">' +
-                            (baris.kelas || '-') + '</span>' +
+                            kolomKedua + '</span>' +
                     '</td>' +
                     '<td class="px-4 py-3 text-sm text-gray-600">' + formatWaktu(baris.waktu) + '</td>' +
                     '<td class="px-4 py-3"><span class="' + metode + '">' +
@@ -896,7 +988,7 @@
                         '<span class="block truncate text-sm font-semibold text-gray-800">' +
                             (baris.nama || '-') + '</span>' +
                         '<span class="block text-xs text-gray-400">' +
-                            (baris.kelas || '-') + ' · ' + formatWaktu(baris.waktu) +
+                            (baris.mataKuliah || baris.kelas || '-') + ' · ' + formatWaktu(baris.waktu) +
                             (baris.dariServer ? '' : ' · dari perangkat mahasiswa') + '</span>' +
                     '</span>' +
                     '<span class="shrink-0 ' + badge + '">' + (baris.status || 'Belum Presen') + '</span>';
@@ -993,6 +1085,10 @@
                         waktu: baris.waktu,
                         metode: baris.metode,
                         status: baris.status,
+                        // Konteks mata kuliah, supaya feed menyebut jam pelajaran
+                        // yang dimasuki mahasiswa, bukan sekadar namanya.
+                        mataKuliah: baris.mataKuliah,
+                        jam: baris.jam,
                         dariServer: true
                     };
                 });
@@ -1294,6 +1390,7 @@
             const gabungan = gabungkanAbsensi();
 
             renderPemilihKelas();
+            renderFilterSesi();
             renderStatistik(presensiList);
             renderDonut(presensiList);
             renderProgresKelas();
@@ -1336,6 +1433,14 @@
             if (filter) {
                 filter.addEventListener('change', function () {
                     filterStatus = filter.value;
+                    renderTabelAbsensi(presensiList);
+                });
+            }
+
+            const filterMataKuliah = document.getElementById('filterSesi');
+            if (filterMataKuliah) {
+                filterMataKuliah.addEventListener('change', function () {
+                    filterSesi = filterMataKuliah.value;
                     renderTabelAbsensi(presensiList);
                 });
             }

@@ -9,14 +9,16 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 /*
-| Sesi absensi dibuat otomatis supaya mahasiswa tidak pernah gagal absen hanya
-| karena tidak ada dosen yang kebetulan membuka sesi. Command `sesi:absensi`
-| menutup sesi yang sudah lewat lalu membuat sesi untuk hari ini, dan aman
-| dijalankan berulang kali.
+| Sesi presensi dibuat otomatis per mata kuliah: `sesi:absensi` membuat sesi
+| untuk semua jadwal mengajar hari ini (satu sesi per mata kuliah) lalu
+| menutup sesi yang jam selesainya sudah lewat. Idempoten, jadi aman dijalankan
+| berulang kali.
 |
-| Dijadwalkan dua kali: pagi sebelum jam buka supaya sesi sudah siap saat
-| mahasiswa pertama masuk, dan sore setelah jam tutup supaya sesi yang hari ini
-| ditandai selesai. Jalankan dua kali sehari lewat `php artisan schedule:run`.
+| Dijadwalkan tiap lima menit supaya sesi baru langsung ada begitu jam
+| pelajaran dimulai. Halaman absensi mahasiswa dan dashboard dosen juga membuat
+| sesi yang mereka butuhkan saat dibuka, sehingga presensi tetap jalan walau
+| server tempat aplikasi ini berjalan tidak menjalankan scheduler sama sekali.
 */
-Schedule::command('sesi:absensi')->dailyAt('05:00')->name('sesi-absensi-buka');
-Schedule::command('sesi:absensi')->dailyAt('21:30')->name('sesi-absensi-tutup');
+Schedule::command('sesi:absensi')
+    ->everyFiveMinutes()
+    ->name('sesi-absensi-per-jadwal');

@@ -20,20 +20,19 @@ class SesiAbsensiHarian extends Command
     /**
      * @var string
      */
-    protected $description = 'Buat sesi absensi harian dan tutup sesi yang sudah lewat';
+    protected $description = 'Buat sesi presensi per mata kuliah dan tutup sesi yang sudah lewat';
 
     /**
      * Jalankan pembuatan sesi.
      *
-     * Dua pekerjaan yang selalu berpasangan: sesi yang rentangnya sudah lewat
-     * ditutup lebih dulu, lalu sesi untuk tanggal yang diminta dibuat kalau
-     * belum ada. Sesi yang sama tidak pernah dibuat dua kali, jadi command ini
-     * aman dijalankan berulang kali maupun bersamaan dengan scheduler.
+     * Sesi dibuat dari jadwal mengajar tanggal yang diminta: satu mata kuliah
+     * satu sesi, dengan jam mulai dan selesai miliknya sendiri. Sesi yang
+     * rentangnya sudah lewat ikut ditutup, dan karena pembuatannya idempoten,
+     * command ini aman dijalankan berulang kali maupun bersamaan dengan
+     * scheduler.
      */
     public function handle(SesiAbsensiService $sesi): int
     {
-        $ditutup = $sesi->tutupSesiLewat();
-
         $tanggal = $this->tanggalDipilih();
 
         if ($tanggal === null) {
@@ -42,21 +41,30 @@ class SesiAbsensiHarian extends Command
             return self::FAILURE;
         }
 
-        $sudahAda = $sesi->sesiPadaTanggal($tanggal);
-
-        $hasil = $sudahAda ?? $sesi->buatSesiHarian($tanggal);
+        $daftar = $sesi->pastikanSesiHariIni($tanggal);
 
         $this->components->twoColumnDetail(
-            $sudahAda === null ? 'Sesi dibuat' : 'Sesi sudah ada',
-            $hasil->kode_sesi
+            'Sesi dibuat',
+            (string) $daftar->count()
         );
 
-        $this->components->twoColumnDetail(
-            'Waktu',
-            $hasil->waktu_mulai->format('d M Y H:i').' - '.$hasil->waktu_selesai->format('d M Y H:i')
-        );
+        foreach ($daftar->take(10) as $sesiHariIni) {
+            $this->components->twoColumnDetail(
+                $sesiHariIni->judul(),
+                $sesiHariIni->waktu_mulai->format('d M Y H:i').' - '.$sesiHariIni->waktu_selesai->format('d M Y H:i')
+            );
+        }
 
-        $this->components->twoColumnDetail('Sesi ditutup', (string) $ditutup);
+        if ($daftar->count() > 10) {
+            $this->components->twoColumnDetail(
+                'Sesi lainnya',
+                (string) ($daftar->count() - 10)
+            );
+        }
+
+        if ($daftar->isEmpty()) {
+            $this->components->warn('Tidak ada jadwal kuliah aktif pada tanggal itu.');
+        }
 
         return self::SUCCESS;
     }

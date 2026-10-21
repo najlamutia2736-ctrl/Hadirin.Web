@@ -98,6 +98,80 @@
             <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
                 {{-- Formulir --}}
                 <section class="lg:col-span-2">
+                    @if ($daftarSesi->isEmpty())
+                        {{-- Belum ada jadwal, jadi tidak ada sesi yang bisa diajukan --}}
+                        <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                            <div class="flex items-start gap-4">
+                                <span
+                                    class="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-slate-100 text-xl text-slate-400">
+                                    <i class="fas fa-calendar-xmark"></i>
+                                </span>
+                                <div>
+                                    <h2 class="text-lg font-semibold text-slate-800">
+                                        Belum ada jadwal kuliah hari ini
+                                    </h2>
+                                    <p class="mt-1 text-sm text-slate-600">
+                                        Pengajuan melekat pada jadwal mata kuliahnya, jadi belum ada sesi
+                                        yang bisa dipilih sampai jadwal mengajarnya diisi.
+                                    </p>
+
+                                    <div class="mt-5 flex flex-wrap gap-3">
+                                        <a href="{{ route('absensi.index') }}"
+                                            class="inline-flex items-center gap-2 rounded-xl bg-slate-800 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-900">
+                                            Kembali ke presensi
+                                            <i class="fas fa-arrow-right text-xs"></i>
+                                        </a>
+                                        <a href="{{ route('absensi.metode') }}"
+                                            class="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50">
+                                            <i class="fas fa-list-check text-xs"></i>
+                                            Lihat metode
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @elseif ($pilihanSesi->isEmpty())
+                        {{-- Semua sesi hari ini sudah punya catatan, jadi tidak ada yang bisa diajukan --}}
+                        <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                            <div class="flex items-start gap-4">
+                                <span
+                                    class="grid h-12 w-12 shrink-0 place-items-center rounded-xl {{ $semuaSudahTercatat ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600' }}">
+                                    <i class="fas {{ $semuaSudahTercatat ? 'fa-circle-check' : 'fa-clock' }}"></i>
+                                </span>
+                                <div>
+                                    <h2 class="text-lg font-semibold text-slate-800">
+                                        @if ($semuaSudahTercatat)
+                                            Kehadiran hari ini sudah tercatat
+                                        @else
+                                            Semua jam pelajaran hari ini sudah selesai
+                                        @endif
+                                    </h2>
+                                    <p class="mt-1 text-sm text-slate-600">
+                                        @if ($semuaSudahTercatat)
+                                            Setiap mata kuliah hari ini sudah punya catatan presensi, jadi
+                                            formulir pengajuan tidak dikirim lagi.
+                                        @else
+                                            Sesi hari ini sudah berakhir, jadi pengajuan untuk jadwal itu
+                                            tidak bisa diterima lagi.
+                                        @endif
+                                    </p>
+
+                                    <div class="mt-5 flex flex-wrap gap-3">
+                                        <a href="{{ route('absensi.index') }}"
+                                            class="inline-flex items-center gap-2 rounded-xl bg-slate-800 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-900">
+                                            Kembali ke presensi
+                                            <i class="fas fa-arrow-right text-xs"></i>
+                                        </a>
+                                        <a href="{{ route('absensi.notifikasi') }}"
+                                            class="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50">
+                                            <i class="fas fa-bell text-xs"></i>
+                                            Lihat riwayat
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @else
                     <form method="POST" action="{{ route('absensi.izin-sakit.store') }}"
                         class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                         @csrf
@@ -158,20 +232,27 @@
                                 @enderror
                             </fieldset>
 
-                            {{-- Tanggal --}}
+                            {{-- Mata kuliah (sesi hari ini) --}}
                             <div>
-                                <label for="tanggal" class="block text-sm font-medium text-slate-700">
-                                    Tanggal tidak hadir
+                                <label for="sesi" class="block text-sm font-medium text-slate-700">
+                                    Mata kuliah
                                     <span class="text-red-500">*</span>
                                 </label>
-                                <input type="date" id="tanggal" name="tanggal"
-                                    value="{{ old('tanggal', now()->toDateString()) }}" min="{{ now()->toDateString() }}"
-                                    required
+                                <select id="sesi" name="sesi" required
                                     class="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-200">
+                                    @foreach ($pilihanSesi as $opsi)
+                                        <option value="{{ $opsi->id }}"
+                                            @selected((string) old('sesi', $sesiTerpilih?->id) === (string) $opsi->id)>
+                                            {{ $opsi->judul() }} ·
+                                            {{ $opsi->waktu_mulai->format('H:i') }} -
+                                            {{ $opsi->waktu_selesai->format('H:i') }}
+                                        </option>
+                                    @endforeach
+                                </select>
                                 <p class="mt-1.5 text-xs text-slate-500">
-                                    Tidak boleh diisi tanggal yang sudah lewat.
+                                    Pengajuan melekat pada jadwalnya, jadi pilih jam pelajaran yang diajukan.
                                 </p>
-                                @error('tanggal')
+                                @error('sesi')
                                     <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
                                 @enderror
                             </div>
@@ -208,6 +289,7 @@
                             </button>
                         </div>
                     </form>
+                    @endif
                 </section>
 
                 {{-- Panel samping --}}
@@ -216,33 +298,53 @@
                     <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                         <h2 class="text-sm font-semibold text-slate-800">Status hari ini</h2>
 
-                        @if ($hariIni)
+                        @if ($daftarSesi->isEmpty())
                             <div class="mt-3 flex items-center gap-3 rounded-xl bg-slate-50 p-3">
-                                <i
-                                    class="fas {{ $hariIni->status === 'izin' ? 'fa-file-signature text-blue-500' : 'fa-heart-pulse text-amber-500' }} text-lg"></i>
+                                <i class="fas fa-calendar-xmark text-lg text-slate-400"></i>
                                 <div>
-                                    <p class="text-sm font-semibold capitalize text-slate-800">{{ $hariIni->status }}</p>
-                                    <p class="text-xs text-slate-500">
-                                        {{ $hariIni->waktu_absen->format('H:i') }} WIB
-                                    </p>
+                                    <p class="text-sm font-semibold text-slate-800">Tidak ada jadwal</p>
+                                    <p class="text-xs text-slate-500">Belum ada jam pelajaran hari ini</p>
                                 </div>
                             </div>
-                            <p class="mt-3 text-xs leading-relaxed text-slate-500">
-                                Kehadiran hari ini sudah tercatat, jadi formulir di samping tidak bisa dikirim
-                                lagi.
-                            </p>
                         @else
-                            <div class="mt-3 flex items-center gap-3 rounded-xl bg-slate-50 p-3">
-                                <i class="fas fa-hourglass-half text-lg text-slate-400"></i>
-                                <div>
-                                    <p class="text-sm font-semibold text-slate-800">Belum presen</p>
-                                    <p class="text-xs text-slate-500">Formulir masih bisa diisi</p>
-                                </div>
-                            </div>
-                            <p class="mt-3 text-xs leading-relaxed text-slate-500">
-                                Kalau kamu sebenarnya bisa hadir, lebih cepat memakai scan QR atau Kode NIM.
-                            </p>
+                            <ul class="mt-3 space-y-2">
+                                @foreach ($daftarSesi as $sesi)
+                                    @php
+                                        $absen = $sesi->absensis->first();
+                                        $kondisi = $sesi->kondisiSekarang();
+                                    @endphp
+                                    <li class="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2.5">
+                                        <span class="min-w-0 text-xs font-semibold text-slate-800">
+                                            {{ $sesi->judul() }}
+                                            <span class="block font-normal text-slate-500">
+                                                {{ $sesi->waktu_mulai->format('H:i') }} -
+                                                {{ $sesi->waktu_selesai->format('H:i') }}
+                                            </span>
+                                        </span>
+                                        <span
+                                            class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold {{ $absen ? 'bg-emerald-100 text-emerald-700' : ($kondisi === 'berjalan' ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-600') }}">
+                                            @if ($absen)
+                                                {{ ucfirst($absen->status) }} {{ $absen->waktu_absen->format('H:i') }}
+                                            @elseif ($kondisi === 'berjalan')
+                                                Sedang berlangsung
+                                            @elseif ($kondisi === 'selesai')
+                                                Belum presen
+                                            @else
+                                                Mulai {{ $sesi->waktu_mulai->format('H:i') }}
+                                            @endif
+                                        </span>
+                                    </li>
+                                @endforeach
+                            </ul>
                         @endif
+
+                        <p class="mt-3 text-xs leading-relaxed text-slate-500">
+                            @if ($pilihanSesi->isNotEmpty())
+                                Kalau kamu sebenarnya bisa hadir, lebih cepat memakai scan QR atau Kode NIM.
+                            @else
+                                Semua mata kuliah hari ini sudah punya catatan presensi.
+                            @endif
+                        </p>
                     </div>
 
                     {{-- Riwayat pengajuan --}}
@@ -285,7 +387,7 @@
                         <ul class="mt-2.5 space-y-1.5 text-xs leading-relaxed text-amber-800/80">
                             <li class="flex gap-2">
                                 <i class="fas fa-circle-check mt-0.5 text-[10px] text-amber-500"></i>
-                                Pengajuan hanya bisa dikirim satu kali per hari.
+                                Pengajuan hanya bisa dikirim satu kali per mata kuliah.
                             </li>
                             <li class="flex gap-2">
                                 <i class="fas fa-circle-check mt-0.5 text-[10px] text-amber-500"></i>
@@ -313,21 +415,24 @@
         const hitungAlasan = document.getElementById('hitungAlasan');
 
         // Placeholder ikut berubah mengikuti jenis yang dipilih, supaya mahasiswa
-        // langsung tahu contoh yang diharapkan.
-        const placeholderIzin = @json($jenis['izin']['placeholder']);
-        const placeholderSakit = @json($jenis['sakit']['placeholder']);
+        // langsung tahu contoh yang diharapkan. Elemen form tidak ada kalau
+        // semua sesi hari ini sudah punya catatan, jadi skrip berhenti diam-diam.
+        if (alasan !== null && hitungAlasan !== null) {
+            const placeholderIzin = @json($jenis['izin']['placeholder']);
+            const placeholderSakit = @json($jenis['sakit']['placeholder']);
 
-        function perbaruiPenghitung() {
-            hitungAlasan.textContent = `${alasan.value.length} / 500`;
-        }
+            function perbaruiPenghitung() {
+                hitungAlasan.textContent = `${alasan.value.length} / 500`;
+            }
 
-        document.querySelectorAll('input[name="jenis"]').forEach((radio) => {
-            radio.addEventListener('change', () => {
-                alasan.placeholder = radio.value === 'sakit' ? placeholderSakit : placeholderIzin;
+            document.querySelectorAll('input[name="jenis"]').forEach((radio) => {
+                radio.addEventListener('change', () => {
+                    alasan.placeholder = radio.value === 'sakit' ? placeholderSakit : placeholderIzin;
+                });
             });
-        });
 
-        alasan.addEventListener('input', perbaruiPenghitung);
-        perbaruiPenghitung();
+            alasan.addEventListener('input', perbaruiPenghitung);
+            perbaruiPenghitung();
+        }
     </script>
 @endpush

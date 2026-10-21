@@ -287,7 +287,7 @@
                             </span>
                             <span class="text-sm font-semibold text-gray-800">
                                 {{ number_format($baris['value'], 0, ',', '.') }}
-                                <span class="font-normal text-gray-400">mahasiswa</span>
+                                <span class="font-normal text-gray-400">catatan</span>
                             </span>
                         </div>
                     @endforeach
@@ -295,7 +295,7 @@
 
                 <div class="border-t border-gray-100 px-6 py-3 text-center text-xs text-gray-500">
                     Total <span class="font-semibold text-gray-800">{{ number_format($rekapHariIni['total'], 0, ',', '.') }}</span>
-                    mahasiswa tercatat presensi hari ini
+                    catatan presensi hari ini
                 </div>
             </div>
         </div>
