@@ -56,7 +56,7 @@
         @endforeach
     </div>
 
-    {{-- filter periode & kelas --}}
+    {{-- filter periode, kelas & mata kuliah --}}
     <form method="GET" action="{{ route('dosen.laporan') }}"
         class="mb-6 flex flex-col gap-3 rounded-xl border border-gray-100 bg-white px-5 py-4 shadow-sm sm:flex-row sm:items-end sm:justify-between">
         {{-- tab aktif ikut dibawa supaya filter tidak melompat ke tab bulanan --}}
@@ -231,67 +231,159 @@
         </div>
     @endif
 
-    {{-- tren harian --}}
-    <div class="mb-6">
-        <div>
-            <div class="h-full rounded-xl border border-gray-100 bg-white shadow-sm">
-                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-6 py-4">
-                    <div class="flex items-center gap-3">
-                        <span class="grid h-9 w-9 place-items-center rounded-lg bg-indigo-50 text-indigo-600">
-                            <i class="fas fa-chart-line"></i>
-                        </span>
-                        <div>
-                            <h3 class="font-semibold text-gray-800">Tren Kehadiran Harian</h3>
-                            <p class="text-xs text-gray-500">
-                                {{ $laporan['label'] }} &middot; rata-rata {{ $total['persentase'] }}%
-                            </p>
-                        </div>
-                    </div>
-                    <div class="flex flex-wrap items-center gap-4 text-[11px] font-medium text-gray-500">
-                        @if ($perbandingan)
-                            <span class="flex items-center gap-1.5">
-                                <span class="h-2.5 w-2.5 rounded-full bg-emerald-500"></span> Persentase Hadir
-                            </span>
-                            <span class="flex items-center gap-1.5">
-                                <span class="h-2.5 w-2.5 rounded-sm bg-indigo-300"></span> Jumlah Catatan
-                            </span>
-                            <span class="flex items-center gap-1.5">
-                                <span class="h-0.5 w-4 rounded bg-gray-400"></span> Rata-rata Periode
-                            </span>
-                        @else
-                            <span class="flex items-center gap-1.5">
-                                <span class="h-2.5 w-2.5 rounded-sm bg-emerald-500"></span> Hadir
-                            </span>
-                            <span class="flex items-center gap-1.5">
-                                <span class="h-2.5 w-2.5 rounded-sm bg-blue-500"></span> Izin
-                            </span>
-                            <span class="flex items-center gap-1.5">
-                                <span class="h-2.5 w-2.5 rounded-sm bg-amber-500"></span> Sakit
-                            </span>
-                            <span class="flex items-center gap-1.5">
-                                <span class="h-2.5 w-2.5 rounded-sm bg-rose-500"></span> Alpa
-                            </span>
-                        @endif
-                    </div>
-                </div>
-
-                <div class="px-6 py-5">
-                    @if ($adaCatatan)
-                        <div class="chart-container">
-                            <canvas id="grafikTrenHarian"></canvas>
-                        </div>
-                    @else
-                        <p class="py-10 text-center text-sm text-gray-400">
-                            <i class="fas fa-chart-simple mb-2 block text-2xl text-gray-300"></i>
-                            Belum ada presensi harian pada {{ $laporan['label'] }}.
-                        </p>
-                    @endif
+    {{-- tren kehadiran harian --}}
+    <div class="mb-6 rounded-xl border border-gray-100 bg-white shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-6 py-3">
+            <div class="flex items-center gap-3">
+                <span class="grid h-9 w-9 place-items-center rounded-lg bg-indigo-50 text-indigo-600">
+                    <i class="fas fa-chart-line"></i>
+                </span>
+                <div>
+                    <h3 class="font-semibold text-gray-800">Tren Kehadiran Harian</h3>
+                    <p class="text-xs text-gray-500">
+                        Kehadiran harian &middot;
+                        {{ $mataKuliahAktif ?? 'semua mata kuliah' }} &middot;
+                        {{ $laporan['label'] }} &middot; rata-rata {{ $total['persentase'] }}%
+                    </p>
                 </div>
             </div>
+            <div class="flex flex-wrap items-center gap-4 text-[11px] font-medium text-gray-500">
+                @if ($perbandingan)
+                    <span class="flex items-center gap-1.5">
+                        <span class="h-2.5 w-2.5 rounded-full bg-emerald-500"></span> Persentase Hadir
+                    </span>
+                    <span class="flex items-center gap-1.5">
+                        <span class="h-2.5 w-2.5 rounded-sm bg-indigo-300"></span> Jumlah Catatan
+                    </span>
+                    <span class="flex items-center gap-1.5">
+                        <span class="h-0.5 w-4 rounded bg-gray-400"></span> Rata-rata Periode
+                    </span>
+                @else
+                    <span class="flex items-center gap-1.5">
+                        <span class="h-2.5 w-2.5 rounded-sm bg-emerald-500"></span> Hadir
+                    </span>
+                    <span class="flex items-center gap-1.5">
+                        <span class="h-2.5 w-2.5 rounded-sm bg-blue-500"></span> Izin
+                    </span>
+                    <span class="flex items-center gap-1.5">
+                        <span class="h-2.5 w-2.5 rounded-sm bg-amber-500"></span> Sakit
+                    </span>
+                    <span class="flex items-center gap-1.5">
+                        <span class="h-2.5 w-2.5 rounded-sm bg-rose-500"></span> Alpa
+                    </span>
+                @endif
+            </div>
+        </div>
+
+        <div class="px-6 py-4">
+            @if ($adaCatatan)
+                <div class="chart-container">
+                    <canvas id="grafikTrenHarian"></canvas>
+                </div>
+            @else
+                <p class="py-6 text-center text-sm text-gray-400">
+                    <i class="fas fa-chart-simple mb-2 block text-2xl text-gray-300"></i>
+                    Belum ada presensi harian pada {{ $laporan['label'] }}.
+                </p>
+            @endif
         </div>
     </div>
 
-    {{-- mahasiswa perlu perhatian + rincian per mahasiswa --}}
+    {{-- ringkasan per kelas: gambaran total sebelum rincian di bawahnya --}}
+    <div class="mb-6 overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
+        <div class="border-b border-gray-200 px-6 py-3">
+            <div class="flex items-center gap-3">
+                <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-violet-50 text-violet-600">
+                    <i class="fas fa-building-columns"></i>
+                </span>
+                <div>
+                    <h3 class="font-semibold text-gray-800">Ringkasan per Kelas</h3>
+                    <p class="text-xs text-gray-500">
+                        Ringkasan kehadiran seluruh kelas &middot;
+                        {{ $mataKuliahAktif ?? 'semua mata kuliah' }} &middot; {{ $laporan['label'] }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="min-w-full text-left text-sm">
+                <thead class="bg-gray-50 text-[11px] uppercase tracking-wide text-gray-400">
+                    <tr>
+                        <th class="px-4 py-2 font-semibold">Kelas</th>
+                        <th class="px-3 py-2 text-center font-semibold">Mahasiswa</th>
+                        <th class="px-3 py-2 text-center font-semibold">Hadir</th>
+                        <th class="px-3 py-2 text-center font-semibold">Izin</th>
+                        <th class="px-3 py-2 text-center font-semibold">Sakit</th>
+                        <th class="px-3 py-2 text-center font-semibold">Alpa</th>
+                        <th class="px-3 py-2 text-center font-semibold">Total Catatan</th>
+                        <th class="px-4 py-2 font-semibold">Kehadiran</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @forelse ($laporan['perKelas'] as $baris)
+                        <tr class="transition-colors hover:bg-gray-50">
+                            <td class="px-4 py-2.5">
+                                <a href="{{ route('dosen.laporan', array_filter([
+                                            'tab' => $perbandingan ? 'periode' : null,
+                                            'bulan' => $laporan['bulan'],
+                                            'periode' => $laporan['periode'],
+                                            'kelas' => $baris['kelas'],
+                                            'mata_kuliah' => $mataKuliahAktif,
+                                        ])) }}"
+                                    class="inline-flex items-center gap-2 font-medium text-gray-800 hover:text-indigo-600">
+                                    <span class="grid h-7 w-7 place-items-center rounded-lg bg-purple-100 text-purple-600">
+                                        <i class="fas fa-chalkboard text-xs"></i>
+                                    </span>
+                                    {{ $baris['kelas'] }}
+                                </a>
+                            </td>
+                            <td class="px-3 py-2.5 text-center text-gray-700">{{ $baris['mahasiswa'] }}</td>
+                            <td class="px-3 py-2.5 text-center font-semibold text-emerald-600">{{ $baris['hadir'] }}</td>
+                            <td class="px-3 py-2.5 text-center font-semibold text-blue-600">{{ $baris['izin'] }}</td>
+                            <td class="px-3 py-2.5 text-center font-semibold text-amber-600">{{ $baris['sakit'] }}</td>
+                            <td class="px-3 py-2.5 text-center font-semibold text-rose-600">{{ $baris['alpa'] }}</td>
+                            <td class="px-3 py-2.5 text-center text-gray-600">{{ $baris['total'] }}</td>
+                            <td class="px-4 py-2.5">
+                                <div class="flex items-center gap-3">
+                                    <div class="progress-bar w-20">
+                                        <div class="progress-fill {{ $warnaPersentase($baris['persentase']) }}"
+                                            style="width: {{ $baris['persentase'] }}%"></div>
+                                    </div>
+                                    <span class="text-sm font-semibold text-gray-800">
+                                        {{ $baris['persentase'] }}%
+                                    </span>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="8" class="px-6 py-6 text-center text-gray-500">
+                                Belum ada kelas yang bisa dilaporkan.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+
+                @if (count($laporan['perKelas']) > 0)
+                    <tfoot class="border-t-2 border-gray-200 bg-gray-50 text-sm">
+                        <tr>
+                            <td class="px-4 py-2.5 font-bold text-gray-800">TOTAL</td>
+                            <td class="px-3 py-2.5 text-center font-bold text-gray-800">{{ $total['mahasiswa'] }}</td>
+                            <td class="px-3 py-2.5 text-center font-bold text-emerald-600">{{ $total['hadir'] }}</td>
+                            <td class="px-3 py-2.5 text-center font-bold text-blue-600">{{ $total['izin'] }}</td>
+                            <td class="px-3 py-2.5 text-center font-bold text-amber-600">{{ $total['sakit'] }}</td>
+                            <td class="px-3 py-2.5 text-center font-bold text-rose-600">{{ $total['alpa'] }}</td>
+                            <td class="px-3 py-2.5 text-center font-bold text-gray-800">{{ $total['total'] }}</td>
+                            <td class="px-4 py-2.5 font-bold text-gray-800">{{ $total['persentase'] }}%</td>
+                        </tr>
+                    </tfoot>
+                @endif
+            </table>
+        </div>
+    </div>
+
+    {{-- perlu perhatian & rincian per mahasiswa --}}
     <div class="mb-6 grid grid-cols-1 gap-5 lg:grid-cols-3">
         <div>
             <div class="flex h-full flex-col rounded-xl border border-gray-100 bg-white shadow-sm">
@@ -304,7 +396,8 @@
                             <h3 class="font-semibold text-gray-800">Perlu Perhatian</h3>
                             <p class="text-xs text-gray-500">
                                 Kehadiran di bawah {{ $laporan['batasPerhatian'] }}% &middot;
-                                {{ count($laporan['perluPerhatian']) }} mahasiswa
+                                {{ count($laporan['perluPerhatian']) }} mahasiswa &middot;
+                                {{ $laporan['label'] }}
                             </p>
                         </div>
                     </div>
@@ -367,6 +460,7 @@
                                 {{ $perbandingan ? 'Progres per Mahasiswa' : 'Rincian per Mahasiswa' }}
                             </h3>
                             <p class="text-xs text-gray-500">
+                                Kehadiran per mahasiswa &middot;
                                 {{ $kelasAktif ?? 'Semua kelas yang diampu' }} &middot;
                                 {{ count($laporan['perMahasiswa']) }} mahasiswa
                                 @if ($perbandingan)
@@ -572,7 +666,7 @@
     </div>
 
     {{-- rekap per jadwal & per tanggal: satu panel, dua cara membaca --}}
-    <div class="mb-6 overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
+    <div class="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
         <div class="flex flex-col gap-3 border-b border-gray-200 px-6 py-4 lg:flex-row lg:items-center lg:justify-between">
             <div class="flex items-center gap-3">
                 <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-amber-50 text-amber-600">
@@ -755,96 +849,6 @@
         </div>
     </div>
 
-    {{-- tabel rekap per kelas + total, tetap dipakai kedua tab --}}
-    <div class="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
-        <div class="border-b border-gray-200 px-6 py-4">
-            <div class="flex items-center gap-3">
-                <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-violet-50 text-violet-600">
-                    <i class="fas fa-building-columns"></i>
-                </span>
-                <div>
-                    <h3 class="font-semibold text-gray-800">Ringkasan per Kelas</h3>
-                    <p class="text-xs text-gray-500">Total keseluruhan pada {{ $laporan['label'] }}</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="overflow-x-auto">
-            <table class="min-w-full text-left text-sm">
-                <thead class="bg-gray-50 text-[11px] uppercase tracking-wide text-gray-400">
-                    <tr>
-                        <th class="px-6 py-3 font-semibold">Kelas</th>
-                        <th class="px-4 py-3 text-center font-semibold">Mahasiswa</th>
-                        <th class="px-4 py-3 text-center font-semibold">Hadir</th>
-                        <th class="px-4 py-3 text-center font-semibold">Izin</th>
-                        <th class="px-4 py-3 text-center font-semibold">Sakit</th>
-                        <th class="px-4 py-3 text-center font-semibold">Alpa</th>
-                        <th class="px-4 py-3 text-center font-semibold">Total Catatan</th>
-                        <th class="px-6 py-3 font-semibold">Kehadiran</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100">
-                    @forelse ($laporan['perKelas'] as $baris)
-                        <tr class="transition-colors hover:bg-gray-50">
-                            <td class="px-6 py-4">
-                                <a href="{{ route('dosen.laporan', array_filter([
-                                            'tab' => $perbandingan ? 'periode' : null,
-                                            'bulan' => $laporan['bulan'],
-                                            'periode' => $laporan['periode'],
-                                            'kelas' => $baris['kelas'],
-                                            'mata_kuliah' => $mataKuliahAktif,
-                                        ])) }}"
-                                    class="inline-flex items-center gap-2 font-medium text-gray-800 hover:text-indigo-600">
-                                    <span class="grid h-8 w-8 place-items-center rounded-lg bg-purple-100 text-purple-600">
-                                        <i class="fas fa-chalkboard text-xs"></i>
-                                    </span>
-                                    {{ $baris['kelas'] }}
-                                </a>
-                            </td>
-                            <td class="px-4 py-4 text-center text-gray-700">{{ $baris['mahasiswa'] }}</td>
-                            <td class="px-4 py-4 text-center font-semibold text-emerald-600">{{ $baris['hadir'] }}</td>
-                            <td class="px-4 py-4 text-center font-semibold text-blue-600">{{ $baris['izin'] }}</td>
-                            <td class="px-4 py-4 text-center font-semibold text-amber-600">{{ $baris['sakit'] }}</td>
-                            <td class="px-4 py-4 text-center font-semibold text-rose-600">{{ $baris['alpa'] }}</td>
-                            <td class="px-4 py-4 text-center text-gray-600">{{ $baris['total'] }}</td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-3">
-                                    <div class="progress-bar w-28">
-                                        <div class="progress-fill {{ $warnaPersentase($baris['persentase']) }}"
-                                            style="width: {{ $baris['persentase'] }}%"></div>
-                                    </div>
-                                    <span class="text-sm font-semibold text-gray-800">
-                                        {{ $baris['persentase'] }}%
-                                    </span>
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="8" class="px-6 py-10 text-center text-gray-500">
-                                Belum ada kelas yang bisa dilaporkan.
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-
-                @if (count($laporan['perKelas']) > 0)
-                    <tfoot class="border-t-2 border-gray-200 bg-gray-50 text-sm">
-                        <tr>
-                            <td class="px-6 py-4 font-bold text-gray-800">TOTAL</td>
-                            <td class="px-4 py-4 text-center font-bold text-gray-800">{{ $total['mahasiswa'] }}</td>
-                            <td class="px-4 py-4 text-center font-bold text-emerald-600">{{ $total['hadir'] }}</td>
-                            <td class="px-4 py-4 text-center font-bold text-blue-600">{{ $total['izin'] }}</td>
-                            <td class="px-4 py-4 text-center font-bold text-amber-600">{{ $total['sakit'] }}</td>
-                            <td class="px-4 py-4 text-center font-bold text-rose-600">{{ $total['alpa'] }}</td>
-                            <td class="px-4 py-4 text-center font-bold text-gray-800">{{ $total['total'] }}</td>
-                            <td class="px-6 py-4 font-bold text-gray-800">{{ $total['persentase'] }}%</td>
-                        </tr>
-                    </tfoot>
-                @endif
-            </table>
-        </div>
-    </div>
 @endsection
 
 @push('styles')
@@ -853,7 +857,7 @@
     <style>
         .chart-container {
             position: relative;
-            height: 280px;
+            height: 180px;
         }
 
         /* transisi halus saat nilai pada panel absensi hari ini berubah */
