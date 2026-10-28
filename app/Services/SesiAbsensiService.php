@@ -67,6 +67,9 @@ class SesiAbsensiService
 
         $jadwal = Jadwal::query()
             ->where('status', 'Aktif')
+            // Jadwal tahun akademik lampau yang masih berstatus Aktif tidak
+            // boleh membuat sesi presensi di tahun sekarang.
+            ->where('tahun_akademik', $tanggal->year)
             ->where('hari', self::namaHari($tanggal))
             ->orderBy('jam_mulai')
             ->get();

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Dosen;
 use App\Models\Jadwal;
 use App\Models\Kelas;
+use App\Models\MataKuliah;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -71,6 +72,7 @@ class JadwalController extends Controller
         return view('cms.jadwal.create', [
             'kelasList' => $this->kelasList(),
             'dosenList' => $this->dosenList(),
+            'daftarMataKuliah' => $this->daftarMataKuliah(),
             'daftarHari' => Jadwal::HARI_TERSEDIA,
             'daftarStatus' => Jadwal::STATUS_TERSEDIA,
         ]);
@@ -101,6 +103,7 @@ class JadwalController extends Controller
             'jadwal' => $jadwal,
             'kelasList' => $this->kelasList(),
             'dosenList' => $this->dosenList(),
+            'daftarMataKuliah' => $this->daftarMataKuliah(),
             'daftarHari' => Jadwal::HARI_TERSEDIA,
             'daftarStatus' => Jadwal::STATUS_TERSEDIA,
         ]);
@@ -226,6 +229,23 @@ class JadwalController extends Controller
             ->with('user:id,name')
             ->orderBy('id')
             ->get();
+    }
+
+    /**
+     * Nama mata kuliah dari tabel `mata_kuliah`, untuk saran isian form.
+     *
+     * Kolom `jadwals.mata_kuliah` tetap teks bebas, tapi admin dibantu
+     * memilih nama yang sudah terdaftar supaya namanya tidak berbeda-beda
+     * antarjadwal dan tetap cocok dengan data dosen dan kelas.
+     *
+     * @return list<string>
+     */
+    private function daftarMataKuliah(): array
+    {
+        return MataKuliah::query()
+            ->orderBy('nama_mata_kuliah')
+            ->pluck('nama_mata_kuliah')
+            ->all();
     }
 
     /**

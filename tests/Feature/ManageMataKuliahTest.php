@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Dosen;
 use App\Models\Kelas;
 use App\Models\MataKuliah;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -228,4 +229,109 @@ test('mata kuliah muncul di sidebar cms', function () {
     $this->get(route('cms.mata-kuliah'))
         ->assertOk()
         ->assertSee('Mata Kuliah', false);
+});
+
+/*
+| Dosen pengajar ditampilkan dan ditetapkan lewat relasi `dosens.mata_kuliah_id`,
+| bukan kolom baru di tabel `mata_kuliah`: satu dosen menunjuk ke satu mata
+| kuliah, dan halaman mata kuliah menampilkan nama dosen pengajar di tiap baris.
+| Form dosen wajib diisi hanya kalau ada dosen yang bisa dipilih, supaya
+| instalasi baru tanpa data dosen tetap bisa mengisi daftar mata kuliah.
+*/
+
+test('halaman mata kuliah menampilkan dosen pengajar tiap mata kuliah', function () {
+    $mataKuliah = MataKuliah::create([
+        'kode_mata_kuliah' => 'UJI1',
+        'nama_mata_kuliah' => 'Matematika Uji',
+    ]);
+
+    $dosen = Dosen::factory()->create(['mata_kuliah_id' => $mataKuliah->id]);
+
+    MataKuliah::create([
+        'kode_mata_kuliah' => 'UJI2',
+        'nama_mata_kuliah' => 'Informatika Uji',
+    ]);
+
+    $this->get(route('cms.mata-kuliah'))
+        ->assertOk()
+        ->assertSee('Dosen Pengajar')
+        ->assertSee($dosen->user->name)
+        ->assertSee('Belum ada dosen');
+});
+
+test('form tambah mata kuliah menampilkan daftar dosen pengajar', function () {
+    $dosen = Dosen::factory()->create();
+
+    $this->get(route('cms.mata-kuliah.create'))
+        ->assertOk()
+        ->assertSee('Dosen Pengajar')
+        ->assertSee($dosen->user->name);
+});
+
+test('form tambah mata kuliah memberi tahu admin kalau belum ada dosen', function () {
+    $this->get(route('cms.mata-kuliah.create'))
+        ->assertOk()
+        ->assertSee('Belum ada data dosen')
+        ->assertSee(route('cms.dosens.create'), false);
+});
+
+test('dosen pengajar wajib dipilih saat ada dosen', function () {
+    Dosen::factory()->create();
+
+    $this->from(route('cms.mata-kuliah'))
+        ->post(route('cms.mata-kuliah.store'), [
+            'code' => 'UJI1',
+            'name' => 'Matematika Uji',
+        ])
+        ->assertSessionHasErrors('dosen');
+
+    $this->assertDatabaseMissing('mata_kuliah', ['kode_mata_kuliah' => 'UJI1']);
+});
+
+test('mata kuliah baru mengaitkan dosen pengajar yang dipilih', function () {
+    $dosen = Dosen::factory()->create();
+
+    $this->post(route('cms.mata-kuliah.store'), [
+        'code' => 'UJI1',
+        'name' => 'Matematika Uji',
+        'dosen' => $dosen->id,
+    ])->assertSessionHasNoErrors();
+
+    $mataKuliah = MataKuliah::query()->where('kode_mata_kuliah', 'UJI1')->firstOrFail();
+
+    $this->assertDatabaseHas('dosens', [
+        'id' => $dosen->id,
+        'mata_kuliah_id' => $mataKuliah->id,
+    ]);
+});
+
+test('dosen pengajar bisa dipindahkan lewat form edit', function () {
+    $mataKuliah = MataKuliah::create([
+        'kode_mata_kuliah' => 'UJI1',
+        'nama_mata_kuliah' => 'Matematika Uji',
+    ]);
+
+    $dosenLama = Dosen::factory()->create(['mata_kuliah_id' => $mataKuliah->id]);
+    $dosenBaru = Dosen::factory()->create();
+
+    // Form edit menampilkan dosen yang sekarang mengampu mata kuliah ini.
+    $this->get(route('cms.mata-kuliah.edit', $mataKuliah))
+        ->assertOk()
+        ->assertSee($dosenLama->user->name);
+
+    $this->from(route('cms.mata-kuliah.edit', $mataKuliah))
+        ->put(route('cms.mata-kuliah.update', $mataKuliah), [
+            'code' => 'UJI1',
+            'name' => 'Matematika Uji',
+            'dosen' => $dosenBaru->id,
+        ])
+        ->assertSessionHasNoErrors();
+
+    $this->assertDatabaseHas('dosens', [
+        'id' => $dosenBaru->id,
+        'mata_kuliah_id' => $mataKuliah->id,
+    ])->assertDatabaseHas('dosens', [
+        'id' => $dosenLama->id,
+        'mata_kuliah_id' => null,
+    ]);
 });

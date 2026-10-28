@@ -59,6 +59,7 @@
                     <tr>
                         <th class="px-6 py-3">Mata Kuliah</th>
                         <th class="px-6 py-3">Kode</th>
+                        <th class="px-6 py-3">Dosen Pengajar</th>
                         <th class="px-6 py-3">Jumlah Kelas</th>
                         <th class="px-6 py-3 text-right">Aksi</th>
                     </tr>
@@ -80,6 +81,15 @@
                                     class="inline-block rounded-full bg-gray-100 px-2.5 py-1 font-mono text-xs font-medium text-gray-600">
                                     {{ $item->kode_mata_kuliah }}
                                 </span>
+                            </td>
+                            <td class="px-6 py-4">
+                                @if ($item->dosens->isEmpty())
+                                    <span class="text-xs text-gray-400">Belum ada dosen</span>
+                                @else
+                                    <p class="font-medium text-gray-700">
+                                        {{ $item->dosens->map(fn ($dosen) => $dosen->user?->name ?? 'Dosen tanpa akun')->implode(', ') }}
+                                    </p>
+                                @endif
                             </td>
                             <td class="px-6 py-4">
                                 @if ($item->kelas_count > 0)
@@ -109,7 +119,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="4" class="px-6 py-10 text-center text-gray-500">
+                            <td colspan="5" class="px-6 py-10 text-center text-gray-500">
                                 Belum ada data mata kuliah.
                             </td>
                         </tr>

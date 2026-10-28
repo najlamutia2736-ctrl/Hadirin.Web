@@ -26,6 +26,7 @@ return [
             'label' => 'Menu Utama',
             'items' => [
                 ['label' => 'Dashboard', 'route' => 'cms.dashboard', 'icon' => 'fas fa-tachometer-alt'],
+                ['label' => 'Pindai Barcode', 'route' => 'cms.pindai', 'icon' => 'fas fa-barcode'],
             ],
         ],
         [
@@ -58,13 +59,14 @@ return [
             'label' => 'Menu Utama',
             'items' => [
                 ['label' => 'Dashboard', 'route' => 'dosen.dashboard', 'icon' => 'fas fa-tachometer-alt'],
-                ['label' => 'Kelola Data Kelas', 'route' => 'dosen.kelola', 'icon' => 'fas fa-users-cog'],
+                ['label' => 'Pindai Barcode', 'route' => 'dosen.pindai', 'icon' => 'fas fa-barcode'],
+                ['label' => 'Kelola Data Presensi', 'route' => 'dosen.kelola', 'icon' => 'fas fa-users-cog'],
             ],
         ],
         [
             'label' => 'Laporan',
             'items' => [
-                ['label' => 'Laporan Bulanan', 'route' => 'dosen.laporan', 'icon' => 'fas fa-file-alt'],
+                ['label' => 'Laporan Presensi', 'route' => 'dosen.laporan', 'icon' => 'fas fa-file-alt'],
             ],
         ],
         [

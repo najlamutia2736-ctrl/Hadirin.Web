@@ -2,13 +2,6 @@
 
 @section('title', 'Scan QR Code · Hadirin.web')
 
-@php
-    // Route `absensi.scan-qr` hanya mengembalikan view tanpa data tambahan,
-    // jadi identitas untuk topbar diambil dari relasi user yang sedang login.
-    $user = auth()->user();
-    $mahasiswa = $user?->mahasiswa;
-@endphp
-
 @section('konten')
     <div class="min-h-screen">
         {{-- Topbar --}}
@@ -20,12 +13,12 @@
 
                 <div class="flex items-center gap-3">
                     <div class="hidden text-right sm:block">
-                        <p class="text-sm font-semibold text-slate-800">{{ $user?->name }}</p>
-                        <p class="text-xs text-slate-500">{{ $mahasiswa?->kelas ?? 'Presensi Mahasiswa' }}</p>
+                        <p class="text-sm font-semibold text-slate-800">{{ $mahasiswa->user?->name }}</p>
+                        <p class="text-xs text-slate-500">{{ $mahasiswa->kelas }}</p>
                     </div>
                     <span
                         class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-indigo-100 text-sm font-semibold text-indigo-700">
-                        {{ strtoupper(substr($user?->name ?? 'S', 0, 1)) }}
+                        {{ strtoupper(substr($mahasiswa->user?->name ?? 'S', 0, 1)) }}
                     </span>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
@@ -51,7 +44,7 @@
                     Scan QR Code
                 </h1>
                 <p class="mt-1 text-slate-600">
-                    Arahkan kamera ke QR code yang terpasang di depan kelas.
+                    Arahkan kamera ke QR Sesi yang ditampilkan dosen di depan kelas.
                 </p>
             </section>
 
@@ -155,7 +148,7 @@
                         <div id="aksiSetelahBenar" class="mt-4 hidden space-y-2">
                             <a href="{{ route('absensi.index') }}"
                                 class="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-700">
-                                Lanjut isi presensi
+                                Lihat status presensi
                                 <i class="fas fa-arrow-right text-xs"></i>
                             </a>
                             <button type="button" id="tombolScanLagi"
@@ -176,7 +169,8 @@
                         <label for="kodeManual" class="mt-4 block text-xs font-medium text-slate-600">
                             Ketik kode QR secara manual
                         </label>
-                        <input type="text" id="kodeManual" autocomplete="off" placeholder="Contoh: HADIRIN-PAGI-2026"
+                        <input type="text" id="kodeManual" autocomplete="off"
+                            placeholder="Contoh: JW12-{{ today()->format('Y-m-d') }}"
                             class="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-200">
                         <button type="button" id="tombolKodeManual"
                             class="mt-2.5 w-full rounded-xl bg-slate-800 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-900">
@@ -196,7 +190,7 @@
                         <ul class="mt-2 space-y-1.5 text-xs leading-relaxed text-indigo-800/80">
                             <li class="flex gap-2">
                                 <i class="fas fa-circle-check mt-0.5 text-[10px] text-indigo-500"></i>
-                                Pegang HP/Kartu setinggi dada, jarak 15 sampai 25 cm.
+                                Pegang HP menghadap QR Sesi di depan kelas, jarak 15 sampai 25 cm.
                             </li>
                             <li class="flex gap-2">
                                 <i class="fas fa-circle-check mt-0.5 text-[10px] text-indigo-500"></i>
@@ -252,10 +246,16 @@
             }
         }
 
-        /* Kartu hasil diberi penanda hijau begitu kode terbaca. */
+        /* Kartu hasil diberi penanda hijau begitu kehadiran tercatat. */
         .kartu-hasil.terbaca {
             border-color: rgb(209, 250, 229);
             box-shadow: 0 0 0 2px rgb(209, 250, 229);
+        }
+
+        /* Penanda merah saat server menolak hasil scan. */
+        .kartu-hasil.gagal {
+            border-color: rgb(254, 202, 202);
+            box-shadow: 0 0 0 2px rgb(254, 202, 202);
         }
     </style>
 
@@ -264,11 +264,12 @@
         // SCAN QR CODE
         // ============================================================
         // Kamera dibuka lewat getUserMedia, lalu setiap frame-nya digambar
-        // ke canvas dan dibaca jsQR. Pemindaian berhenti sekali kode
-        // terdeteksi supaya satu QR tidak terbaca berulang, dan seluruh
-        // track kamera dimatikan saat halaman ditinggalkan supaya lampu
-        // kamera tidak menyala terus.
+        // ke canvas dan dibaca jsQR. Begitu kode terbaca, kodenya langsung
+        // dikirim ke server sebagai JSON dan kehadiran dicatat otomatis —
+        // mahasiswa tidak perlu mengetik apa pun. Kamera dimatikan saat
+        // halaman ditinggalkan supaya lampu kamera tidak menyala terus.
 
+        const RUTE_SIMPAN = @json($ruteSimpan);
         const video = document.getElementById('kamera');
         const kanvas = document.getElementById('kanvas');
         const bingkai = document.getElementById('bingkai');
@@ -527,6 +528,7 @@
             const teks = String(nilai).trim();
 
             if (teks === '') {
+                kirimOtomatis = true;
                 return;
             }
 
@@ -534,17 +536,66 @@
             if (navigator.vibrate) {
                 navigator.vibrate(120);
             }
-            bunyiBerhasil();
+            bunyiNada(true);
 
             kodeTerdeteksi.textContent = teks;
-            keteranganHasil.textContent = 'QR code berhasil dibaca.';
+            keteranganHasil.textContent = 'QR terbaca, memeriksa kehadiran…';
             isiHasil.classList.remove('hidden');
             aksiSetelahBenar.classList.remove('hidden');
-            panelHasil.classList.add('terbaca');
 
             // Kamera dimatikan supaya merekam wajah mahasiswa tidak berlanjut.
             matikanKamera();
-            tampilkanStatus('fa-circle-check', 'QR code terbaca', 'Kamera sudah dimatikan otomatis.');
+
+            kirimKode(teks);
+        }
+
+        /**
+         * Kirim kode hasil scan ke server, lalu tampilkan hasilnya.
+         *
+         * Kehadiran dicatat oleh server setelah memeriksa sesi, kelas, dan
+         * duplikasi — jadi yang tampil di layar selalu keputusan server,
+         * bukan anggapan halaman ini.
+         */
+        async function kirimKode(kode) {
+            try {
+                const respons = await fetch(RUTE_SIMPAN, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Accept: 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    },
+                    body: JSON.stringify({
+                        kode: kode,
+                    }),
+                });
+
+                const hasil = await respons.json();
+
+                if (respons.ok && hasil.sukses === true) {
+                    panelHasil.classList.remove('gagal');
+                    panelHasil.classList.add('terbaca');
+                    keteranganHasil.textContent = hasil.pesan || 'Kehadiran tercatat.';
+                    tampilkanStatus('fa-circle-check', 'Kehadiran tercatat', hasil.pesan || 'Kamera sudah dimatikan otomatis.');
+                } else {
+                    tampilkanGagalScan(hasil.pesan || 'Kode ditolak oleh server.');
+                }
+            } catch (error) {
+                tampilkanGagalScan('Gagal menghubungi server. Periksa koneksi lalu coba lagi.');
+            }
+        }
+
+        function tampilkanGagalScan(pesan) {
+            panelHasil.classList.remove('terbaca');
+            panelHasil.classList.add('gagal');
+            keteranganHasil.textContent = pesan;
+
+            if (navigator.vibrate) {
+                navigator.vibrate([80, 60, 80]);
+            }
+
+            bunyiNada(false);
+            tampilkanStatus('fa-triangle-exclamation', 'Kehadiran belum tercatat', pesan, true);
         }
 
         function resetHasil() {
@@ -553,11 +604,11 @@
             keteranganHasil.textContent = 'Belum ada QR code terbaca.';
             isiHasil.classList.add('hidden');
             aksiSetelahBenar.classList.add('hidden');
-            panelHasil.classList.remove('terbaca');
+            panelHasil.classList.remove('terbaca', 'gagal');
         }
 
         // Bunyinya dibuat dari Web Audio API supaya tidak perlu file audio.
-        function bunyiBerhasil() {
+        function bunyiNada(berhasil) {
             try {
                 const AudioContextPeta = window.AudioContext || window.webkitAudioContext;
 
@@ -572,7 +623,7 @@
                 oscillator.connect(gain);
                 gain.connect(audio.destination);
                 oscillator.type = 'sine';
-                oscillator.frequency.setValueAtTime(880, audio.currentTime);
+                oscillator.frequency.setValueAtTime(berhasil ? 880 : 320, audio.currentTime);
                 gain.gain.setValueAtTime(0.08, audio.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + 0.25);
                 oscillator.start();

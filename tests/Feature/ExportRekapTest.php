@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Absensi;
+use App\Models\Jadwal;
 use App\Models\Mahasiswa;
 use App\Models\SesiAbsensi;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -218,4 +219,83 @@ test('rekap menampilkan baris kosong bila tidak ada data', function () {
         ->assertOk()
         ->assertSee('Belum ada data rekap.')
         ->assertDontSee('Total Catatan');
+});
+
+/**
+ * Satu mata kuliah dengan sesi berafiliasi jadwal beserta catatan absensinya.
+ *
+ * Berbeda dengan `rekapMahasiswa()` yang memakai sesi lama tanpa jadwal, helper
+ * ini memakai sesi yang menautkan `jadwal_id` supaya barisnya masuk ke rekap
+ * per mata kuliah.
+ *
+ * @param  array<string, string>  $catatan  Kunci tanggal, nilai status absensi.
+ * @param  array<string, mixed>  $atributMahasiswa  tambahan atribut mahasiswanya.
+ */
+function absensiMataKuliah(string $mataKuliah, array $catatan, array $atributMahasiswa = []): void
+{
+    $jadwal = Jadwal::factory()->create(['mata_kuliah' => $mataKuliah]);
+
+    $sesi = SesiAbsensi::create([
+        'jadwal_id' => $jadwal->getKey(),
+        'kode_sesi' => 'MK-'.$jadwal->getKey(),
+        'waktu_mulai' => '2026-09-01 06:30:00',
+        'waktu_selesai' => '2026-09-01 08:00:00',
+        'status' => 'selesai',
+    ]);
+
+    $mahasiswa = Mahasiswa::factory()->create($atributMahasiswa + ['kelas' => 'Kelas A']);
+
+    foreach ($catatan as $tanggal => $status) {
+        Absensi::create([
+            'mahasiswa_id' => $mahasiswa->getKey(),
+            'sesi_absensi_id' => $sesi->getKey(),
+            'waktu_absen' => $tanggal.' 07:00:00',
+            'status' => $status,
+        ]);
+    }
+}
+
+test('halaman rekap merinci kehadiran per mata kuliah', function () {
+    absensiMataKuliah('Aljabar Linear', ['2026-09-01' => 'hadir', '2026-09-02' => 'alpha']);
+    absensiMataKuliah('Basis Data', ['2026-09-03' => 'hadir']);
+
+    $this->get(route('cms.rekap', ['bulan' => '2026-09']))
+        ->assertOk()
+        ->assertSee('Rekap per Mata Kuliah')
+        ->assertSee('Aljabar Linear')
+        ->assertSee('Basis Data');
+});
+
+test('export excel memuat ringkasan per mata kuliah', function () {
+    absensiMataKuliah('Aljabar Linear', ['2026-09-01' => 'hadir', '2026-09-02' => 'sakit']);
+
+    $csv = $this->get(route('cms.rekap.export.excel', ['bulan' => '2026-09']))->streamedContent();
+
+    expect($csv)
+        ->toContain('REKAP PER MATA KULIAH')
+        ->toContain('"Aljabar Linear";1;1;0;1;0;2;50');
+});
+
+test('export excel memfilter berdasarkan mata kuliah', function () {
+    absensiMataKuliah('Aljabar Linear', ['2026-09-01' => 'hadir']);
+    absensiMataKuliah('Basis Data', ['2026-09-02' => 'hadir']);
+
+    $csv = $this->get(route('cms.rekap.export.excel', [
+        'bulan' => '2026-09',
+        'mata_kuliah' => 'Aljabar Linear',
+    ]))->streamedContent();
+
+    expect($csv)
+        ->toContain('"Filter Mata Kuliah";"Aljabar Linear"')
+        ->toContain('"Aljabar Linear";1;1')
+        ->not->toContain('Basis Data');
+});
+
+test('export pdf menampilkan rekap per mata kuliah', function () {
+    absensiMataKuliah('Aljabar Linear', ['2026-09-01' => 'hadir']);
+
+    $this->get(route('cms.rekap.export.pdf', ['bulan' => '2026-09']))
+        ->assertOk()
+        ->assertSee('Rekap Kehadiran per Mata Kuliah')
+        ->assertSee('Aljabar Linear');
 });

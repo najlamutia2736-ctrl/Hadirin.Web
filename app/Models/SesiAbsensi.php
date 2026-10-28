@@ -19,6 +19,16 @@ use Illuminate\Support\Carbon;
 class SesiAbsensi extends Model
 {
     /**
+     * Nama kelompok untuk catatan presensi lama yang belum punya jadwal.
+     *
+     * Laporan per mata kuliah mengelompokkan absensi lewat `jadwals.mata_kuliah`.
+     * Baris lama sebelum sesi ditautkan ke jadwal (`jadwal_id` null) tetap harus
+     * ikut terhitung, jadi digabung ke satu baris dengan nama ini supaya riwayat
+     * lama tidak hilang dari rekap.
+     */
+    public const TANPA_JADWAL = 'Tanpa Jadwal Kuliah';
+
+    /**
      * @var list<string>
      */
     protected $fillable = ['jadwal_id', 'kode_sesi', 'waktu_mulai', 'waktu_selesai', 'status'];

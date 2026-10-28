@@ -1,13 +1,13 @@
 @extends('layouts.app')
 
-@section('title', 'Kelola Data Kelas · Hadirin.Web')
+@section('title', 'Kelola Data Presensi · Hadirin.Web')
 
 @php
-    $pageTitle = 'Kelola Data Kelas';
+    $pageTitle = 'Kelola Data Presensi';
     $breadcrumbItems = [
         ['label' => 'Beranda'],
         ['label' => 'Dashboard Dosen'],
-        ['label' => 'Kelola Data Kelas', 'current' => true],
+        ['label' => 'Kelola Data Presensi', 'current' => true],
     ];
 
     $genderOptions = [
@@ -19,6 +19,15 @@
 @endphp
 
 @section('konten')
+    {{-- penambahan dari halaman tambah mahasiswa --}}
+    @if (session('success'))
+        <div role="status"
+            class="mb-6 flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
+            <i class="fas fa-check-circle"></i>
+            {{ session('success') }}
+        </div>
+    @endif
+
     {{-- pemilih kelas --}}
     <div class="mb-6 flex flex-col gap-3 rounded-xl border border-gray-100 bg-white px-5 py-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
         <div class="flex items-center gap-3">
@@ -40,8 +49,8 @@
             <div>
                 <p class="font-semibold">Belum ada kelas yang diampu.</p>
                 <p class="mt-0.5">
-                    Hubungkan kelas dengan akun Anda di dashboard admin, menu
-                    <a href="{{ route('cms.kelas') }}" class="font-semibold underline">Classes</a>,
+                    Hubungkan kelas dengan akun Anda lewat menu
+                    <span class="font-semibold">Kelas</span> di dashboard admin,
                     kolom <span class="font-semibold">Dosen Pengampu</span>. Daftar mahasiswa
                     kelas tersebut akan muncul di halaman ini.
                 </p>
@@ -235,10 +244,49 @@
         </div>
     </div>
 
+    {{-- modal barcode presensi --}}
+    <div id="modalBarcodeMahasiswa" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4">
+        <div class="w-full max-w-sm overflow-hidden rounded-xl bg-white shadow-xl">
+            <div class="flex items-start justify-between gap-4 border-b border-gray-100 px-6 py-4">
+                <div>
+                    <h3 class="font-semibold text-gray-800">Barcode Presensi</h3>
+                    <p class="mt-0.5 text-xs text-gray-500">Dipindai petugas lewat menu Pindai Barcode.</p>
+                </div>
+                <button type="button" data-modal-barcode-close aria-label="Tutup modal barcode"
+                    class="text-gray-400 transition-colors hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="px-6 py-5 text-center">
+                <p id="barcodeMahasiswaNama" class="font-semibold text-gray-800"></p>
+                <p id="barcodeMahasiswaNim" class="mt-0.5 text-sm text-gray-500"></p>
+
+                <div class="mt-4 flex justify-center">
+                    <div id="barcodeMahasiswaWadah" data-barcode-mahasiswa data-barcode-ukuran="240"
+                        class="inline-flex items-center justify-center rounded-xl bg-white p-3 ring-1 ring-slate-200"></div>
+                </div>
+
+                <p class="mt-4 text-xs text-gray-500">
+                    Barcode langsung bisa dipakai: begitu dipindai, mahasiswa tercatat hadir
+                    pada sesi mata kuliah yang sedang berjalan.
+                </p>
+            </div>
+            <div class="flex justify-end border-t border-gray-100 px-6 py-4">
+                <button type="button" data-modal-barcode-close
+                    class="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-100">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+
     {{-- notifikasi --}}
     <div id="notifikasiKelola"
         class="pointer-events-none fixed bottom-5 right-5 z-50 hidden max-w-sm rounded-xl border px-4 py-3 text-sm font-medium shadow-lg"></div>
 @endsection
+
+{{-- Pustaka QR untuk modal barcode mahasiswa --}}
+@include('components.qr-script')
 
 @push('styles')
     @include('dosen.partials.styles')
@@ -284,14 +332,20 @@
 
     <script>
         // ============================================================
-        // KELOLA DATA KELAS
+        // KELOLA DATA PRESENSI
         // ============================================================
-        // Halaman ini mengelola daftar mahasiswa pada kelas yang diampu dosen.
+        // Halaman ini mengelola daftar mahasiswa pada kelas yang diampu dosen,
+        // lengkap dengan kolom presensi hari ini tiap mahasiswa.
         // Kelas dan mahasiswanya datang dari server lewat `HADIRIN_DOSEN`, jadi
         // perubahan di dashboard admin ikut terlihat di sini.
 
         const ENDPOINT_SIMPAN = @json(route('dosen.kelola.mahasiswa.store'));
         const DASAR_SISWA = @json(url('/dashboard/dosen/kelola/mahasiswa'));
+        // Form tambah kini punya halaman sendiri, bukan modal.
+        const TAMBAH_MAHASISWA = @json(route('dosen.kelola.mahasiswa.create'));
+        // Mahasiswa yang baru ditambahkan lewat halaman tambah; barcode-nya
+        // langsung dibuka saat halaman kelola selesai dimuat.
+        const MAHASISWA_BARU = @json($mahasiswaBaru);
 
         /** URL satu mahasiswa, dipakai untuk ubah dan hapus. */
         function endpointMahasiswa(id) {
@@ -454,6 +508,9 @@
                     '</td>' +
                     '<td class="px-6 py-3">' +
                         '<div class="flex items-center justify-end gap-1">' +
+                            '<button type="button" title="Barcode" data-barcode-baris ' +
+                                'class="flex h-8 w-8 items-center justify-center rounded-lg text-indigo-600 transition-colors hover:bg-indigo-50">' +
+                                '<i class="fas fa-barcode text-xs"></i></button>' +
                             '<button type="button" title="Ubah" onclick="ubahMahasiswa(' + mahasiswa.id + ')" ' +
                                 'class="flex h-8 w-8 items-center justify-center rounded-lg text-blue-600 transition-colors hover:bg-blue-50">' +
                                 '<i class="fas fa-pen text-xs"></i></button>' +
@@ -464,6 +521,18 @@
                     '</td>';
 
                 tbody.appendChild(tr);
+
+                // Identitas di-set lewat properti, bukan lewat string HTML, supaya
+                // nama berisi kutip tidak merusak atributnya sendiri.
+                const tombolBarcode = tr.querySelector('[data-barcode-baris]');
+                tombolBarcode.dataset.nimBarcode = mahasiswa.nim || '';
+                tombolBarcode.dataset.namaBarcode = mahasiswa.nama || '-';
+                tombolBarcode.addEventListener('click', function () {
+                    tampilkanBarcodeMahasiswa(
+                        tombolBarcode.dataset.nimBarcode,
+                        tombolBarcode.dataset.namaBarcode
+                    );
+                });
             });
         }
 
@@ -503,6 +572,33 @@
             mahasiswaSedangDihapus = null;
         }
 
+        /**
+         * Buka modal barcode milik satu mahasiswa.
+         *
+         * Barcode berisikan NIM, jadi begitu mahasiswa terdaftar barcode pun
+         * langsung ada — tidak perlu dibuat atau dicetak lewat langkah lain.
+         */
+        function tampilkanBarcodeMahasiswa(nim, nama) {
+            const modal = document.getElementById('modalBarcodeMahasiswa');
+            const wadah = document.getElementById('barcodeMahasiswaWadah');
+            if (!modal || !wadah) return;
+
+            document.getElementById('barcodeMahasiswaNama').textContent = nama || 'Mahasiswa';
+            document.getElementById('barcodeMahasiswaNim').textContent = 'NIM ' + (nim || '-');
+            window.gambarBarcodeMahasiswa(wadah, nim || '', 240);
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function tutupModalBarcode() {
+            const modal = document.getElementById('modalBarcodeMahasiswa');
+            if (!modal) return;
+
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
         function isiDropdownKelas(terpilih) {
             const select = document.getElementById('mahasiswaKelas');
             if (!select) return;
@@ -521,24 +617,13 @@
         }
 
         /**
-         * Buka modal tambah mahasiswa baru.
+         * Buka halaman tambah mahasiswa.
+         *
+         * Form tambah kini punya halaman tersendiri, bukan modal, supaya enak
+         * diisi — terutama di HP. Kelas tujuan dipilih langsung di halaman itu.
          */
         function tambahMahasiswa() {
-            if (daftarKelas.length === 0) {
-                notifikasi('Belum ada kelas yang bisa ditambahkan mahasiswa.', 'amber');
-                return;
-            }
-
-            document.getElementById('formMahasiswa').reset();
-            document.getElementById('mahasiswaId').value = '';
-            document.getElementById('judulModalMahasiswa').textContent = 'Tambah Mahasiswa';
-            sembunyikanErrorModal();
-
-            const status = document.getElementById('mahasiswaStatus');
-            if (status) status.value = 'Aktif';
-
-            isiDropdownKelas(kelasAktif);
-            bukaModalMahasiswa();
+            window.location.href = TAMBAH_MAHASISWA;
         }
 
         /**
@@ -647,6 +732,12 @@
                 tutupModalMahasiswa();
                 notifikasi(hasil.message, 'green');
                 await muatUlangData();
+
+                // Mahasiswa baru langsung menampilkan barcode miliknya, sesuai
+                // aturan bahwa tiap data baru otomatis punya barcode siap pakai.
+                if (!id && hasil.mahasiswa) {
+                    tampilkanBarcodeMahasiswa(hasil.mahasiswa.nim, hasil.mahasiswa.nama);
+                }
             } catch (error) {
                 notifikasi('Gagal menghubungi server. Coba lagi.', 'red');
             } finally {
@@ -790,6 +881,13 @@
 
             renderSeluruhHalaman();
 
+            // Mahasiswa yang baru ditambahkan lewat halaman tambah: barcode-nya
+            // langsung dibuka mengikuti aturan bahwa tiap mahasiswa baru otomatis
+            // punya barcode siap pakai.
+            if (MAHASISWA_BARU) {
+                tampilkanBarcodeMahasiswa(MAHASISWA_BARU.nim, MAHASISWA_BARU.nama);
+            }
+
             const cari = document.getElementById('cariMahasiswa');
             if (cari) {
                 cari.addEventListener('input', function () {
@@ -815,6 +913,14 @@
 
             document.getElementById('modalHapusMahasiswa').addEventListener('click', function (event) {
                 if (event.target === event.currentTarget) tutupModalHapus();
+            });
+
+            document.querySelectorAll('[data-modal-barcode-close]').forEach(function (tombol) {
+                tombol.addEventListener('click', tutupModalBarcode);
+            });
+
+            document.getElementById('modalBarcodeMahasiswa').addEventListener('click', function (event) {
+                if (event.target === event.currentTarget) tutupModalBarcode();
             });
         });
     </script>

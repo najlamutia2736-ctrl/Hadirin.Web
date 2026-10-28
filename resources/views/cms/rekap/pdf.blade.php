@@ -206,6 +206,7 @@
         <div class="meta">
             <span><b>Periode:</b> {{ $periode['label'] }}</span>
             <span><b>Kelas:</b> {{ $periode['kelas'] ?? 'Semua Kelas' }}</span>
+            <span><b>Mata Kuliah:</b> {{ $periode['mata_kuliah'] ?? 'Semua Mata Kuliah' }}</span>
             <span><b>Dicetak:</b> {{ $periode['dicetak'] }}</span>
         </div>
 
@@ -259,6 +260,66 @@
         <p style="font-size: 10.5px; color: #6b7280; margin-top: 8px">
             Catatan: persentase kehadiran dihitung dari jumlah hadir dibagi total catatan presensi pada periode
             {{ $periode['label'] }}.
+        </p>
+
+        <h2 class="judul" style="margin-top: 18px">Rekap Kehadiran per Mata Kuliah</h2>
+
+        <div class="meta">
+            <span><b>Periode:</b> {{ $periode['label'] }}</span>
+            <span><b>Mata Kuliah:</b> {{ $periode['mata_kuliah'] ?? 'Semua Mata Kuliah' }}</span>
+            <span><b>Dicetak:</b> {{ $periode['dicetak'] }}</span>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th class="kelas" style="width: 30%">Mata Kuliah</th>
+                    <th>Sesi</th>
+                    <th>Hadir</th>
+                    <th>Izin</th>
+                    <th>Sakit</th>
+                    <th>Alpa</th>
+                    <th>Total Catatan</th>
+                    <th>Persentase</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse ($rekapMataKuliah as $row)
+                    <tr>
+                        <td class="kelas">{{ $row['mata_kuliah'] }}</td>
+                        <td>{{ $row['sesi'] }}</td>
+                        <td>{{ $row['hadir'] }}</td>
+                        <td>{{ $row['izin'] }}</td>
+                        <td>{{ $row['sakit'] }}</td>
+                        <td>{{ $row['alpa'] }}</td>
+                        <td>{{ $row['total'] }}</td>
+                        <td>{{ $row['persentase'] }}%</td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td class="kosong" colspan="8">Belum ada data rekap pada periode ini.</td>
+                    </tr>
+                @endforelse
+            </tbody>
+            @if (count($rekapMataKuliah) > 0)
+                <tfoot>
+                    <tr>
+                        <td class="kelas">TOTAL ({{ count($rekapMataKuliah) }} mata kuliah)</td>
+                        <td>{{ $totalMataKuliah['sesi'] }}</td>
+                        <td>{{ $totalMataKuliah['hadir'] }}</td>
+                        <td>{{ $totalMataKuliah['izin'] }}</td>
+                        <td>{{ $totalMataKuliah['sakit'] }}</td>
+                        <td>{{ $totalMataKuliah['alpa'] }}</td>
+                        <td>{{ $totalMataKuliah['total'] }}</td>
+                        <td>{{ $totalMataKuliah['persentase'] }}%</td>
+                    </tr>
+                </tfoot>
+            @endif
+        </table>
+
+        <p style="font-size: 10.5px; color: #6b7280; margin-top: 8px">
+            Catatan: satu baris adalah satu mata kuliah; kolom sesi berisi jumlah sesi mata kuliah yang punya
+            catatan presensi, dan presensi lama tanpa jadwal masuk ke baris "Tanpa Jadwal Kuliah".
         </p>
 
         <div class="ttd">

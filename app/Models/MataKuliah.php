@@ -29,4 +29,17 @@ class MataKuliah extends Model
     {
         return $this->hasMany(Kelas::class, 'mata_kuliah_id');
     }
+
+    /**
+     * Dosen yang mengampu mata kuliah ini.
+     *
+     * Relasinya memakai kolom `dosens.mata_kuliah_id`: satu dosen menunjuk ke
+     * satu mata kuliah, tapi satu mata kuliah bisa diampu beberapa dosen.
+     * Inilah yang dipakai halaman Manajemen Mata Kuliah untuk menampilkan
+     * nama dosen pengajar di setiap baris.
+     */
+    public function dosens(): HasMany
+    {
+        return $this->hasMany(Dosen::class, 'mata_kuliah_id');
+    }
 }

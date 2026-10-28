@@ -32,7 +32,7 @@
         ],
         'alpha' => [
             'label' => 'Alpa',
-            'ringkasan' => 'Terdcatat tidak hadir',
+            'ringkasan' => 'Tercatat tidak hadir',
             'ikon' => 'fa-circle-xmark',
             'kartu' => 'from-rose-500 to-red-500',
             'lencana' => 'bg-rose-100 text-rose-700',
@@ -206,6 +206,35 @@
                             </div>
                         @endforeach
                     </dl>
+
+                    {{-- rincian kehadiran per mata kuliah pada bulan ini --}}
+                    @if (count($rekap['perMataKuliah']) > 0)
+                        <div class="mt-5 border-t border-slate-100 pt-4">
+                            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                Per Mata Kuliah
+                            </p>
+
+                            <ul class="mt-3 space-y-3">
+                                @foreach ($rekap['perMataKuliah'] as $baris)
+                                    <li>
+                                        <div class="flex items-center justify-between gap-2">
+                                            <span class="truncate text-xs font-medium text-slate-700">
+                                                {{ $baris['mata_kuliah'] }}
+                                            </span>
+                                            <span class="shrink-0 text-xs text-slate-500">
+                                                <span class="font-semibold text-slate-800">{{ $baris['persentase'] }}%</span>
+                                                &middot; {{ $baris['hadir'] }}/{{ $baris['total'] }}
+                                            </span>
+                                        </div>
+                                        <div class="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                                            <div class="h-full rounded-full bg-indigo-500"
+                                                style="width: {{ $baris['persentase'] }}%"></div>
+                                        </div>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
                 </div>
             </section>
 

@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Absensi;
+use App\Models\Jadwal;
 use App\Models\Mahasiswa;
+use App\Models\SesiAbsensi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\View\View;
@@ -64,13 +66,17 @@ class RekapController extends Controller
     {
         $periode = $this->periode($request);
         $rekap = $this->barisRekap($periode);
+        $rekapMataKuliah = $this->barisRekapMataKuliah($periode);
 
         return view('cms.rekap.index', [
             'rekap' => $rekap,
+            'rekapMataKuliah' => $rekapMataKuliah,
             'total' => $this->ringkasan($rekap),
+            'totalMataKuliah' => $this->ringkasanMataKuliah($rekapMataKuliah),
             'periode' => $periode,
             'pilihanBulan' => $this->pilihanBulan(),
             'pilihanKelas' => $this->pilihanKelas(),
+            'pilihanMataKuliah' => $this->pilihanMataKuliah(),
         ]);
     }
 
@@ -85,11 +91,13 @@ class RekapController extends Controller
     {
         $periode = $this->periode($request);
         $rekap = $this->barisRekap($periode);
+        $rekapMataKuliah = $this->barisRekapMataKuliah($periode);
         $total = $this->ringkasan($rekap);
+        $totalMataKuliah = $this->ringkasanMataKuliah($rekapMataKuliah);
 
         $namaBerkas = sprintf('rekap-kehadiran-%s-%s.csv', $periode['kunci'], now()->format('Ymd-His'));
 
-        return response()->streamDownload(function () use ($rekap, $total, $periode): void {
+        return response()->streamDownload(function () use ($rekap, $rekapMataKuliah, $total, $totalMataKuliah, $periode): void {
             $keluaran = fopen('php://output', 'wb');
 
             fwrite($keluaran, "\xEF\xBB\xBF");
@@ -98,6 +106,7 @@ class RekapController extends Controller
             fputcsv($keluaran, ['Kampus', config('app.name')], ';');
             fputcsv($keluaran, ['Periode', $periode['label']], ';');
             fputcsv($keluaran, ['Kelas', $periode['kelas'] ?? 'Semua Kelas'], ';');
+            fputcsv($keluaran, ['Filter Mata Kuliah', $periode['mata_kuliah'] ?? 'Semua Mata Kuliah'], ';');
             fputcsv($keluaran, ['Dicetak', $periode['dicetak']], ';');
             fputcsv($keluaran, [], ';');
 
@@ -127,6 +136,43 @@ class RekapController extends Controller
                 $total['persentase'],
             ], ';');
 
+            fputcsv($keluaran, [], ';');
+            fputcsv($keluaran, ['REKAP PER MATA KULIAH'], ';');
+            fputcsv($keluaran, [
+                'Mata Kuliah',
+                'Sesi',
+                'Hadir',
+                'Izin',
+                'Sakit',
+                'Alpa',
+                'Total Catatan',
+                'Persentase Kehadiran (%)',
+            ], ';');
+
+            foreach ($rekapMataKuliah as $baris) {
+                fputcsv($keluaran, [
+                    $baris['mata_kuliah'],
+                    $baris['sesi'],
+                    $baris['hadir'],
+                    $baris['izin'],
+                    $baris['sakit'],
+                    $baris['alpa'],
+                    $baris['total'],
+                    $baris['persentase'],
+                ], ';');
+            }
+
+            fputcsv($keluaran, [
+                'TOTAL',
+                $totalMataKuliah['sesi'],
+                $totalMataKuliah['hadir'],
+                $totalMataKuliah['izin'],
+                $totalMataKuliah['sakit'],
+                $totalMataKuliah['alpa'],
+                $totalMataKuliah['total'],
+                $totalMataKuliah['persentase'],
+            ], ';');
+
             fclose($keluaran);
         }, $namaBerkas, [
             'Content-Type' => 'text/csv; charset=UTF-8',
@@ -142,10 +188,13 @@ class RekapController extends Controller
     {
         $periode = $this->periode($request);
         $rekap = $this->barisRekap($periode);
+        $rekapMataKuliah = $this->barisRekapMataKuliah($periode);
 
         return view('cms.rekap.pdf', [
             'rekap' => $rekap,
+            'rekapMataKuliah' => $rekapMataKuliah,
             'total' => $this->ringkasan($rekap),
+            'totalMataKuliah' => $this->ringkasanMataKuliah($rekapMataKuliah),
             'periode' => $periode,
         ]);
     }
@@ -157,12 +206,17 @@ class RekapController extends Controller
      * yang dikirim berbeda dari rentang penuh bulan tersebut, berarti pengguna
      * mempersempit periode secara manual dan rentang tanggal itu yang dipakai.
      *
-     * @return array{bulan:?string,kelas:?string,q:?string,dari:Carbon,sampai:Carbon,label:string,kunci:string,dicetak:string}
+     * `mata_kuliah` menyaring kedua rekap (per kelas dan per mata kuliah) ke satu
+     * nama mata kuliah saja; nilai apa pun diterima apa adanya karena hasilnya
+     * cukup berupa tabel kosong bila namanya tidak ada di `jadwals`.
+     *
+     * @return array{bulan:?string,kelas:?string,mata_kuliah:?string,q:?string,dari:Carbon,sampai:Carbon,label:string,kunci:string,dicetak:string}
      */
     private function periode(Request $request): array
     {
         $bulan = $this->bulan($request->query('bulan'));
         $kelas = $this->teks($request->query('kelas'));
+        $mataKuliah = $this->teks($request->query('mata_kuliah'));
         $q = $this->teks($request->query('q'));
 
         // Tanggal dari form hanya berisi tanggal tanpa jam, jadi batas tengah malam
@@ -193,6 +247,7 @@ class RekapController extends Controller
         return [
             'bulan' => $bulan,
             'kelas' => $kelas,
+            'mata_kuliah' => $mataKuliah,
             'q' => $q,
             'dari' => $awal,
             'sampai' => $akhir,
@@ -205,7 +260,12 @@ class RekapController extends Controller
     /**
      * Agregasi rekap kehadiran per kelas untuk periode tertentu.
      *
-     * @param  array{bulan:?string,kelas:?string,q:?string,dari:Carbon,sampai:Carbon,label:string,kunci:string,dicetak:string}  $periode
+     * Absensi ditautkan ke sesi lalu jadwal supaya filter `mata_kuliah` bisa
+     * membatasi hitungan per kelas ke satu mata kuliah saja. Jumlah mahasiswa
+     * tetap dihitung dari pendaftaran kelas, karena sistem tidak menyimpan
+     * pendaftaran per mata kuliah.
+     *
+     * @param  array{bulan:?string,kelas:?string,mata_kuliah:?string,q:?string,dari:Carbon,sampai:Carbon,label:string,kunci:string,dicetak:string}  $periode
      * @return list<array{kelas:string,mahasiswa:int,hadir:int,izin:int,sakit:int,alpa:int,total:int,persentase:int}>
      */
     private function barisRekap(array $periode): array
@@ -219,8 +279,11 @@ class RekapController extends Controller
 
         $catatanAbsensi = Absensi::query()
             ->join('mahasiswa', 'absensis.mahasiswa_id', '=', 'mahasiswa.id')
+            ->join('sesi_absensis', 'absensis.sesi_absensi_id', '=', 'sesi_absensis.id')
+            ->leftJoin('jadwals', 'sesi_absensis.jadwal_id', '=', 'jadwals.id')
             ->whereBetween('absensis.waktu_absen', [$periode['dari'], $periode['sampai']])
             ->when($periode['kelas'] !== null, fn ($query) => $query->where('mahasiswa.kelas', $periode['kelas']))
+            ->when($periode['mata_kuliah'] !== null, fn ($query) => $query->where('jadwals.mata_kuliah', $periode['mata_kuliah']))
             ->when($periode['q'] !== null, fn ($query) => $query->where('mahasiswa.kelas', 'like', '%'.$periode['q'].'%'))
             ->selectRaw('mahasiswa.kelas as kelas, absensis.status as status, count(*) as total')
             ->groupBy('mahasiswa.kelas', 'absensis.status')
@@ -268,6 +331,101 @@ class RekapController extends Controller
     }
 
     /**
+     * Agregasi rekap kehadiran per mata kuliah untuk periode tertentu.
+     *
+     * Satu baris per nama mata kuliah: jumlah sesi yang tercatat beserta
+     * rincian status kehadirannya. Sesi adalah satuan kuliah yang sesungguhnya,
+     * jadi rekap ini yang dipakai sebagai laporan utama kehadiran per mata
+     * kuliah — bukan per hari atau per kelas.
+     *
+     * Baris absensi lama tanpa jadwal (`jadwal_id` null) digabung ke grup
+     * `SesiAbsensi::TANPA_JADWAL` supaya riwayat lama tidak hilang dari rekap.
+     *
+     * @param  array{bulan:?string,kelas:?string,mata_kuliah:?string,q:?string,dari:Carbon,sampai:Carbon,label:string,kunci:string,dicetak:string}  $periode
+     * @return list<array{mata_kuliah:string,sesi:int,hadir:int,izin:int,sakit:int,alpa:int,total:int,persentase:int}>
+     */
+    private function barisRekapMataKuliah(array $periode): array
+    {
+        $catatanAbsensi = Absensi::query()
+            ->join('mahasiswa', 'absensis.mahasiswa_id', '=', 'mahasiswa.id')
+            ->join('sesi_absensis', 'absensis.sesi_absensi_id', '=', 'sesi_absensis.id')
+            ->leftJoin('jadwals', 'sesi_absensis.jadwal_id', '=', 'jadwals.id')
+            ->whereBetween('absensis.waktu_absen', [$periode['dari'], $periode['sampai']])
+            ->when($periode['kelas'] !== null, fn ($query) => $query->where('mahasiswa.kelas', $periode['kelas']))
+            ->when($periode['mata_kuliah'] !== null, fn ($query) => $query->where('jadwals.mata_kuliah', $periode['mata_kuliah']))
+            // Pencarian pada tabel ini menyoroti nama mata kuliah, sedangkan
+            // pencarian tabel per kelas menyoroti nama kelas; satu kotak `q`
+            // dipakai keduanya karena isinya memang berbeda tabel.
+            ->when($periode['q'] !== null, fn ($query) => $query->where('jadwals.mata_kuliah', 'like', '%'.$periode['q'].'%'))
+            ->selectRaw('jadwals.mata_kuliah as mata_kuliah, absensis.status as status, count(*) as total')
+            ->groupBy('jadwals.mata_kuliah', 'absensis.status')
+            ->get();
+
+        // Jumlah sesi per mata kuliah dihitung terpisah dengan distinct id
+        // sesi, karena satu sesi punya banyak baris absensi (satu per mahasiswa).
+        $sesiPerMataKuliah = Absensi::query()
+            ->join('mahasiswa', 'absensis.mahasiswa_id', '=', 'mahasiswa.id')
+            ->join('sesi_absensis', 'absensis.sesi_absensi_id', '=', 'sesi_absensis.id')
+            ->leftJoin('jadwals', 'sesi_absensis.jadwal_id', '=', 'jadwals.id')
+            ->whereBetween('absensis.waktu_absen', [$periode['dari'], $periode['sampai']])
+            ->when($periode['kelas'] !== null, fn ($query) => $query->where('mahasiswa.kelas', $periode['kelas']))
+            ->when($periode['mata_kuliah'] !== null, fn ($query) => $query->where('jadwals.mata_kuliah', $periode['mata_kuliah']))
+            ->when($periode['q'] !== null, fn ($query) => $query->where('jadwals.mata_kuliah', 'like', '%'.$periode['q'].'%'))
+            ->selectRaw('jadwals.mata_kuliah as mata_kuliah, count(distinct absensis.sesi_absensi_id) as sesi')
+            ->groupBy('jadwals.mata_kuliah')
+            ->pluck('sesi', 'mata_kuliah');
+
+        $kosong = fn (string $mataKuliah): array => [
+            'mata_kuliah' => $mataKuliah,
+            'sesi' => 0,
+            'hadir' => 0,
+            'izin' => 0,
+            'sakit' => 0,
+            'alpa' => 0,
+            'total' => 0,
+            'persentase' => 0,
+        ];
+
+        $baris = [];
+
+        foreach ($catatanAbsensi as $catatan) {
+            $mataKuliah = (string) ($catatan->mata_kuliah ?? SesiAbsensi::TANPA_JADWAL);
+            $kolom = self::PETA_STATUS[$catatan->status] ?? null;
+
+            if ($kolom === null) {
+                continue;
+            }
+
+            $baris[$mataKuliah] ??= $kosong($mataKuliah);
+            $baris[$mataKuliah][$kolom] += (int) $catatan->total;
+            $baris[$mataKuliah]['total'] += (int) $catatan->total;
+        }
+
+        foreach ($sesiPerMataKuliah as $mataKuliah => $sesi) {
+            // Kunci null pada hasil groupBy berubah jadi string kosong di PHP,
+            // jadi dinormalkan kembali ke nama grup tanpa jadwal.
+            $kunci = ($mataKuliah === null || $mataKuliah === '')
+                ? SesiAbsensi::TANPA_JADWAL
+                : (string) $mataKuliah;
+
+            $baris[$kunci] ??= $kosong($kunci);
+            $baris[$kunci]['sesi'] = (int) $sesi;
+        }
+
+        uksort($baris, 'strnatcmp');
+
+        $rekap = array_values($baris);
+
+        foreach ($rekap as $indeks => $baris) {
+            $rekap[$indeks]['persentase'] = $baris['total'] > 0
+                ? (int) round($baris['hadir'] / $baris['total'] * 100)
+                : 0;
+        }
+
+        return $rekap;
+    }
+
+    /**
      * Jumlah keseluruhan seluruh baris rekap, dipakai untuk baris TOTAL pada export.
      *
      * @param  list<array{kelas:string,mahasiswa:int,hadir:int,izin:int,sakit:int,alpa:int,total:int,persentase:int}>  $rekap
@@ -276,6 +434,34 @@ class RekapController extends Controller
     private function ringkasan(array $rekap): array
     {
         $total = ['mahasiswa' => 0, 'hadir' => 0, 'izin' => 0, 'sakit' => 0, 'alpa' => 0, 'total' => 0, 'persentase' => 0];
+
+        foreach ($rekap as $baris) {
+            foreach (array_keys($total) as $kolom) {
+                if ($kolom !== 'persentase') {
+                    $total[$kolom] += $baris[$kolom];
+                }
+            }
+        }
+
+        $total['persentase'] = $total['total'] > 0
+            ? (int) round($total['hadir'] / $total['total'] * 100)
+            : 0;
+
+        return $total;
+    }
+
+    /**
+     * Jumlah keseluruhan rekap per mata kuliah untuk baris TOTAL.
+     *
+     * Bedanya dengan `ringkasan()`: kolom `mahasiswa` diganti `sesi`, karena
+     * satuan rekap per mata kuliah adalah sesi kuliah, bukan jumlah peserta.
+     *
+     * @param  list<array{mata_kuliah:string,sesi:int,hadir:int,izin:int,sakit:int,alpa:int,total:int,persentase:int}>  $rekap
+     * @return array{sesi:int,hadir:int,izin:int,sakit:int,alpa:int,total:int,persentase:int}
+     */
+    private function ringkasanMataKuliah(array $rekap): array
+    {
+        $total = ['sesi' => 0, 'hadir' => 0, 'izin' => 0, 'sakit' => 0, 'alpa' => 0, 'total' => 0, 'persentase' => 0];
 
         foreach ($rekap as $baris) {
             foreach (array_keys($total) as $kolom) {
@@ -328,6 +514,32 @@ class RekapController extends Controller
             ->pluck('kelas')
             ->filter()
             ->map(fn ($kelas) => (string) $kelas)
+            ->values()
+            ->all();
+
+        usort($daftar, 'strnatcmp');
+
+        return $daftar;
+    }
+
+    /**
+     * Daftar mata kuliah yang punya jadwal mengajar, untuk dropdown filter.
+     *
+     * Diambil dari `jadwals` bukan dari tabel `mata_kuliah`, supaya pilihan
+     * selalu berisi mata kuliah yang bisa benar-benar punya catatan absensi
+     * pada rekap — nama yang tidak pernah mengajar tidak menampilkan apa pun.
+     *
+     * @return list<string>
+     */
+    private function pilihanMataKuliah(): array
+    {
+        $daftar = Jadwal::query()
+            ->whereNotNull('mata_kuliah')
+            ->distinct()
+            ->pluck('mata_kuliah')
+            ->filter()
+            ->map(fn ($mataKuliah) => (string) $mataKuliah)
+            ->unique()
             ->values()
             ->all();
 

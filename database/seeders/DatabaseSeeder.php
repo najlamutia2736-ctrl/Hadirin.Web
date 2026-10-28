@@ -14,6 +14,10 @@ class DatabaseSeeder extends Seeder
     /**
      * Seed the application's database.
      *
+     * Instalasi baru langsung punya tiga akun yang bisa dipakai login
+     * (admin, dosen, mahasiswa) lewat `AkunSeeder`, sehingga tidak perlu
+     * menunggu akun dibuat dari dashboard CMS.
+     *
      * Sesi presensi ikut dibuat di sini supaya instalasi baru langsung bisa
      * dipakai absen tanpa menunggu scheduler berjalan. Satu sesi dibuat per
      * jadwal mengajar hari ini. Pada server sebenarnya sesi dibuat otomatis
@@ -27,6 +31,8 @@ class DatabaseSeeder extends Seeder
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
+
+        $this->call(AkunSeeder::class);
 
         app(SesiAbsensiService::class)->pastikanSesiHariIni(today());
     }

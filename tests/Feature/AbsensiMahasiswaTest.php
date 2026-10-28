@@ -142,6 +142,33 @@ test('rekap bulan ini menghitung hadir izin sakit dan alpha', function () {
     $response->assertSee('6 catatan presensi');
 });
 
+test('rekap bulan ini dirinci per mata kuliah', function () {
+    $mahasiswa = mahasiswaDenganAkun();
+
+    $sesiInformatika = sesiUntuk($mahasiswa, ['mata_kuliah' => 'Informatika']);
+    $sesiAljabar = sesiUntuk($mahasiswa, ['mata_kuliah' => 'Aljabar Linear'], 120);
+
+    Absensi::create([
+        'mahasiswa_id' => $mahasiswa->id,
+        'sesi_absensi_id' => $sesiInformatika->id,
+        'waktu_absen' => now(),
+        'status' => 'hadir',
+    ]);
+
+    Absensi::create([
+        'mahasiswa_id' => $mahasiswa->id,
+        'sesi_absensi_id' => $sesiAljabar->id,
+        'waktu_absen' => now(),
+        'status' => 'sakit',
+    ]);
+
+    $response = $this->actingAs($mahasiswa->user)->get(route('absensi.index'))->assertOk();
+
+    $response->assertSee('Per Mata Kuliah')
+        ->assertSee('Informatika')
+        ->assertSee('Aljabar Linear');
+});
+
 test('menu pada halaman absensi menuju ke enam halaman lain', function () {
     $mahasiswa = mahasiswaDenganAkun();
 
@@ -469,8 +496,10 @@ test('mahasiswa bisa absen lagi di hari yang sama untuk mata kuliah berikutnya',
 });
 
 test('sesi milik kelas lain tidak bisa dipakai untuk absen', function () {
-    $mahasiswa = mahasiswaDenganAkun(['nim' => '20240101']);
-    $teman = mahasiswaDenganAkun(['nim' => '20249999']);
+    // Kelasnya dipastikan berbeda; kalau mengandalkan acakan factory, kedua
+    // mahasiswa bisa kebagian kelas yang sama dan tesnya jadi tidak menentu.
+    $mahasiswa = mahasiswaDenganAkun(['nim' => '20240101', 'kelas' => 'Kelas A']);
+    $teman = mahasiswaDenganAkun(['nim' => '20249999', 'kelas' => 'Kelas B']);
     $sesiKelasLain = sesiUntuk($teman);
 
     $this->actingAs($mahasiswa->user)
@@ -745,6 +774,129 @@ test('halaman notifikasi menampilkan tujuh hari terakhir dengan hari kosong', fu
         ->assertSee('2 catatan');
 });
 
+test('riwayat notifikasi bisa difilter per mata kuliah', function () {
+    $mahasiswa = mahasiswaDenganAkun();
+
+    $aljabar = sesiUntuk($mahasiswa, ['mata_kuliah' => 'Aljabar Linear']);
+    $informatika = sesiUntuk($mahasiswa, ['mata_kuliah' => 'Informatika Dasar'], 45);
+
+    Absensi::create([
+        'mahasiswa_id' => $mahasiswa->id,
+        'sesi_absensi_id' => $aljabar->id,
+        'waktu_absen' => now()->subDay()->setTime(7, 30),
+        'status' => 'hadir',
+        'keterangan' => 'Catatan Aljabar.',
+    ]);
+
+    Absensi::create([
+        'mahasiswa_id' => $mahasiswa->id,
+        'sesi_absensi_id' => $informatika->id,
+        'waktu_absen' => now()->subDay()->setTime(9, 0),
+        'status' => 'izin',
+        'keterangan' => 'Catatan Informatika.',
+    ]);
+
+    // Tanpa filter semua catatan tampil, dan formulir filternya ikut ada.
+    $this->actingAs($mahasiswa->user)
+        ->get(route('absensi.notifikasi'))
+        ->assertOk()
+        ->assertSee('2 catatan')
+        ->assertSee('name="mata_kuliah"', false)
+        ->assertSee('Terapkan');
+
+    // Filter satu mata kuliah: hanya catatannya yang tersisa di tabel riwayat.
+    $this->actingAs($mahasiswa->user)
+        ->get(route('absensi.notifikasi', ['mata_kuliah' => 'Aljabar Linear']))
+        ->assertOk()
+        ->assertSee('1 catatan')
+        ->assertSee('Catatan Aljabar.')
+        ->assertDontSee('Catatan Informatika.');
+});
+
+test('riwayat notifikasi bisa difilter per status', function () {
+    $mahasiswa = mahasiswaDenganAkun();
+    $sesi = sesiUntuk($mahasiswa);
+
+    foreach ([['hadir', 'Catatan hadir.'], ['alpha', 'Catatan alpa.']] as $idx => [$status, $keterangan]) {
+        Absensi::create([
+            'mahasiswa_id' => $mahasiswa->id,
+            'sesi_absensi_id' => $sesi->id,
+            'waktu_absen' => now()->subDay()->setTime(7, 30)->addMinutes($idx * 90),
+            'status' => $status,
+            'keterangan' => $keterangan,
+        ]);
+    }
+
+    $this->actingAs($mahasiswa->user)
+        ->get(route('absensi.notifikasi', ['status' => 'alpha']))
+        ->assertOk()
+        ->assertSee('1 catatan')
+        ->assertSee('Catatan alpa.')
+        ->assertDontSee('Catatan hadir.');
+});
+
+test('filter riwayat notifikasi mengabaikan nilai yang tidak dikenal', function () {
+    $mahasiswa = mahasiswaDenganAkun();
+    $sesi = sesiUntuk($mahasiswa, ['mata_kuliah' => 'Aljabar Linear']);
+
+    foreach (['Catatan Aljabar.', 'Catatan izin.'] as $idx => $keterangan) {
+        Absensi::create([
+            'mahasiswa_id' => $mahasiswa->id,
+            'sesi_absensi_id' => $sesi->id,
+            'waktu_absen' => now()->subDay()->setTime(7, 30)->addMinutes($idx * 90),
+            'status' => $idx === 0 ? 'hadir' : 'izin',
+            'keterangan' => $keterangan,
+        ]);
+    }
+
+    // Pilihan di luar daftar diabaikan, bukan membuat halaman kosong.
+    $this->actingAs($mahasiswa->user)
+        ->get(route('absensi.notifikasi', ['mata_kuliah' => 'Tidak Pernah Diikuti', 'status' => 'libur']))
+        ->assertOk()
+        ->assertSee('2 catatan')
+        ->assertDontSee('difilter')
+        ->assertSee('Catatan Aljabar.')
+        ->assertSee('Catatan izin.');
+
+    // Filter valid tapi tidak ada catatannya: pesannya menyesuaikan.
+    $this->actingAs($mahasiswa->user)
+        ->get(route('absensi.notifikasi', ['status' => 'sakit']))
+        ->assertOk()
+        ->assertSee('0 catatan')
+        ->assertSee('Tidak ada catatan yang cocok')
+        ->assertDontSee('Mulai presen');
+});
+
+test('riwayat notifikasi bisa difilter untuk sesi tanpa jadwal kuliah', function () {
+    $mahasiswa = mahasiswaDenganAkun();
+
+    $sesiLama = sesiBerjalan(); // sesi lama tanpa jadwal_id
+    $sesiBaru = sesiUntuk($mahasiswa, ['mata_kuliah' => 'Aljabar Linear']);
+
+    Absensi::create([
+        'mahasiswa_id' => $mahasiswa->id,
+        'sesi_absensi_id' => $sesiLama->id,
+        'waktu_absen' => now()->subDay()->setTime(7, 30),
+        'status' => 'hadir',
+        'keterangan' => 'Catatan tanpa jadwal.',
+    ]);
+
+    Absensi::create([
+        'mahasiswa_id' => $mahasiswa->id,
+        'sesi_absensi_id' => $sesiBaru->id,
+        'waktu_absen' => now()->subDay()->setTime(9, 0),
+        'status' => 'hadir',
+        'keterangan' => 'Catatan berjadwal.',
+    ]);
+
+    $this->actingAs($mahasiswa->user)
+        ->get(route('absensi.notifikasi', ['mata_kuliah' => SesiAbsensi::TANPA_JADWAL]))
+        ->assertOk()
+        ->assertSee('1 catatan')
+        ->assertSee('Catatan tanpa jadwal.')
+        ->assertDontSee('Catatan berjadwal.');
+});
+
 test('halaman notifikasi hanya untuk akun mahasiswa', function () {
     $this->get(route('absensi.notifikasi'))
         ->assertRedirect(route('login'));
@@ -879,8 +1031,9 @@ test('pengajuan untuk sesi yang sudah berakhir ditolak', function () {
 });
 
 test('pengajuan ditolak untuk sesi milik kelas lain', function () {
-    $mahasiswa = mahasiswaDenganAkun();
-    $teman = mahasiswaDenganAkun();
+    // Kelasnya dipastikan berbeda supaya tes tidak flaky seperti acakan factory.
+    $mahasiswa = mahasiswaDenganAkun(['kelas' => 'Kelas A']);
+    $teman = mahasiswaDenganAkun(['kelas' => 'Kelas B']);
     $sesiKelasLain = sesiUntuk($teman);
 
     $this->actingAs($mahasiswa->user)
@@ -983,4 +1136,126 @@ test('halaman metode hanya bisa dibuka oleh akun mahasiswa', function () {
     $this->actingAs(User::factory()->create(['role' => 'Admin']))
         ->get(route('absensi.metode'))
         ->assertForbidden();
+});
+
+/*
+| Scan QR Sesi: mahasiswa memindai QR yang ditampilkan dosen atau admin di
+| depan kelas (halaman Pindai Barcode). Isinya kode sesi, jadi begitu terbaca,
+| halaman mengirimkannya sebagai JSON dan kehadiran dicatat tanpa form.
+*/
+
+test('halaman scan qr hanya untuk akun mahasiswa', function () {
+    $this->get(route('absensi.scan-qr'))
+        ->assertRedirect(route('login'));
+
+    $this->actingAs(User::factory()->create(['role' => 'Dosen']))
+        ->get(route('absensi.scan-qr'))
+        ->assertForbidden();
+});
+
+test('halaman scan qr mengirim alamat simpan untuk skrip kameranya', function () {
+    $mahasiswa = mahasiswaDenganAkun();
+
+    $this->actingAs($mahasiswa->user)
+        ->get(route('absensi.scan-qr'))
+        ->assertOk()
+        // Alamatnya dikirim sebagai JSON ke dalam skrip kameranya.
+        ->assertSee('RUTE_SIMPAN', false)
+        ->assertSee('meta name="csrf-token"', false);
+});
+
+test('scan qr sesi yang sedang berjalan mencatat kehadiran sebagai hadir', function () {
+    $mahasiswa = mahasiswaDenganAkun(['nim' => '20240101']);
+    $sesi = sesiUntuk($mahasiswa);
+
+    $this->actingAs($mahasiswa->user)
+        ->postJson(route('absensi.scan-qr.store'), ['kode' => $sesi->kode_sesi])
+        ->assertOk()
+        ->assertJson(['sukses' => true]);
+
+    $absensi = Absensi::where('mahasiswa_id', $mahasiswa->id)->firstOrFail();
+
+    expect($absensi->status)->toBe('hadir')
+        ->and($absensi->sesi_absensi_id)->toBe($sesi->id);
+});
+
+test('scan ulang pada sesi yang sama ditolak dan tidak menggandakan catatan', function () {
+    $mahasiswa = mahasiswaDenganAkun();
+    $sesi = sesiUntuk($mahasiswa);
+
+    $this->actingAs($mahasiswa->user)
+        ->postJson(route('absensi.scan-qr.store'), ['kode' => $sesi->kode_sesi])
+        ->assertOk();
+
+    $this->actingAs($mahasiswa->user)
+        ->postJson(route('absensi.scan-qr.store'), ['kode' => $sesi->kode_sesi])
+        ->assertStatus(422)
+        ->assertJson(['sukses' => false]);
+
+    expect(Absensi::where('mahasiswa_id', $mahasiswa->id)->count())->toBe(1);
+});
+
+test('scan qr milik kelas lain ditolak', function () {
+    // Kelasnya dipastikan berbeda supaya tes tidak flaky seperti acakan factory.
+    $mahasiswa = mahasiswaDenganAkun(['kelas' => 'Kelas A']);
+    $teman = mahasiswaDenganAkun(['kelas' => 'Kelas B']);
+    $sesiKelasLain = sesiUntuk($teman);
+
+    $this->actingAs($mahasiswa->user)
+        ->postJson(route('absensi.scan-qr.store'), ['kode' => $sesiKelasLain->kode_sesi])
+        ->assertStatus(422)
+        ->assertJson(['sukses' => false]);
+
+    expect(Absensi::where('mahasiswa_id', $mahasiswa->id)->count())->toBe(0);
+});
+
+test('scan qr ditolak saat sesi sudah berakhir', function () {
+    $mahasiswa = mahasiswaDenganAkun();
+    $sesi = sesiUntuk($mahasiswa);
+
+    // Sesi dimundurkan supaya sudah lewat, apa pun jam tes dijalankan.
+    $sesi->forceFill([
+        'waktu_mulai' => now()->subHours(2),
+        'waktu_selesai' => now()->subHour(),
+    ])->save();
+
+    $this->actingAs($mahasiswa->user)
+        ->postJson(route('absensi.scan-qr.store'), ['kode' => $sesi->kode_sesi])
+        ->assertStatus(422)
+        ->assertJson(['sukses' => false]);
+
+    expect(Absensi::where('mahasiswa_id', $mahasiswa->id)->count())->toBe(0);
+});
+
+test('kode qr yang tidak dikenal ditolak', function () {
+    $mahasiswa = mahasiswaDenganAkun();
+
+    $this->actingAs($mahasiswa->user)
+        ->postJson(route('absensi.scan-qr.store'), ['kode' => 'JW999-2020-01-01'])
+        ->assertStatus(422)
+        ->assertJson(['sukses' => false]);
+});
+
+test('mahasiswa nonaktif tidak bisa presen lewat scan qr', function () {
+    $mahasiswa = mahasiswaDenganAkun(['status' => 'Nonaktif']);
+    $sesi = sesiUntuk($mahasiswa);
+
+    $this->actingAs($mahasiswa->user)
+        ->postJson(route('absensi.scan-qr.store'), ['kode' => $sesi->kode_sesi])
+        ->assertStatus(403)
+        ->assertJson(['sukses' => false]);
+
+    expect(Absensi::where('mahasiswa_id', $mahasiswa->id)->count())->toBe(0);
+});
+
+test('mahasiswa nonaktif tidak bisa presen lewat kode nim', function () {
+    $mahasiswa = mahasiswaDenganAkun(['nim' => '20240101', 'status' => 'Nonaktif']);
+    $sesi = sesiUntuk($mahasiswa);
+
+    $this->actingAs($mahasiswa->user)
+        ->post(route('absensi.id-unik.store'), ['kode' => '20240101', 'sesi' => $sesi->id])
+        ->assertRedirect(route('absensi.id-unik'))
+        ->assertSessionHas('gagal');
+
+    expect(Absensi::where('mahasiswa_id', $mahasiswa->id)->count())->toBe(0);
 });

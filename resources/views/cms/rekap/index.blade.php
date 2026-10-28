@@ -7,7 +7,7 @@
     <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
             <h2 class="text-2xl font-bold text-gray-800">Rekap Kehadiran</h2>
-            <p class="mt-1 text-gray-600">Ringkasan kehadiran mahasiswa per kelas dan per bulan.</p>
+            <p class="mt-1 text-gray-600">Ringkasan kehadiran mahasiswa per mata kuliah, per kelas, dan per bulan.</p>
         </div>
         <div class="flex flex-col gap-3 sm:flex-row">
             <a href="{{ route('cms.rekap.export.pdf', request()->except('page')) }}" target="_blank" rel="noopener"
@@ -49,6 +49,18 @@
             </select>
         </div>
         <div class="flex-1">
+            <label class="mb-1.5 block text-sm font-medium text-gray-700" for="mataKuliah">Mata Kuliah</label>
+            <select id="mataKuliah" name="mata_kuliah"
+                class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                <option value="">Semua Mata Kuliah</option>
+                @foreach ($pilihanMataKuliah as $mataKuliah)
+                    <option value="{{ $mataKuliah }}" @selected($periode['mata_kuliah'] === $mataKuliah)>
+                        {{ $mataKuliah }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+        <div class="flex-1">
             <label class="mb-1.5 block text-sm font-medium text-gray-700" for="dari">Dari Tanggal</label>
             <input id="dari" name="dari" type="date" value="{{ $periode['dari']->format('Y-m-d') }}"
                 class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
@@ -71,7 +83,7 @@
         <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4">
             <h3 class="font-semibold text-gray-800">Rekap per Kelas</h3>
             <form method="GET" action="{{ route('cms.rekap') }}" class="relative">
-                @foreach (['bulan' => $periode['bulan'], 'kelas' => $periode['kelas'], 'dari' => $periode['dari']->format('Y-m-d'), 'sampai' => $periode['sampai']->format('Y-m-d')] as $nama => $nilai)
+                @foreach (['bulan' => $periode['bulan'], 'kelas' => $periode['kelas'], 'mata_kuliah' => $periode['mata_kuliah'], 'dari' => $periode['dari']->format('Y-m-d'), 'sampai' => $periode['sampai']->format('Y-m-d')] as $nama => $nilai)
                     @if ($nilai)
                         <input type="hidden" name="{{ $nama }}" value="{{ $nilai }}">
                     @endif
@@ -79,7 +91,7 @@
                 <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-400">
                     <i class="fas fa-search text-sm"></i>
                 </span>
-                <input type="search" name="q" value="{{ $periode['q'] }}" placeholder="Cari kelas..."
+                <input type="search" name="q" value="{{ $periode['q'] }}" placeholder="Cari kelas / mata kuliah..."
                     class="w-full rounded-lg border border-gray-200 py-2 pl-9 pr-3 text-sm text-gray-700 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:w-56">
             </form>
         </div>
@@ -150,9 +162,96 @@
                 @if ($periode['kelas'])
                     · Kelas <span class="font-medium text-gray-700">{{ $periode['kelas'] }}</span>
                 @endif
+                @if ($periode['mata_kuliah'])
+                    · Mata Kuliah <span class="font-medium text-gray-700">{{ $periode['mata_kuliah'] }}</span>
+                @endif
             </p>
             <p class="mt-1 text-xs text-gray-400">
                 Persentase kehadiran dihitung dari hadir dibagi total catatan presensi pada periode tersebut.
+            </p>
+        </div>
+    </div>
+
+    {{-- tabel rekap per mata kuliah: satu baris per sesi mata kuliah --}}
+    <div class="mt-6 overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
+        <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+            <div>
+                <h3 class="font-semibold text-gray-800">Rekap per Mata Kuliah</h3>
+                <p class="mt-0.5 text-xs text-gray-500">
+                    Kehadiran dihitung per sesi mata kuliah, bukan per hari.
+                </p>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    <tr>
+                        <th class="px-6 py-3">Mata Kuliah</th>
+                        <th class="px-6 py-3">Sesi</th>
+                        <th class="px-6 py-3">Hadir</th>
+                        <th class="px-6 py-3">Izin</th>
+                        <th class="px-6 py-3">Sakit</th>
+                        <th class="px-6 py-3">Alpa</th>
+                        <th class="px-6 py-3">Persentase Kehadiran</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @forelse ($rekapMataKuliah as $row)
+                        <tr class="transition-colors hover:bg-gray-50">
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-center gap-2">
+                                    <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-sky-100 text-sky-600">
+                                        <i class="fas fa-book text-xs"></i>
+                                    </span>
+                                    <span class="font-medium text-gray-800">{{ $row['mata_kuliah'] }}</span>
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-gray-500">{{ $row['sesi'] }}</td>
+                            <td class="px-6 py-4 font-medium text-green-600">{{ $row['hadir'] }}</td>
+                            <td class="px-6 py-4 text-blue-600">{{ $row['izin'] }}</td>
+                            <td class="px-6 py-4 text-amber-600">{{ $row['sakit'] }}</td>
+                            <td class="px-6 py-4 text-red-600">{{ $row['alpa'] }}</td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="h-2 w-40 overflow-hidden rounded-full bg-gray-100">
+                                        <div class="h-full rounded-full {{ $row['persentase'] >= 90 ? 'bg-green-500' : ($row['persentase'] >= 75 ? 'bg-amber-500' : 'bg-red-500') }}"
+                                            style="width: {{ $row['persentase'] }}%"></div>
+                                    </div>
+                                    <span class="text-xs font-semibold text-gray-700">{{ $row['persentase'] }}%</span>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7" class="px-6 py-10 text-center text-gray-500">
+                                Belum ada data rekap.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+                @if (count($rekapMataKuliah) > 0)
+                    <tfoot class="border-t-2 border-gray-200 bg-gray-50 text-sm font-semibold text-gray-800">
+                        <tr>
+                            <td class="px-6 py-3">Total ({{ count($rekapMataKuliah) }} mata kuliah)</td>
+                            <td class="px-6 py-3">{{ $totalMataKuliah['sesi'] }}</td>
+                            <td class="px-6 py-3 text-green-600">{{ $totalMataKuliah['hadir'] }}</td>
+                            <td class="px-6 py-3 text-blue-600">{{ $totalMataKuliah['izin'] }}</td>
+                            <td class="px-6 py-3 text-amber-600">{{ $totalMataKuliah['sakit'] }}</td>
+                            <td class="px-6 py-3 text-red-600">{{ $totalMataKuliah['alpa'] }}</td>
+                            <td class="px-6 py-3">{{ $totalMataKuliah['persentase'] }}%</td>
+                        </tr>
+                    </tfoot>
+                @endif
+            </table>
+        </div>
+
+        <div class="border-t border-gray-200 px-6 py-4">
+            <p class="text-xs text-gray-500">
+                Sesi adalah jumlah sesi mata kuliah yang punya catatan presensi pada
+                <span class="font-medium text-gray-700">{{ $periode['label'] }}</span>.
+                Presensi lama yang belum punya jadwal masuk ke baris
+                <span class="font-medium text-gray-700">Tanpa Jadwal Kuliah</span>.
             </p>
         </div>
     </div>

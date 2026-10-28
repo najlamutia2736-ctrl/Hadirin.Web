@@ -166,8 +166,8 @@
             <div>
                 <p class="font-semibold">Belum ada kelas yang diampu.</p>
                 <p class="mt-0.5">
-                    Hubungkan kelas dengan akun Anda di dashboard admin, menu
-                    <a href="{{ route('cms.kelas') }}" class="font-semibold underline">Classes</a>,
+                    Hubungkan kelas dengan akun Anda lewat menu
+                    <span class="font-semibold">Kelas</span> di dashboard admin,
                     kolom <span class="font-semibold">Dosen Pengampu</span>. Mahasiswa
                     kelas yang terhubung akan otomatis muncul di halaman ini.
                 </p>

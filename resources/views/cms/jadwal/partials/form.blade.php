@@ -13,6 +13,10 @@
 
     $nilai = fn (string $kolom, $cadangan = null) => old($kolom, $cadangan);
 
+    // Saran nama mata kuliah dari tabel `mata_kuliah`; kosong kalau admin
+    // belum mendaftarkan mata kuliah apa pun.
+    $daftarMataKuliah = $daftarMataKuliah ?? [];
+
     $kelasError = $errors->has('kelas_id');
     $dosenError = $errors->has('dosen_id');
     $hariError = $errors->has('hari');
@@ -76,6 +80,7 @@
             Mata Kuliah <span class="text-red-500" aria-hidden="true">*</span>
         </label>
         <input id="mata_kuliah" name="mata_kuliah" type="text" required maxlength="100"
+            list="daftar-mata-kuliah"
             value="{{ $nilai('mata_kuliah', $item?->mata_kuliah) }}"
             placeholder="Contoh: Informatika" autocomplete="off"
             @class([
@@ -85,6 +90,13 @@
                 'border-gray-200 bg-white focus:border-indigo-500 focus:ring-indigo-500' => ! $errors->has(
                     'mata_kuliah'),
             ])>
+        {{-- Saran otomatis dari tabel Mata Kuliah; mengetik nama baru tetap boleh. --}}
+        <datalist id="daftar-mata-kuliah">
+            @foreach ($daftarMataKuliah as $namaMataKuliah)
+                <option value="{{ $namaMataKuliah }}"></option>
+            @endforeach
+        </datalist>
+        <p class="mt-1.5 text-xs text-gray-500">Pilih dari daftar Mata Kuliah, atau ketik nama baru bila belum terdaftar.</p>
         @error('mata_kuliah')
             <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
         @enderror

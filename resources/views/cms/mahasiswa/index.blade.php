@@ -125,6 +125,14 @@
                                         class="flex h-8 w-8 items-center justify-center rounded-lg text-blue-600 transition-colors hover:bg-blue-50">
                                         <i class="fas fa-pen text-xs"></i>
                                     </a>
+                                    <button type="button" title="Barcode" data-barcode-trigger
+                                        data-modal-open="modal-barcode"
+                                        data-barcode-nim="{{ $item->nim }}"
+                                        data-barcode-nama="{{ $item->user->name }}"
+                                        aria-label="Lihat barcode presensi {{ $item->user->name }}"
+                                        class="flex h-8 w-8 items-center justify-center rounded-lg text-indigo-600 transition-colors hover:bg-indigo-50">
+                                        <i class="fas fa-barcode text-xs"></i>
+                                    </button>
                                     <button type="button" title="Lihat Detail" data-mahasiswa-detail
                                         data-modal-open="modal-detail"
                                         data-mahasiswa-name="{{ $item->user->name }}"
@@ -334,6 +342,48 @@
         </div>
     </div>
 
+    {{-- modal: barcode presensi --}}
+    <div id="modal-barcode"
+        class="fixed inset-0 z-50 {{ $mahasiswaBaru ? 'flex' : 'hidden' }} items-center justify-center bg-black/50 p-4"
+        role="dialog" aria-modal="true" aria-labelledby="mahasiswa-barcode-title">
+        <div class="w-full max-w-sm overflow-hidden rounded-xl bg-white shadow-xl">
+            <div class="flex items-start justify-between gap-4 border-b border-gray-100 px-6 py-4">
+                <div>
+                    <h3 id="mahasiswa-barcode-title" class="font-semibold text-gray-800">Barcode Presensi</h3>
+                    <p class="mt-0.5 text-xs text-gray-500">Dipindai petugas lewat menu Pindai Barcode.</p>
+                </div>
+                <button type="button" data-modal-close aria-label="Tutup modal barcode"
+                    class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="px-6 py-5 text-center">
+                <p id="barcode-nama" class="font-semibold text-gray-800">{{ $mahasiswaBaru?->user->name ?? '-' }}</p>
+                <p id="barcode-nim" class="mt-0.5 text-sm text-gray-500">NIM {{ $mahasiswaBaru?->nim ?? '-' }}</p>
+
+                <div class="mt-4 flex justify-center">
+                    <div id="barcode-wadah" data-barcode-mahasiswa
+                        data-barcode-teks="{{ $mahasiswaBaru?->nim ?? '' }}"
+                        data-barcode-ukuran="240"
+                        class="inline-flex items-center justify-center rounded-xl bg-white p-3 ring-1 ring-slate-200"></div>
+                </div>
+
+                <p class="mt-4 text-xs text-gray-500">
+                    Barcode langsung bisa dipakai: begitu dipindai, mahasiswa tercatat hadir
+                    pada sesi mata kuliah yang sedang berjalan.
+                </p>
+            </div>
+
+            <div class="flex justify-end border-t border-gray-100 px-6 py-4">
+                <button type="button" data-modal-close
+                    class="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-100">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+
     {{-- modal: konfirmasi hapus --}}
     <div id="modal-hapus" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4"
         role="dialog" aria-modal="true" aria-labelledby="delete-mahasiswa-title">
@@ -358,6 +408,8 @@
             </form>
         </div>
     </div>
+
+    @include('components.qr-script')
 
     <script>
         // Filter kelas & status langsung tersubmit begitu berubah, tombol
@@ -407,6 +459,22 @@
             trigger.addEventListener('click', function() {
                 deleteStudentForm.action = trigger.dataset.deleteUrl;
                 deleteStudentName.textContent = trigger.dataset.studentName;
+            });
+        });
+
+        // Tombol barcode tiap baris: isi modal dengan barcode milik mahasiswa
+        // itu lebih dulu, baru handler umum di bawah yang membuka modalnya.
+        var barcodeWadah = document.getElementById('barcode-wadah');
+        var barcodeNama = document.getElementById('barcode-nama');
+        var barcodeNim = document.getElementById('barcode-nim');
+
+        document.querySelectorAll('[data-barcode-trigger]').forEach(function(trigger) {
+            trigger.addEventListener('click', function() {
+                var nim = trigger.dataset.barcodeNim || '';
+
+                barcodeNama.textContent = trigger.dataset.barcodeNama || 'Mahasiswa';
+                barcodeNim.textContent = 'NIM ' + nim;
+                window.gambarBarcodeMahasiswa(barcodeWadah, nim, 240);
             });
         });
 

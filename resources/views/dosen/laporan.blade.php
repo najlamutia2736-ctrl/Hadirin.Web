@@ -1,16 +1,17 @@
 @extends('layouts.app')
 
-@section('title', 'Laporan Bulanan · Hadirin.Web')
+@section('title', 'Laporan Presensi · Hadirin.Web')
 
 @php
-    $pageTitle = 'Laporan Bulanan';
+    $pageTitle = 'Laporan Presensi';
     $breadcrumbItems = [
         ['label' => 'Beranda'],
         ['label' => 'Dashboard Dosen'],
-        ['label' => 'Laporan Bulanan', 'current' => true],
+        ['label' => 'Laporan Presensi', 'current' => true],
     ];
 
     $kelasAktif = $laporan['filterKelas'];
+    $mataKuliahAktif = $laporan['mata_kuliah'];
     $adaCatatan = $laporan['adaCatatan'];
     $total = $laporan['total'];
 
@@ -18,112 +19,15 @@
     $perbandingan = $laporan['tab'] === 'periode';
 
     /*
-    | Warna bar persentase kehadiran. Nilainya dipakai bersama tabel per kelas,
-    | tabel per mahasiswa, dan kartu ringkasan supaya persentase yang sama selalu
-    | dibaca dengan warna yang sama.
+    | Warna bar persentase kehadiran. Nilainya dipakai bersama tabel per kelas
+    | dan tabel per mahasiswa supaya persentase yang sama selalu dibaca dengan
+    | warna yang sama.
     */
     $warnaPersentase = fn (int $nilai): string => match (true) {
         $nilai >= 85 => 'bg-emerald-500',
         $nilai >= 70 => 'bg-amber-500',
         default => 'bg-rose-500',
     };
-
-    $warnaRata = match (true) {
-        $total['persentase'] >= 85 => 'emerald',
-        $total['persentase'] >= 70 => 'amber',
-        default => 'rose',
-    };
-
-    $tones = [
-        'emerald' => [
-            'chip' => 'bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-md shadow-emerald-500/30',
-            'accent' => 'from-emerald-500 to-teal-400',
-            'value' => 'text-emerald-600',
-            'bar' => 'bg-emerald-500',
-        ],
-        'blue' => [
-            'chip' => 'bg-gradient-to-br from-blue-500 to-sky-500 text-white shadow-md shadow-blue-500/30',
-            'accent' => 'from-blue-500 to-sky-400',
-            'value' => 'text-blue-600',
-            'bar' => 'bg-blue-500',
-        ],
-        'amber' => [
-            'chip' => 'bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/30',
-            'accent' => 'from-amber-500 to-orange-400',
-            'value' => 'text-amber-600',
-            'bar' => 'bg-amber-500',
-        ],
-        'rose' => [
-            'chip' => 'bg-gradient-to-br from-rose-500 to-red-500 text-white shadow-md shadow-rose-500/30',
-            'accent' => 'from-rose-500 to-red-400',
-            'value' => 'text-rose-600',
-            'bar' => 'bg-rose-500',
-        ],
-    ];
-
-    /*
-    | Badge tren. Hanya tab periode yang punya pembanding, jadi tab bulanan
-    | menampilkan nilai absen dan hari efektif sebagai gantinya.
-    */
-    $badgeTren = match (true) {
-        ! $perbandingan => null,
-        $laporan['selisih'] > 0 => [
-            'kelas' => 'bg-emerald-50 text-emerald-600',
-            'ikon' => 'fas fa-arrow-up',
-            'teks' => '+' . $laporan['selisih'] . ' poin',
-        ],
-        $laporan['selisih'] < 0 => [
-            'kelas' => 'bg-rose-50 text-rose-600',
-            'ikon' => 'fas fa-arrow-down',
-            'teks' => $laporan['selisih'] . ' poin',
-        ],
-        default => [
-            'kelas' => 'bg-gray-100 text-gray-500',
-            'ikon' => 'fas fa-minus',
-            'teks' => 'Sama saja',
-        ],
-    };
-
-    /*
-    | Kartu statistik. Angkanya sudah dihitung di server dari tabel `absensis`,
-    | jadi label/ikon/warna tetap di Blade dan angka ikut terupdate tiap kali
-    | tab, filter periode, atau filter kelas berubah.
-    */
-    $statCards = [
-        [
-            'label' => 'Rata-rata Kehadiran',
-            'icon' => 'fas fa-chart-line',
-            'tone' => $warnaRata,
-            'value' => $total['persentase'] . '%',
-            'sub' => $perbandingan
-                ? $total['mahasiswa'] . ' mahasiswa ikut dihitung'
-                : 'dari ' . number_format($total['total'], 0, ',', '.') . ' catatan presensi',
-            'badge' => $badgeTren,
-        ],
-        [
-            'label' => 'Total Catatan',
-            'icon' => 'fas fa-list-check',
-            'tone' => 'blue',
-            'value' => number_format($total['total'], 0, ',', '.'),
-            'sub' => $total['mahasiswa'] . ' mahasiswa ikut dihitung',
-        ],
-        [
-            'label' => 'Hari Efektif',
-            'icon' => 'fas fa-calendar-check',
-            'tone' => 'amber',
-            'value' => number_format($laporan['hariEfektif'], 0, ',', '.'),
-            'sub' => 'dari ' . $laporan['jumlahHari'] . ' hari dalam periode',
-        ],
-        [
-            'label' => 'Alpa',
-            'icon' => 'fas fa-user-slash',
-            'tone' => 'rose',
-            'value' => number_format($total['alpa'], 0, ',', '.'),
-            'sub' => $total['total'] > 0
-                ? round($total['alpa'] / $total['total'] * 100) . '% dari total catatan'
-                : 'Belum ada catatan',
-        ],
-    ];
 
     // Daftar panjang dibatasi di layar; angka lengkapnya tetap di tabel bawah.
     $daftarPerhatian = array_slice($laporan['perluPerhatian'], 0, 6);
@@ -139,6 +43,7 @@
                         'bulan' => $laporan['bulan'],
                         'periode' => $laporan['periode'],
                         'kelas' => $kelasAktif,
+                        'mata_kuliah' => $mataKuliahAktif,
                     ])) }}"
                 @class([
                     'inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors',
@@ -203,11 +108,28 @@
                     @endforeach
                 </select>
             </div>
+
+            {{-- filter per mata kuliah, hanya muncul kalau jadwal kelasmu terisi --}}
+            @if (count($laporan['pilihanMataKuliah']) > 0)
+                <div>
+                    <label for="mataKuliah" class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                        Mata Kuliah
+                    </label>
+                    <select id="mataKuliah" name="mata_kuliah"
+                        class="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                        <option value="">Semua mata kuliah</option>
+                        @foreach ($laporan['pilihanMataKuliah'] as $pilihan)
+                            <option value="{{ $pilihan }}" @selected($mataKuliahAktif === $pilihan)>{{ $pilihan }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            @endif
         </div>
 
         <div class="flex flex-wrap items-center gap-3">
             <span class="text-xs text-gray-500">
                 {{ $kelasAktif ?? 'Semua kelas yang diampu' }} &middot;
+                {{ $mataKuliahAktif ?? 'Semua mata kuliah' }} &middot;
                 {{ $laporan['label'] }} &middot; dicetak {{ $laporan['dicetak'] }}
             </span>
 
@@ -216,6 +138,7 @@
                             'tab' => $laporan['tab'] === 'bulanan' ? null : $laporan['tab'],
                             'bulan' => $laporan['bulan'],
                             'periode' => $laporan['periode'],
+                            'mata_kuliah' => $mataKuliahAktif,
                         ])) }}"
                     class="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-50">
                     <i class="fas fa-filter-circle-xmark"></i>
@@ -223,8 +146,25 @@
                 </a>
             @endif
 
+            @if ($mataKuliahAktif !== null)
+                <a href="{{ route('dosen.laporan', array_filter([
+                            'tab' => $laporan['tab'] === 'bulanan' ? null : $laporan['tab'],
+                            'bulan' => $laporan['bulan'],
+                            'periode' => $laporan['periode'],
+                            'kelas' => $kelasAktif,
+                        ])) }}"
+                    class="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-50">
+                    <i class="fas fa-filter-circle-xmark"></i>
+                    Semua Mata Kuliah
+                </a>
+            @endif
+
             @unless ($perbandingan)
-                <a href="{{ route('dosen.laporan.export', array_filter(['bulan' => $laporan['bulan'], 'kelas' => $kelasAktif])) }}"
+                <a href="{{ route('dosen.laporan.export', array_filter([
+                            'bulan' => $laporan['bulan'],
+                            'kelas' => $kelasAktif,
+                            'mata_kuliah' => $mataKuliahAktif,
+                        ])) }}"
                     class="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 transition-colors hover:bg-indigo-100">
                     <i class="fas fa-file-csv"></i>
                     Ekspor CSV
@@ -291,38 +231,9 @@
         </div>
     @endif
 
-    {{-- kartu statistik --}}
-    <div class="mb-6 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
-        @foreach ($statCards as $card)
-            @php $tone = $tones[$card['tone']]; @endphp
-            <div
-                class="group relative overflow-hidden rounded-xl border border-gray-100 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
-                <span class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r {{ $tone['accent'] }}"></span>
-
-                <div class="flex items-start justify-between gap-3">
-                    <div
-                        class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-lg transition-transform duration-300 group-hover:scale-110 {{ $tone['chip'] }}">
-                        <i class="{{ $card['icon'] }}"></i>
-                    </div>
-                    @if (isset($card['badge']) && $card['badge'] !== null)
-                        <span
-                            class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold {{ $card['badge']['kelas'] }}">
-                            <i class="{{ $card['badge']['ikon'] }} text-[9px]"></i>
-                            <span>{{ $card['badge']['teks'] }}</span>
-                        </span>
-                    @endif
-                </div>
-
-                <p class="mt-4 text-sm font-medium text-gray-500">{{ $card['label'] }}</p>
-                <p class="mt-0.5 text-2xl font-bold tracking-tight {{ $tone['value'] }}">{{ $card['value'] }}</p>
-                <p class="mt-1 text-xs text-gray-400">{{ $card['sub'] }}</p>
-            </div>
-        @endforeach
-    </div>
-
-    {{-- tren harian + rekap/progres per kelas --}}
-    <div class="mb-6 grid grid-cols-1 gap-5 lg:grid-cols-3">
-        <div class="lg:col-span-2">
+    {{-- tren harian --}}
+    <div class="mb-6">
+        <div>
             <div class="h-full rounded-xl border border-gray-100 bg-white shadow-sm">
                 <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-6 py-4">
                     <div class="flex items-center gap-3">
@@ -378,75 +289,9 @@
                 </div>
             </div>
         </div>
-
-        <div>
-            <div class="h-full rounded-xl border border-gray-100 bg-white shadow-sm">
-                <div class="border-b border-gray-200 px-6 py-4">
-                    <div class="flex items-center gap-3">
-                        <span class="grid h-9 w-9 place-items-center rounded-lg bg-amber-50 text-amber-600">
-                            <i class="fas fa-layer-group"></i>
-                        </span>
-                        <div>
-                            <h3 class="font-semibold text-gray-800">
-                                {{ $perbandingan ? 'Progres per Kelas' : 'Rekap per Kelas' }}
-                            </h3>
-                            <p class="text-xs text-gray-500">
-                                {{ $perbandingan ? 'Peringkat kehadiran pada periode ini' : 'Ringkasan kehadiran pada ' . $laporan['label'] }}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="space-y-4 px-6 py-5">
-                    @forelse ($laporan['perKelas'] as $baris)
-                        @php $aktif = $baris['kelas'] === $kelasAktif; @endphp
-                        <a href="{{ route('dosen.laporan', array_filter([
-                                    'tab' => $perbandingan ? 'periode' : null,
-                                    'bulan' => $laporan['bulan'],
-                                    'periode' => $laporan['periode'],
-                                    'kelas' => $baris['kelas'],
-                                ])) }}"
-                            class="kelas-rekap block rounded-lg transition-colors hover:bg-gray-50">
-                            <div class="mb-1.5 flex items-center justify-between gap-2">
-                                <span class="flex min-w-0 items-center gap-2">
-                                    <span class="truncate text-sm font-semibold {{ $aktif ? 'text-indigo-600' : 'text-gray-700' }}">
-                                        {{ $baris['kelas'] }}
-                                    </span>
-                                    @if ($aktif)
-                                        <span
-                                            class="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-600">
-                                            difilter
-                                        </span>
-                                    @endif
-                                </span>
-                                <span class="shrink-0 text-xs text-gray-500">
-                                    {{ $baris['hadir'] }}/{{ $baris['total'] }}
-                                    <span class="font-semibold text-gray-800">{{ $baris['persentase'] }}%</span>
-                                </span>
-                            </div>
-                            <div class="progress-bar">
-                                <div class="progress-fill {{ $warnaPersentase($baris['persentase']) }}"
-                                    style="width: {{ $baris['persentase'] }}%"></div>
-                            </div>
-                            <div class="mt-1.5 flex items-center gap-3 text-[11px] text-gray-400">
-                                <span class="font-medium text-emerald-600">{{ $baris['hadir'] }} hadir</span>
-                                <span class="font-medium text-blue-600">{{ $baris['izin'] }} izin</span>
-                                <span class="font-medium text-amber-600">{{ $baris['sakit'] }} sakit</span>
-                                <span class="font-medium text-rose-600">{{ $baris['alpa'] }} alpa</span>
-                            </div>
-                        </a>
-                    @empty
-                        <p class="py-6 text-center text-sm text-gray-400">
-                            <i class="fas fa-building-columns mb-2 block text-2xl text-gray-300"></i>
-                            Belum ada kelas yang diampu.
-                        </p>
-                    @endforelse
-                </div>
-            </div>
-        </div>
     </div>
 
-    {{-- rekap per kelas + mahasiswa perlu perhatian --}}
+    {{-- mahasiswa perlu perhatian + rincian per mahasiswa --}}
     <div class="mb-6 grid grid-cols-1 gap-5 lg:grid-cols-3">
         <div>
             <div class="flex h-full flex-col rounded-xl border border-gray-100 bg-white shadow-sm">
@@ -638,6 +483,278 @@
         </div>
     </div>
 
+    {{-- rekap per mata kuliah: laporan utama sesi kuliah, bukan per hari --}}
+    <div class="mb-6 overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
+        <div class="border-b border-gray-200 px-6 py-4">
+            <div class="flex items-center gap-3">
+                <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-sky-50 text-sky-600">
+                    <i class="fas fa-book"></i>
+                </span>
+                <div>
+                    <h3 class="font-semibold text-gray-800">
+                        {{ $perbandingan ? 'Progres per Mata Kuliah' : 'Rekap per Mata Kuliah' }}
+                    </h3>
+                    <p class="text-xs text-gray-500">
+                        Kehadiran dihitung per sesi mata kuliah &middot;
+                        {{ $mataKuliahAktif ?? 'semua mata kuliah' }} &middot; {{ $laporan['label'] }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="min-w-full text-left text-sm">
+                <thead class="bg-gray-50 text-[11px] uppercase tracking-wide text-gray-400">
+                    <tr>
+                        <th class="px-6 py-3 font-semibold">Mata Kuliah</th>
+                        <th class="px-4 py-3 text-center font-semibold">Sesi</th>
+                        <th class="px-4 py-3 text-center font-semibold">Hadir</th>
+                        <th class="px-4 py-3 text-center font-semibold">Izin</th>
+                        <th class="px-4 py-3 text-center font-semibold">Sakit</th>
+                        <th class="px-4 py-3 text-center font-semibold">Alpa</th>
+                        <th class="px-4 py-3 text-center font-semibold">Total Catatan</th>
+                        <th class="px-6 py-3 font-semibold">Kehadiran</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @forelse ($laporan['perMataKuliah'] as $baris)
+                        <tr class="transition-colors hover:bg-gray-50">
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-center gap-2 font-medium text-gray-800">
+                                    <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-sky-100 text-sky-600">
+                                        <i class="fas fa-book text-xs"></i>
+                                    </span>
+                                    {{ $baris['mata_kuliah'] }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-4 text-center text-gray-600">{{ $baris['sesi'] }}</td>
+                            <td class="px-4 py-4 text-center font-semibold text-emerald-600">{{ $baris['hadir'] }}</td>
+                            <td class="px-4 py-4 text-center font-semibold text-blue-600">{{ $baris['izin'] }}</td>
+                            <td class="px-4 py-4 text-center font-semibold text-amber-600">{{ $baris['sakit'] }}</td>
+                            <td class="px-4 py-4 text-center font-semibold text-rose-600">{{ $baris['alpa'] }}</td>
+                            <td class="px-4 py-4 text-center text-gray-600">{{ $baris['total'] }}</td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="progress-bar w-28">
+                                        <div class="progress-fill {{ $warnaPersentase($baris['persentase']) }}"
+                                            style="width: {{ $baris['persentase'] }}%"></div>
+                                    </div>
+                                    <span class="text-sm font-semibold text-gray-800">
+                                        {{ $baris['persentase'] }}%
+                                    </span>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="8" class="px-6 py-10 text-center text-gray-500">
+                                Belum ada catatan presensi per mata kuliah pada {{ $laporan['label'] }}.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+                @if (count($laporan['perMataKuliah']) > 0)
+                    <tfoot class="border-t-2 border-gray-200 bg-gray-50 text-sm">
+                        <tr>
+                            <td class="px-6 py-4 font-bold text-gray-800">TOTAL</td>
+                            <td class="px-4 py-4 text-center font-bold text-gray-800">{{ $total['sesi'] }}</td>
+                            <td class="px-4 py-4 text-center font-bold text-emerald-600">{{ $total['hadir'] }}</td>
+                            <td class="px-4 py-4 text-center font-bold text-blue-600">{{ $total['izin'] }}</td>
+                            <td class="px-4 py-4 text-center font-bold text-amber-600">{{ $total['sakit'] }}</td>
+                            <td class="px-4 py-4 text-center font-bold text-rose-600">{{ $total['alpa'] }}</td>
+                            <td class="px-4 py-4 text-center font-bold text-gray-800">{{ $total['total'] }}</td>
+                            <td class="px-6 py-4 font-bold text-gray-800">{{ $total['persentase'] }}%</td>
+                        </tr>
+                    </tfoot>
+                @endif
+            </table>
+        </div>
+    </div>
+
+    {{-- rekap per jadwal & per tanggal: satu panel, dua cara membaca --}}
+    <div class="mb-6 overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
+        <div class="flex flex-col gap-3 border-b border-gray-200 px-6 py-4 lg:flex-row lg:items-center lg:justify-between">
+            <div class="flex items-center gap-3">
+                <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-amber-50 text-amber-600">
+                    <i class="fas fa-calendar-days"></i>
+                </span>
+                <div>
+                    <h3 class="font-semibold text-gray-800">
+                        {{ $perbandingan ? 'Progres per Jadwal & Tanggal' : 'Rekap per Jadwal & Tanggal' }}
+                    </h3>
+                    <p class="text-xs text-gray-500">
+                        Kehadiran per pertemuan jadwal dan per hari &middot;
+                        {{ $mataKuliahAktif ?? 'semua mata kuliah' }} &middot; {{ $laporan['label'] }}
+                    </p>
+                </div>
+            </div>
+
+            <div class="inline-flex shrink-0 self-start rounded-lg border border-gray-200 bg-gray-50 p-1">
+                <button type="button" data-rekapTab="jadwal"
+                    class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors bg-indigo-600 text-white shadow-sm">
+                    <i class="fas fa-calendar-days text-[10px]"></i>
+                    {{ $perbandingan ? 'Progres per Jadwal' : 'Rekap per Jadwal' }}
+                </button>
+                <button type="button" data-rekapTab="tanggal"
+                    class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors text-gray-600 hover:bg-white hover:text-indigo-600">
+                    <i class="fas fa-calendar-check text-[10px]"></i>
+                    {{ $perbandingan ? 'Progres per Tanggal' : 'Rekap per Tanggal' }}
+                </button>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto" data-rekapPanel="jadwal">
+            <table class="min-w-full text-left text-sm">
+                <thead class="bg-gray-50 text-[11px] uppercase tracking-wide text-gray-400">
+                    <tr>
+                        <th class="px-6 py-3 font-semibold">Jadwal</th>
+                        <th class="px-4 py-3 text-center font-semibold">Sesi</th>
+                        <th class="px-4 py-3 text-center font-semibold">Hadir</th>
+                        <th class="px-4 py-3 text-center font-semibold">Izin</th>
+                        <th class="px-4 py-3 text-center font-semibold">Sakit</th>
+                        <th class="px-4 py-3 text-center font-semibold">Alpa</th>
+                        <th class="px-4 py-3 text-center font-semibold">Total Catatan</th>
+                        <th class="px-6 py-3 font-semibold">Kehadiran</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @forelse ($laporan['perJadwal'] as $baris)
+                        <tr class="transition-colors hover:bg-gray-50">
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-start gap-2 font-medium text-gray-800">
+                                    <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-amber-100 text-amber-600">
+                                        <i class="fas fa-calendar-days text-xs"></i>
+                                    </span>
+                                    <span>
+                                        <span class="block">{{ $baris['jadwal'] }}</span>
+                                        @if ($baris['mata_kuliah'] !== null)
+                                            <span class="block text-xs font-normal text-gray-500">
+                                                {{ $baris['mata_kuliah'] }} &middot; {{ $baris['kelas'] ?? '-' }}
+                                            </span>
+                                        @endif
+                                    </span>
+                                </span>
+                            </td>
+                            <td class="px-4 py-4 text-center text-gray-600">{{ $baris['sesi'] }}</td>
+                            <td class="px-4 py-4 text-center font-semibold text-emerald-600">{{ $baris['hadir'] }}</td>
+                            <td class="px-4 py-4 text-center font-semibold text-blue-600">{{ $baris['izin'] }}</td>
+                            <td class="px-4 py-4 text-center font-semibold text-amber-600">{{ $baris['sakit'] }}</td>
+                            <td class="px-4 py-4 text-center font-semibold text-rose-600">{{ $baris['alpa'] }}</td>
+                            <td class="px-4 py-4 text-center text-gray-600">{{ $baris['total'] }}</td>
+                            <td class="px-6 py-4">
+                                @if ($baris['total'] > 0)
+                                    <div class="flex items-center gap-3">
+                                        <div class="progress-bar w-28">
+                                            <div class="progress-fill {{ $warnaPersentase($baris['persentase']) }}"
+                                                style="width: {{ $baris['persentase'] }}%"></div>
+                                        </div>
+                                        <span class="text-sm font-semibold text-gray-800">
+                                            {{ $baris['persentase'] }}%
+                                        </span>
+                                    </div>
+                                @else
+                                    <span class="text-xs text-gray-400">Belum ada catatan</span>
+                                @endif
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="8" class="px-6 py-10 text-center text-gray-500">
+                                Belum ada catatan presensi per jadwal pada {{ $laporan['label'] }}.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+                @if (count($laporan['perJadwal']) > 0)
+                    <tfoot class="border-t-2 border-gray-200 bg-gray-50 text-sm">
+                        <tr>
+                            <td class="px-6 py-4 font-bold text-gray-800">TOTAL</td>
+                            <td class="px-4 py-4 text-center font-bold text-gray-800">{{ $total['sesi'] }}</td>
+                            <td class="px-4 py-4 text-center font-bold text-emerald-600">{{ $total['hadir'] }}</td>
+                            <td class="px-4 py-4 text-center font-bold text-blue-600">{{ $total['izin'] }}</td>
+                            <td class="px-4 py-4 text-center font-bold text-amber-600">{{ $total['sakit'] }}</td>
+                            <td class="px-4 py-4 text-center font-bold text-rose-600">{{ $total['alpa'] }}</td>
+                            <td class="px-4 py-4 text-center font-bold text-gray-800">{{ $total['total'] }}</td>
+                            <td class="px-6 py-4 font-bold text-gray-800">{{ $total['persentase'] }}%</td>
+                        </tr>
+                    </tfoot>
+                @endif
+            </table>
+        </div>
+
+        <div class="overflow-x-auto hidden" data-rekapPanel="tanggal">
+            <table class="min-w-full text-left text-sm">
+                <thead class="bg-gray-50 text-[11px] uppercase tracking-wide text-gray-400">
+                    <tr>
+                        <th class="px-6 py-3 font-semibold">Tanggal</th>
+                        <th class="px-4 py-3 text-center font-semibold">Sesi</th>
+                        <th class="px-4 py-3 text-center font-semibold">Hadir</th>
+                        <th class="px-4 py-3 text-center font-semibold">Izin</th>
+                        <th class="px-4 py-3 text-center font-semibold">Sakit</th>
+                        <th class="px-4 py-3 text-center font-semibold">Alpa</th>
+                        <th class="px-4 py-3 text-center font-semibold">Total Catatan</th>
+                        <th class="px-6 py-3 font-semibold">Kehadiran</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @forelse ($laporan['perHari'] as $baris)
+                        <tr class="transition-colors hover:bg-gray-50">
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-center gap-2 font-medium text-gray-800">
+                                    <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-teal-100 text-teal-600">
+                                        <i class="fas fa-calendar-day text-xs"></i>
+                                    </span>
+                                    {{ $baris['namaTanggal'] }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-4 text-center text-gray-600">{{ $baris['sesi'] }}</td>
+                            <td class="px-4 py-4 text-center font-semibold text-emerald-600">{{ $baris['hadir'] }}</td>
+                            <td class="px-4 py-4 text-center font-semibold text-blue-600">{{ $baris['izin'] }}</td>
+                            <td class="px-4 py-4 text-center font-semibold text-amber-600">{{ $baris['sakit'] }}</td>
+                            <td class="px-4 py-4 text-center font-semibold text-rose-600">{{ $baris['alpa'] }}</td>
+                            <td class="px-4 py-4 text-center text-gray-600">{{ $baris['total'] }}</td>
+                            <td class="px-6 py-4">
+                                @if ($baris['total'] > 0)
+                                    <div class="flex items-center gap-3">
+                                        <div class="progress-bar w-28">
+                                            <div class="progress-fill {{ $warnaPersentase($baris['persentase']) }}"
+                                                style="width: {{ $baris['persentase'] }}%"></div>
+                                        </div>
+                                        <span class="text-sm font-semibold text-gray-800">
+                                            {{ $baris['persentase'] }}%
+                                        </span>
+                                    </div>
+                                @else
+                                    <span class="text-xs text-gray-400">Belum ada catatan</span>
+                                @endif
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="8" class="px-6 py-10 text-center text-gray-500">
+                                Belum ada catatan presensi per tanggal pada {{ $laporan['label'] }}.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+                @if (count($laporan['perHari']) > 0)
+                    <tfoot class="border-t-2 border-gray-200 bg-gray-50 text-sm">
+                        <tr>
+                            <td class="px-6 py-4 font-bold text-gray-800">TOTAL</td>
+                            <td class="px-4 py-4 text-center font-bold text-gray-800">{{ array_sum(array_column($laporan['perHari'], 'sesi')) }}</td>
+                            <td class="px-4 py-4 text-center font-bold text-emerald-600">{{ $total['hadir'] }}</td>
+                            <td class="px-4 py-4 text-center font-bold text-blue-600">{{ $total['izin'] }}</td>
+                            <td class="px-4 py-4 text-center font-bold text-amber-600">{{ $total['sakit'] }}</td>
+                            <td class="px-4 py-4 text-center font-bold text-rose-600">{{ $total['alpa'] }}</td>
+                            <td class="px-4 py-4 text-center font-bold text-gray-800">{{ $total['total'] }}</td>
+                            <td class="px-6 py-4 font-bold text-gray-800">{{ $total['persentase'] }}%</td>
+                        </tr>
+                    </tfoot>
+                @endif
+            </table>
+        </div>
+    </div>
+
     {{-- tabel rekap per kelas + total, tetap dipakai kedua tab --}}
     <div class="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
         <div class="border-b border-gray-200 px-6 py-4">
@@ -675,6 +792,7 @@
                                             'bulan' => $laporan['bulan'],
                                             'periode' => $laporan['periode'],
                                             'kelas' => $baris['kelas'],
+                                            'mata_kuliah' => $mataKuliahAktif,
                                         ])) }}"
                                     class="inline-flex items-center gap-2 font-medium text-gray-800 hover:text-indigo-600">
                                     <span class="grid h-8 w-8 place-items-center rounded-lg bg-purple-100 text-purple-600">
@@ -751,11 +869,6 @@
         .laporan-row:hover {
             background-color: #f9fafb;
         }
-
-        /* baris rekap per kelas */
-        .kelas-rekap {
-            padding-bottom: 0.25rem;
-        }
     </style>
 @endpush
 
@@ -770,7 +883,7 @@
 
     <script>
         // ============================================================
-        // LAPORAN BULANAN
+        // LAPORAN PRESENSI
         // ============================================================
         // Halaman ini menggabungkan dua laporan lama: rekap bulanan dan
         // progres absensi. Periodenya dibedakan lewat tab, tapi tabel dan
@@ -1042,6 +1155,28 @@
 
             const filter = document.getElementById('laporanFilterMahasiswa');
             if (filter) filter.addEventListener('change', saringTabelMahasiswa);
+
+            // Panel rekap per jadwal & per tanggal dirender sekaligus di server;
+            // tab ini hanya menukar tabel yang terlihat tanpa memuat ulang.
+            document.querySelectorAll('[data-rekapTab]').forEach(function (tombol) {
+                tombol.addEventListener('click', function () {
+                    const pilihan = tombol.dataset.rekapTab;
+
+                    document.querySelectorAll('[data-rekapTab]').forEach(function (lain) {
+                        const aktif = lain.dataset.rekapTab === pilihan;
+                        lain.classList.toggle('bg-indigo-600', aktif);
+                        lain.classList.toggle('text-white', aktif);
+                        lain.classList.toggle('shadow-sm', aktif);
+                        lain.classList.toggle('text-gray-600', !aktif);
+                        lain.classList.toggle('hover:bg-white', !aktif);
+                        lain.classList.toggle('hover:text-indigo-600', !aktif);
+                    });
+
+                    document.querySelectorAll('[data-rekapPanel]').forEach(function (panel) {
+                        panel.classList.toggle('hidden', panel.dataset.rekapPanel !== pilihan);
+                    });
+                });
+            });
         });
     </script>
 @endpush

@@ -9,6 +9,7 @@ use App\Models\Kelas;
 use App\Models\Mahasiswa;
 use App\Models\MataKuliah;
 use App\Models\User;
+use App\Services\SesiAbsensiService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -362,20 +363,20 @@ class DashboardAdminController extends Controller
     /**
      * Jadwal mengajar yang jatuh pada hari ini.
      *
-     * `jadwals.hari` menyimpan nama hari dalam bahasa Indonesia, jadi eher
-     * dicocokkan di sisi PHP daripada lewat `whereDate` yang tidak berlaku di
-     * sini.
+     * Nama hari diambil dari `SesiAbsensiService::namaHari()` yang sama dengan
+     * pembuat sesi dan halaman dosen/mahasiswa, supaya satu jadwal tidak
+     * muncul di satu halaman tapi hilang di halaman lain. Jadwal tahun
+     * akademik lampau yang masih Aktif tidak ikut.
      *
      * @return Collection<int, Jadwal>
      */
     private function jadwalHariIni(): Collection
     {
-        $hari = now()->locale('id')->translatedFormat('l');
-
         return Jadwal::query()
             ->with(['kelas:id,nama_kelas', 'dosen.user:id,name'])
-            ->where('hari', $hari)
+            ->where('hari', SesiAbsensiService::namaHari(today()))
             ->where('status', 'Aktif')
+            ->where('tahun_akademik', now()->year)
             ->orderBy('jam_mulai')
             ->limit(self::BATAS_JADWAL_HARI_INI)
             ->get();

@@ -9,6 +9,7 @@ use App\Http\Controllers\JadwalController;
 use App\Http\Controllers\KelasController;
 use App\Http\Controllers\MahasiswaController;
 use App\Http\Controllers\MataKuliahController;
+use App\Http\Controllers\PindaiBarcodeController;
 use App\Http\Controllers\RekapController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -68,9 +69,16 @@ Route::prefix('/absensi')
         Route::get('/metode', [AbsensiMahasiswaController::class, 'metode'])
             ->name('metode');
 
-        Route::get('/scan-qr', function () {
-            return view('absensi.scan-qr');
-        })->name('scan-qr');
+        Route::get('/scan-qr', [AbsensiMahasiswaController::class, 'scanQr'])
+            ->name('scan-qr');
+
+        /*
+         * Hasil scan QR Sesi dikirim ke sini sebagai JSON. Berbeda dengan
+         * ID Unik yang menunggu form dikirim, halaman scan mengirim kode
+         * begitu kamera membacanya supaya kehadiran tercatat tanpa mengetik.
+         */
+        Route::post('/scan-qr', [AbsensiMahasiswaController::class, 'storeScanQr'])
+            ->name('scan-qr.store');
 
         Route::get('/id-unik', [AbsensiMahasiswaController::class, 'idUnik'])
             ->name('id-unik');
@@ -100,6 +108,14 @@ Route::prefix('dashboard/dosen')
         Route::get('/kelola', 'kelola')
             ->name('kelola');
 
+        /*
+         * Halaman tambah mahasiswa. Bentuknya halaman penuh (bukan modal) untuk
+         * kelas yang diampu dosen; penyimpanannya tetap lewat rute POST di
+         * bawah ini.
+         */
+        Route::get('/kelola/mahasiswa/tambah', 'create')
+            ->name('kelola.mahasiswa.create');
+
         Route::post('/kelola/mahasiswa', 'storeMahasiswa')
             ->name('kelola.mahasiswa.store');
 
@@ -114,6 +130,16 @@ Route::prefix('dashboard/dosen')
 
         Route::get('/laporan/export', 'exportLaporan')
             ->name('laporan.export');
+
+        /*
+         * Pemindai barcode presensi. Untuk dosen, daftar sesinya dibatasi
+         * jadwal yang diajarnya sendiri.
+         */
+        Route::get('/pindai-barcode', [PindaiBarcodeController::class, 'index'])
+            ->name('pindai');
+
+        Route::post('/pindai-barcode', [PindaiBarcodeController::class, 'store'])
+            ->name('pindai.store');
     });
 
 /*
@@ -266,5 +292,18 @@ Route::middleware(['auth', 'role:Admin,Operator'])->group(function () {
 
         Route::get('/rekap/export/pdf', 'exportPdf')
             ->name('cms.rekap.export.pdf');
+    });
+
+    /*
+     * Pemindai barcode presensi. Admin dan operator memindai untuk jadwal
+     * kelas mana pun hari ini; dosen memakai alamatnya sendiri di
+     * `/dashboard/dosen/pindai-barcode` yang dibatasi jadwalnya sendiri.
+     */
+    Route::controller(PindaiBarcodeController::class)->group(function () {
+        Route::get('/pindai-barcode', 'index')
+            ->name('cms.pindai');
+
+        Route::post('/pindai-barcode', 'store')
+            ->name('cms.pindai.store');
     });
 });

@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\SesiAbsensiService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection as SupportCollection;
@@ -111,14 +112,14 @@ class DashboardDosenController extends Controller
     /**
      * Progres absensi lintas beberapa periode.
      *
-     * Bedanya dengan laporan bulanan: laporan terkunci satu bulan dan dipakai
+     * Bedanya dengan laporan presensi: laporan terkunci satu bulan dan dipakai
      * untuk mengarsipkan angka, sedangkan halaman ini membandingkan periode
      * terpilih dengan periode sebelumnya sepanjang durasi yang sama. Jadi
      * yang ditampilkan bukan cuma rekap, tapi juga arah kehadiran.
      *
      * Agregasinya tetap dari tabel `absensis` yang sama dan dibatasi ke kelas
      * milik dosen yang sedang login, sehingga angkanya konsisten dengan
-     * dashboard admin maupun laporan bulanan.
+     * dashboard admin maupun laporan presensi.
      */
     public function kelola(Request $request): View|JsonResponse
     {
@@ -128,8 +129,17 @@ class DashboardDosenController extends Controller
             return response()->json($dosenData);
         }
 
+        // Mahasiswa barunya dikirim sebagai payload kecil (bukan model) supaya
+        // halaman tinggal menyalinnya ke JavaScript lewat `@json` sederhana.
+        $mahasiswaBaru = $this->mahasiswaBaru();
+
         return view('dosen.kelola', [
             'dosenData' => $dosenData,
+            'mahasiswaBaru' => $mahasiswaBaru === null ? null : [
+                'id' => $mahasiswaBaru->getKey(),
+                'nim' => $mahasiswaBaru->nim,
+                'nama' => $mahasiswaBaru->user?->name,
+            ],
         ]);
     }
 
@@ -189,7 +199,7 @@ class DashboardDosenController extends Controller
     }
 
     /**
-     * Export laporan bulanan ke CSV yang bisa langsung dibuka di Excel.
+     * Export laporan presensi ke CSV yang bisa langsung dibuka di Excel.
      *
      * Mengikuti `RekapController::exportExcel`: pemisah titik koma dan BOM
      * UTF-8, karena itu bawaan Excel versi Indonesia.
@@ -212,6 +222,7 @@ class DashboardDosenController extends Controller
             fputcsv($keluaran, ['Mata Kuliah', $laporan['dosen']['mataKuliah'] ?? '-'], ';');
             fputcsv($keluaran, ['Periode', $laporan['label']], ';');
             fputcsv($keluaran, ['Kelas', $laporan['filterKelas'] ?? 'Semua Kelas yang Diampu'], ';');
+            fputcsv($keluaran, ['Filter Mata Kuliah', $laporan['mata_kuliah'] ?? 'Semua Mata Kuliah'], ';');
             fputcsv($keluaran, ['Dicetak', $laporan['dicetak']], ';');
             fputcsv($keluaran, [], ';');
 
@@ -231,6 +242,32 @@ class DashboardDosenController extends Controller
                 fputcsv($keluaran, [
                     $baris['kelas'],
                     $baris['mahasiswa'],
+                    $baris['hadir'],
+                    $baris['izin'],
+                    $baris['sakit'],
+                    $baris['alpa'],
+                    $baris['total'],
+                    $baris['persentase'],
+                ], ';');
+            }
+
+            fputcsv($keluaran, [], ';');
+            fputcsv($keluaran, ['RINGKASAN PER MATA KULIAH'], ';');
+            fputcsv($keluaran, [
+                'Mata Kuliah',
+                'Sesi',
+                'Hadir',
+                'Izin',
+                'Sakit',
+                'Alpa',
+                'Total Catatan',
+                'Persentase (%)',
+            ], ';');
+
+            foreach ($laporan['perMataKuliah'] as $baris) {
+                fputcsv($keluaran, [
+                    $baris['mata_kuliah'],
+                    $baris['sesi'],
                     $baris['hadir'],
                     $baris['izin'],
                     $baris['sakit'],
@@ -292,18 +329,46 @@ class DashboardDosenController extends Controller
     }
 
     /**
+     * Halaman tambah mahasiswa baru untuk kelas yang diampu dosen.
+     *
+     * Bentuknya halaman penuh, bukan modal, mengikuti halaman tambah mahasiswa
+     * di sisi admin (`cms.mahasiswa.create`). Pilihan kelasnya dibatasi kelas
+     * yang memang diampu, sama seperti validasi saat penyimpanan.
+     */
+    public function create(Request $request): View
+    {
+        $dosen = $this->dosenYangLogin($request);
+
+        abort_unless($dosen !== null, 403, 'Hanya akun dosen yang bisa menambahkan mahasiswa.');
+
+        return view('dosen.kelola.create', [
+            'pilihanKelas' => $this->kelasYangDiampu($dosen)
+                ->map(fn (Kelas $kelas): string => $kelas->nama_kelas)
+                ->values()
+                ->all(),
+        ]);
+    }
+
+    /**
      * Tambah mahasiswa baru ke salah satu kelas yang diampu dosen.
      *
      * Kelas tujuan divalidasi terhadap daftar kelas yang diampu, bukan
      * dipercaya dari request, supaya dosen tidak bisa menambahkan mahasiswa ke kelas
      * milik orang lain.
+     *
+     * Permintaan form (dari halaman tambah) dibalas dengan halaman kelola supaya
+     * dosen langsung melihat daftar terbarunya, sedangkan permintaan JSON tetap
+     * dibalas JSON 201 seperti sebelumnya. Pemisahan ini mengikuti pola
+     * `wantsJson()` yang dipakai method `kelola()` dan `dashboard()`.
      */
-    public function storeMahasiswa(Request $request): JsonResponse
+    public function storeMahasiswa(Request $request): JsonResponse|RedirectResponse
     {
         $dosen = $this->dosenYangLogin($request);
 
         if ($dosen === null) {
-            return $this->ditolakAkses();
+            return $request->wantsJson()
+                ? $this->ditolakAkses()
+                : redirect()->route('dosen.kelola');
         }
 
         $validated = $request->validate([
@@ -339,10 +404,22 @@ class DashboardDosenController extends Controller
             ]);
         });
 
-        return response()->json([
-            'message' => 'Mahasiswa berhasil ditambahkan.',
-            'mahasiswa' => $this->barisMahasiswa($mahasiswa),
-        ], 201);
+        if ($request->wantsJson()) {
+            return response()->json([
+                'message' => 'Mahasiswa berhasil ditambahkan.',
+                'mahasiswa' => $this->barisMahasiswa($mahasiswa),
+            ], 201);
+        }
+
+        /*
+         | Id mahasiswa barunya ikut di-flash supaya halaman kelola bisa langsung
+         | membuka barcode miliknya. Barcode tiap mahasiswa berisikan NIM sehingga
+         | langsung siap dipakai begitu datanya tersimpan.
+         */
+        return redirect()
+            ->route('dosen.kelola')
+            ->with('success', 'Mahasiswa berhasil ditambahkan.')
+            ->with('mahasiswa_baru', $mahasiswa->getKey());
     }
 
     /**
@@ -427,12 +504,15 @@ class DashboardDosenController extends Controller
     {
         $dosen = $request->user()?->dosen?->load('mataKuliah');
 
+        $kelasDiampu = $this->kelasYangDiampu($dosen);
+
         // Sesi hari ini dibuat lebih dulu supaya payload selalu memuat daftar
         // mata kuliah yang sedang berlangsung, walau belum ada mahasiswa yang
-        // membuka halaman absensi hari ini.
-        $this->sesiAbsensi->pastikanSesiHariIni();
+        // membuka halaman absensi hari ini. Pembuatannya dibatasi jadwal yang
+        // benar-benar diampu dosen ini, bukan seluruh jadwal kampus.
+        $this->buatSesiMilikDosen($dosen, $kelasDiampu->pluck('id'));
 
-        $kelas = $this->kelasYangDiampu($dosen)
+        $kelas = $kelasDiampu
             ->map(fn (Kelas $kelas): array => $this->payloadKelas($kelas))
             ->values()
             ->all();
@@ -454,10 +534,39 @@ class DashboardDosenController extends Controller
     }
 
     /**
+     * Buat sesi hari ini untuk jadwal yang benar-benar diampu dosen ini.
+     *
+     * Dulu dashboard memanggil `pastikanSesiHariIni()` yang membuat sesi
+     * seluruh kampus pada setiap kunjungan — termasuk kelas dosen lain.
+     * Cukup jadwal mengajar dosen sendiri dan kelas yang diampunya, supaya
+     * kerja tulis di halaman baca ini tetap ringan.
+     *
+     * @param  SupportCollection<int, int|string>  $kelasDiampu
+     */
+    protected function buatSesiMilikDosen(?Dosen $dosen, SupportCollection $kelasDiampu): void
+    {
+        if ($dosen === null) {
+            return;
+        }
+
+        $jadwal = Jadwal::query()
+            ->where('status', 'Aktif')
+            ->where('tahun_akademik', now()->year)
+            ->where('hari', SesiAbsensiService::namaHari(today()))
+            ->where(function ($query) use ($dosen, $kelasDiampu) {
+                $query->where('dosen_id', $dosen->getKey())
+                    ->orWhereIn('kelas_id', $kelasDiampu);
+            })
+            ->get();
+
+        $this->sesiAbsensi->pastikanSesi($jadwal, today());
+    }
+
+    /**
      * Tren kehadiran 12 bulan terakhir untuk kelas yang diampu dosen.
      *
      * Angkanya diambil dari tabel `absensis` yang sama dengan halaman Rekap di
-     * sisi admin dan dengan laporan bulanan dosen, sehingga grafik di dashboard
+     * sisi admin dan dengan laporan presensi dosen, sehingga grafik di dashboard
      * tidak mungkin berbeda dari angka di halaman lain.
      *
      * Bulan tanpa catatan tetap ikut dikembalikan dengan angka nol supaya
@@ -577,7 +686,14 @@ class DashboardDosenController extends Controller
                 // Status kehadiran hari ini; null berarti belum absen.
                 'absensi' => $absen?->status,
                 'waktu' => $absen?->waktu_absen?->toIso8601String(),
-                'metode' => $absen === null ? null : 'Scan QR',
+                // Cara presensi terlihat dari statusnya: izin/sakit datang
+                // dari formulir mahasiswa, sedangkan hadir dari scan QR atau
+                // Kode NIM yang catatannya sama persis.
+                'metode' => match ($absen?->status) {
+                    null => null,
+                    'izin', 'sakit' => 'Izin/Sakit',
+                    default => 'Scan QR',
+                },
             ];
         })->values()->all();
 
@@ -606,6 +722,7 @@ class DashboardDosenController extends Controller
         $jadwalIds = Jadwal::query()
             ->where('kelas_id', $kelas->getKey())
             ->where('status', 'Aktif')
+            ->where('tahun_akademik', now()->year)
             ->where('hari', SesiAbsensiService::namaHari(today()))
             ->pluck('id');
 
@@ -649,6 +766,22 @@ class DashboardDosenController extends Controller
                 ])->all(),
             ];
         })->values()->all();
+    }
+
+    /**
+     * Mahasiswa yang baru ditambahkan lewat halaman tambah.
+     *
+     * Id-nya di-flash oleh {@see storeMahasiswa()} supaya halaman kelola bisa
+     * langsung membuka barcode untuknya, mengikuti aturan bahwa tiap mahasiswa
+     * baru otomatis punya barcode siap pakai.
+     */
+    protected function mahasiswaBaru(): ?Mahasiswa
+    {
+        $id = session('mahasiswa_baru');
+
+        return is_numeric($id)
+            ? Mahasiswa::with('user:id,name')->find($id)
+            : null;
     }
 
     /**
@@ -811,7 +944,8 @@ class DashboardDosenController extends Controller
     {
         $dosen = $this->dosenYangLogin($request);
 
-        $pilihanKelas = $this->kelasYangDiampu($dosen)->pluck('nama_kelas')->all();
+        $kelasDiampu = $this->kelasYangDiampu($dosen);
+        $pilihanKelas = $kelasDiampu->pluck('nama_kelas')->all();
 
         $bulan = $this->bulanValid($request->query('bulan')) ?? now()->format('Y-m');
         $dari = Carbon::createFromFormat('Y-m-d', $bulan.'-01')->startOfDay();
@@ -819,10 +953,16 @@ class DashboardDosenController extends Controller
 
         $filterKelas = $this->filterKelasValid($request, $pilihanKelas);
 
+        // Filter per mata kuliah: pilihannya diambil dari jadwal kelas yang
+        // diampu, sehingga laporan bisa dipertajam ke satu mata kuliah saja.
+        $pilihanMataKuliah = $this->pilihanMataKuliah($kelasDiampu);
+        $filterMataKuliah = $this->filterMataKuliahValid($request, $pilihanMataKuliah);
+
         $rekap = $this->rekapLaporan(
             $filterKelas !== null ? [$filterKelas] : $pilihanKelas,
             $dari,
             $sampai,
+            $filterMataKuliah,
         );
 
         $jumlahHari = (int) $dari->diffInDays($sampai) + 1;
@@ -838,11 +978,15 @@ class DashboardDosenController extends Controller
             'sampai' => $sampai,
             'filterKelas' => $filterKelas,
             'pilihanKelas' => $pilihanKelas,
+            'mata_kuliah' => $filterMataKuliah,
+            'pilihanMataKuliah' => $pilihanMataKuliah,
             'pilihanBulan' => $this->pilihanBulan(),
             'pilihanPeriode' => $this->pilihanPeriode(),
             'dosen' => $this->identitasDosen($dosen),
             'perKelas' => $rekap['perKelas'],
             'perMahasiswa' => $rekap['perMahasiswa'],
+            'perMataKuliah' => $rekap['perMataKuliah'],
+            'perJadwal' => $rekap['perJadwal'],
             'perHari' => $rekap['perHari'],
             'trenHarian' => $this->trenHarian($rekap['perHari'], $dari, $sampai, $jumlahHari),
             'total' => $rekap['total'],
@@ -871,7 +1015,8 @@ class DashboardDosenController extends Controller
     {
         $dosen = $this->dosenYangLogin($request);
 
-        $pilihanKelas = $this->kelasYangDiampu($dosen)->pluck('nama_kelas')->all();
+        $kelasDiampu = $this->kelasYangDiampu($dosen);
+        $pilihanKelas = $kelasDiampu->pluck('nama_kelas')->all();
 
         $periode = $this->periodeValid($request->query('periode'));
         $rentang = $this->rentangPeriode($periode);
@@ -881,9 +1026,12 @@ class DashboardDosenController extends Controller
 
         $filterKelas = $this->filterKelasValid($request, $pilihanKelas);
 
+        $pilihanMataKuliah = $this->pilihanMataKuliah($kelasDiampu);
+        $filterMataKuliah = $this->filterMataKuliahValid($request, $pilihanMataKuliah);
+
         $kelas = $filterKelas !== null ? [$filterKelas] : $pilihanKelas;
 
-        $rekap = $this->rekapLaporan($kelas, $dari, $sampai);
+        $rekap = $this->rekapLaporan($kelas, $dari, $sampai, $filterMataKuliah);
 
         // Periode pembanding: rentang sepanjang sama, tepat sebelum periode
         // terpilih. Tanpa ini dosen hanya tahu angkanya, tidak tahu arahnya.
@@ -891,11 +1039,12 @@ class DashboardDosenController extends Controller
             $kelas,
             $dari->copy()->subDays($jumlahHari),
             $dari->copy()->subDay()->endOfDay(),
+            $filterMataKuliah,
         )['total'];
 
         $perKelas = $rekap['perKelas'];
 
-        // Kelas paling baik di atas supaya daun一目rophe langsung terlihat.
+        // Kelas paling baik di atas supaya daftar langsung terlihat.
         usort($perKelas, fn (array $a, array $b): int => $b['persentase'] <=> $a['persentase']
             ?: strnatcmp((string) $a['kelas'], (string) $b['kelas']));
 
@@ -922,11 +1071,15 @@ class DashboardDosenController extends Controller
             'sampai' => $sampai,
             'filterKelas' => $filterKelas,
             'pilihanKelas' => $pilihanKelas,
+            'mata_kuliah' => $filterMataKuliah,
+            'pilihanMataKuliah' => $pilihanMataKuliah,
             'pilihanBulan' => $this->pilihanBulan(),
             'pilihanPeriode' => $this->pilihanPeriode(),
             'dosen' => $this->identitasDosen($dosen),
             'perKelas' => $perKelas,
             'perMahasiswa' => $perMahasiswa,
+            'perMataKuliah' => $rekap['perMataKuliah'],
+            'perJadwal' => $rekap['perJadwal'],
             'perHari' => $rekap['perHari'],
             'trenHarian' => $this->trenHarian($rekap['perHari'], $dari, $sampai, $jumlahHari),
             'total' => $rekap['total'],
@@ -979,6 +1132,53 @@ class DashboardDosenController extends Controller
     }
 
     /**
+     * Filter mata kuliah dari query string, kalau memang ada di pilihan laporan.
+     *
+     * Sama seperti filter kelas: nilai yang tidak dikenal diabaikan, bukan
+     * dipakai apa adanya, supaya `?mata_kuliah=` tidak pernah menyaring laporan
+     * ke nama yang tidak ada pada kelas yang diampu.
+     *
+     * @param  list<string>  $pilihanMataKuliah
+     */
+    protected function filterMataKuliahValid(Request $request, array $pilihanMataKuliah): ?string
+    {
+        $diminta = $this->teks($request->query('mata_kuliah'));
+
+        return $diminta !== null && in_array($diminta, $pilihanMataKuliah, true) ? $diminta : null;
+    }
+
+    /**
+     * Daftar mata kuliah dari jadwal pada kelas-kelas yang diampu, untuk filter.
+     *
+     * Diambil dari tabel `jadwals` (bukan daftar mata kuliah kampus) supaya
+     * pilihan filter selalu berisi mata kuliah yang memang punya jadwal mengajar
+     * pada kelas tersebut, sama seperti data yang muncul di rekap per mata kuliah.
+     *
+     * @param  Collection<int, Kelas>  $kelas
+     * @return list<string>
+     */
+    protected function pilihanMataKuliah(Collection $kelas): array
+    {
+        if ($kelas->isEmpty()) {
+            return [];
+        }
+
+        $daftar = Jadwal::query()
+            ->whereIn('kelas_id', $kelas->pluck('id'))
+            ->distinct()
+            ->pluck('mata_kuliah')
+            ->filter()
+            ->map(fn ($nama): string => (string) $nama)
+            ->unique()
+            ->values()
+            ->all();
+
+        usort($daftar, 'strnatcmp');
+
+        return $daftar;
+    }
+
+    /**
      * Mahasiswa yang kehadirannya di bawah ambang dan punya catatan presensi.
      *
      * Tanpa catatan presensi tidak dihitung, karena "tidak punya data" bukan
@@ -1016,24 +1216,40 @@ class DashboardDosenController extends Controller
     }
 
     /**
-     * Agregasi absensi satu periode menjadi rekap per kelas, per mahasiswa, per hari.
+     * Agregasi absensi satu periode menjadi rekap per kelas, per mahasiswa, per mata kuliah, per jadwal, per tanggal.
      *
      * Absensi dihitung dari baris `absensis` yang ada di periode tersebut.
      * Mahasiswa tanpa catatan sama sekali tetap muncul di `perMahasiswa` dengan
      * angka nol, supaya tidak hilang dari laporan.
      *
+     * `perMataKuliah` adalah inti laporan sesi kuliah: satu baris per mata kuliah
+     * berisi jumlah sesi yang tercatat beserta rincian statusnya. Baris absensi
+     * lama tanpa jadwal masuk ke grup `SesiAbsensi::TANPA_JADWAL` supaya riwayat
+     * lama tetap ikut terhitung.
+     *
+     * `perJadwal` memecah catatan yang sama per slot jadwal mengajar (hari dan
+     * jam), sedangkan `perHari` memecahnya per tanggal; keduanya memakai sumber
+     * baris yang persis sama seperti `perMataKuliah`, jadi totalnya selalu
+     * identik dengan rekap lain di laporan ini.
+     *
      * @param  list<string>  $kelas
-     * @return array{perKelas:list<array<string,mixed>>,perMahasiswa:list<array<string,mixed>>,perHari:list<array<string,mixed>>,total:array<string,int>}
+     * @param  string|null  $mataKuliah  filter satu mata kuliah, null untuk semua
+     * @return array{perKelas:list<array<string,mixed>>,perMahasiswa:list<array<string,mixed>>,perMataKuliah:list<array<string,mixed>>,perJadwal:list<array<string,mixed>>,perHari:list<array<string,mixed>>,total:array<string,int>}
      */
-    protected function rekapLaporan(array $kelas, Carbon $dari, Carbon $sampai): array
+    protected function rekapLaporan(array $kelas, Carbon $dari, Carbon $sampai, ?string $mataKuliah = null): array
     {
         $mahasiswa = $this->mahasiswaLaporan($kelas);
 
-        $catatan = $this->catatanAbsensi($kelas, $dari, $sampai);
+        $catatan = $this->catatanAbsensi($kelas, $dari, $sampai, $mataKuliah);
 
         $perMahasiswa = [];
         $perKelas = [];
+        $perMataKuliah = [];
+        $perJadwal = [];
         $perTanggal = [];
+        $sesiPerMataKuliah = [];
+        $sesiPerJadwal = [];
+        $sesiPerTanggal = [];
 
         foreach ($mahasiswa as $s) {
             $perMahasiswa[$s->getKey()] = [
@@ -1071,6 +1287,26 @@ class DashboardDosenController extends Controller
             $perTanggal[$baris->tanggal] ??= $this->barisKosong($baris->tanggal);
             $perTanggal[$baris->tanggal][$kolom]++;
             $perTanggal[$baris->tanggal]['total']++;
+
+            // Rekap per mata kuliah: satu baris per nama mata kuliah, dengan
+            // jumlah sesi yang berbeda-beda dihitung dari id sesi uniknya.
+            $perMataKuliah[$baris->mata_kuliah] ??= $this->barisKosongMataKuliah($baris->mata_kuliah);
+            $perMataKuliah[$baris->mata_kuliah][$kolom]++;
+            $perMataKuliah[$baris->mata_kuliah]['total']++;
+            $sesiPerMataKuliah[$baris->mata_kuliah][(int) $baris->sesi] = true;
+
+            // Rekap per jadwal: satu baris per slot jadwal mengajar (hari dan
+            // jam), jadi tiap pertemuan terbaca terpisah. Catatan lama tanpa
+            // `jadwal_id` masuk ke grup `TANPA_JADWAL` seperti pada rekap per
+            // mata kuliah supaya riwayat lama tetap ikut terhitung.
+            $kunciJadwal = $baris->jadwal_id ?? 'tanpa-jadwal';
+            $perJadwal[$kunciJadwal] ??= $this->barisKosongJadwal($baris);
+            $perJadwal[$kunciJadwal][$kolom]++;
+            $perJadwal[$kunciJadwal]['total']++;
+            $sesiPerJadwal[$kunciJadwal][(int) $baris->sesi] = true;
+
+            // Sesi unik per tanggal dipakai tabel rekap per tanggal.
+            $sesiPerTanggal[$baris->tanggal][(int) $baris->sesi] = true;
         }
 
         // Kelas yang punya mahasiswa tapi belum ada absensi tetap ikut dihitung.
@@ -1079,6 +1315,13 @@ class DashboardDosenController extends Controller
 
             $perKelas[$namaKelas] ??= $this->barisKosong($namaKelas);
             $perKelas[$namaKelas]['mahasiswa']++;
+        }
+
+        // Filter per mata kuliah yang belum punya catatan tetap ditampilkan
+        // dengan angka nol, supaya laporan kosong terbaca sebagai "belum ada
+        // data", bukan sebagai "mata kuliah tidak ditemukan".
+        if ($mataKuliah !== null && ! isset($perMataKuliah[$mataKuliah])) {
+            $perMataKuliah[$mataKuliah] = $this->barisKosongMataKuliah($mataKuliah);
         }
 
         // Urutkan kelas secara natural (XII-A sebelum XII-B), bukan leksikografis.
@@ -1098,6 +1341,16 @@ class DashboardDosenController extends Controller
             $daftarKelas[$indeks]['persentase'] = $this->persen($baris['hadir'], $baris['total']);
         }
 
+        $daftarMataKuliah = array_values($perMataKuliah);
+
+        foreach ($daftarMataKuliah as $indeks => $baris) {
+            $daftarMataKuliah[$indeks]['sesi'] = count($sesiPerMataKuliah[$baris['mata_kuliah']] ?? []);
+            $daftarMataKuliah[$indeks]['persentase'] = $this->persen($baris['hadir'], $baris['total']);
+        }
+
+        // Nama mata kuliah urut natural, sama seperti urutan baris kelas.
+        usort($daftarMataKuliah, fn (array $a, array $b): int => strnatcmp($a['mata_kuliah'], $b['mata_kuliah']));
+
         $daftarHari = array_values($perTanggal);
 
         foreach ($daftarHari as $indeks => $baris) {
@@ -1105,9 +1358,43 @@ class DashboardDosenController extends Controller
             $daftarHari[$indeks]['label'] = Carbon::createFromFormat('Y-m-d', $baris['kelas'])
                 ->locale('id')
                 ->translatedFormat('d');
+            // Teks tanggal lengkap untuk tabel rekap per tanggal, misalnya
+            // "Senin, 03 Oktober 2026", supaya barisnya langsung jelas.
+            $daftarHari[$indeks]['namaTanggal'] = Carbon::createFromFormat('Y-m-d', $baris['kelas'])
+                ->locale('id')
+                ->translatedFormat('l, d F Y');
+            $daftarHari[$indeks]['sesi'] = count($sesiPerTanggal[$baris['kelas']] ?? []);
             $daftarHari[$indeks]['persentase'] = $this->persen($baris['hadir'], $baris['total']);
             unset($daftarHari[$indeks]['kelas']);
         }
+
+        // Rekap per jadwal: jumlah sesi & persentase per baris, lalu diurutkan
+        // mengikuti hari kerja (Senin dulu), jam mulai, dan nama kelas.
+        // Catatan tanpa jadwal diletakkan paling bawah.
+        $urutanHari = array_flip(Jadwal::HARI_TERSEDIA);
+
+        $daftarJadwal = [];
+
+        foreach ($perJadwal as $kunci => $baris) {
+            $baris['sesi'] = count($sesiPerJadwal[$kunci] ?? []);
+            $baris['persentase'] = $this->persen($baris['hadir'], $baris['total']);
+
+            $daftarJadwal[] = $baris;
+        }
+
+        usort($daftarJadwal, fn (array $a, array $b): int => [
+            $a['hari'] === null ? 1 : 0,
+            $urutanHari[$a['hari'] ?? ''] ?? PHP_INT_MAX,
+            $a['jam'] ?? '',
+            $a['kelas'] ?? '',
+            $a['jadwal'],
+        ] <=> [
+            $b['hari'] === null ? 1 : 0,
+            $urutanHari[$b['hari'] ?? ''] ?? PHP_INT_MAX,
+            $b['jam'] ?? '',
+            $b['kelas'] ?? '',
+            $b['jadwal'],
+        ]);
 
         $total = [
             'mahasiswa' => count($daftarMahasiswa),
@@ -1116,6 +1403,7 @@ class DashboardDosenController extends Controller
             'sakit' => 0,
             'alpa' => 0,
             'total' => 0,
+            'sesi' => 0,
         ];
 
         foreach ($daftarKelas as $baris) {
@@ -1126,11 +1414,17 @@ class DashboardDosenController extends Controller
             $total['total'] += $baris['total'];
         }
 
+        // Jumlah sesi dihitung dari rekap per mata kuliah karena kelas tidak
+        // punya konsep sesi; tiap sesi hanya muncul di satu baris mata kuliah.
+        $total['sesi'] = array_sum(array_column($daftarMataKuliah, 'sesi'));
+
         $total['persentase'] = $this->persen($total['hadir'], $total['total']);
 
         return [
             'perKelas' => $daftarKelas,
             'perMahasiswa' => $daftarMahasiswa,
+            'perMataKuliah' => $daftarMataKuliah,
+            'perJadwal' => $daftarJadwal,
             'perHari' => $daftarHari,
             'total' => $total,
         ];
@@ -1155,27 +1449,127 @@ class DashboardDosenController extends Controller
     }
 
     /**
+     * Baris kosong untuk dipakai saat menyetel akumulasi per mata kuliah.
+     *
+     * Bentuknya sengaja berbeda dari `barisKosong()` yang berbasis kelas,
+     * karena baris rekap per mata kuliah memakai kunci `mata_kuliah` dan `sesi`.
+     *
+     * @return array<string, int|string>
+     */
+    protected function barisKosongMataKuliah(string $nama): array
+    {
+        return [
+            'mata_kuliah' => $nama,
+            'sesi' => 0,
+            'hadir' => 0,
+            'izin' => 0,
+            'sakit' => 0,
+            'alpa' => 0,
+            'total' => 0,
+        ];
+    }
+
+    /**
+     * Baris kosong untuk akumulasi rekap per jadwal.
+     *
+     * Satu baris mewakili satu slot jadwal mengajar (hari, jam, mata kuliah,
+     * dan kelas). Catatan lama tanpa `jadwal_id` tidak punya slot, jadi
+     * seluruh labelnya diisi null dan judul barisnya memakai
+     * `SesiAbsensi::TANPA_JADWAL`.
+     *
+     * @return array<string, int|string|null>
+     */
+    protected function barisKosongJadwal(object $baris): array
+    {
+        if ($baris->jadwal_id === null) {
+            return [
+                'jadwal' => SesiAbsensi::TANPA_JADWAL,
+                'hari' => null,
+                'jam' => null,
+                'mata_kuliah' => null,
+                'kelas' => null,
+                'sesi' => 0,
+                'hadir' => 0,
+                'izin' => 0,
+                'sakit' => 0,
+                'alpa' => 0,
+                'total' => 0,
+            ];
+        }
+
+        // Kolom `time` berbentuk `07:00:00`, dirapikan menjadi `07:00 - 08:30`
+        // mengikuti format `Jadwal::rentangJam()`.
+        $jam = $baris->jam_mulai !== null && $baris->jam_selesai !== null
+            ? substr((string) $baris->jam_mulai, 0, 5).' - '.substr((string) $baris->jam_selesai, 0, 5)
+            : null;
+
+        return [
+            'jadwal' => trim($baris->hari.($jam !== null ? ', '.$jam : '')),
+            'hari' => $baris->hari,
+            'jam' => $jam,
+            'mata_kuliah' => $baris->mata_kuliah,
+            'kelas' => $baris->nama_kelas_jadwal,
+            'sesi' => 0,
+            'hadir' => 0,
+            'izin' => 0,
+            'sakit' => 0,
+            'alpa' => 0,
+            'total' => 0,
+        ];
+    }
+
+    /**
      * Catatan absensi pada periode tertentu, diambil sekali untuk seluruh kelas.
      *
+     * Absensi ditautkan ke `sesi_absensis` lalu ke `jadwals` supaya tiap baris
+     * membawa nama mata kuliahnya, beserta hari, jam, dan kelas jadwalnya untuk
+     * rekap per jadwal (join `kelas` hanya dipakai untuk menampilkan nama
+     * kelas). Jadwal ditambahkan dengan left join karena baris lama
+     * (`jadwal_id` null) tetap harus ikut terbawa; namanya nanti diganti
+     * `SesiAbsensi::TANPA_JADWAL` oleh pemanggil agregasi.
+     *
      * @param  list<string>  $kelas
+     * @param  string|null  $mataKuliah  filter satu mata kuliah, null untuk semua
      * @return SupportCollection<int, object>
      */
-    protected function catatanAbsensi(array $kelas, Carbon $dari, Carbon $sampai): SupportCollection
+    protected function catatanAbsensi(array $kelas, Carbon $dari, Carbon $sampai, ?string $mataKuliah = null): SupportCollection
     {
         if ($kelas === []) {
             return new SupportCollection;
         }
 
         return Absensi::query()
-            ->whereBetween('waktu_absen', [$dari, $sampai])
-            ->whereIn('mahasiswa_id', function ($query) use ($kelas) {
+            ->join('sesi_absensis', 'absensis.sesi_absensi_id', '=', 'sesi_absensis.id')
+            ->leftJoin('jadwals', 'sesi_absensis.jadwal_id', '=', 'jadwals.id')
+            ->leftJoin('kelas', 'jadwals.kelas_id', '=', 'kelas.id')
+            ->whereBetween('absensis.waktu_absen', [$dari, $sampai])
+            ->when($mataKuliah !== null, fn ($query) => $query->where('jadwals.mata_kuliah', $mataKuliah))
+            ->whereIn('absensis.mahasiswa_id', function ($query) use ($kelas) {
                 $query->select('id')->from('mahasiswa')->whereIn('kelas', $kelas);
             })
-            ->get(['mahasiswa_id', 'status', 'waktu_absen'])
+            ->get([
+                'absensis.mahasiswa_id',
+                'absensis.status',
+                'absensis.waktu_absen',
+                'absensis.sesi_absensi_id',
+                'sesi_absensis.jadwal_id',
+                'jadwals.mata_kuliah',
+                'jadwals.hari',
+                'jadwals.jam_mulai',
+                'jadwals.jam_selesai',
+                'kelas.nama_kelas as nama_kelas_jadwal',
+            ])
             ->map(fn (Absensi $absen): object => (object) [
                 'mahasiswa_id' => $absen->mahasiswa_id,
                 'status' => $absen->status,
                 'tanggal' => $absen->waktu_absen->format('Y-m-d'),
+                'sesi' => $absen->sesi_absensi_id,
+                'mata_kuliah' => $absen->mata_kuliah ?? SesiAbsensi::TANPA_JADWAL,
+                'jadwal_id' => $absen->jadwal_id,
+                'hari' => $absen->hari,
+                'jam_mulai' => $absen->jam_mulai,
+                'jam_selesai' => $absen->jam_selesai,
+                'nama_kelas_jadwal' => $absen->nama_kelas_jadwal,
             ])
             ->values();
     }

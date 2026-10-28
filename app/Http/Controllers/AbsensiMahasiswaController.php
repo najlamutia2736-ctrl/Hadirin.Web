@@ -8,6 +8,7 @@ use App\Models\Mahasiswa;
 use App\Models\SesiAbsensi;
 use App\Services\SesiAbsensiService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -107,6 +108,114 @@ class AbsensiMahasiswaController extends Controller
     }
 
     /**
+     * Halaman presen lewat Scan QR.
+     *
+     * Yang dipindai mahasiswa adalah **QR Sesi** yang ditampilkan dosen atau
+     * admin di depan kelas (halaman Pindai Barcode). Isinya kode sesi, jadi
+     * begitu kamera membacanya, halaman ini langsung mengirimkannya ke
+     * {@see storeScanQr()} dan kehadiran tercatat tanpa mengetik apa pun.
+     */
+    public function scanQr(Request $request): View
+    {
+        $mahasiswa = $request->user()?->mahasiswa;
+
+        // Guard sama dengan halaman absensi lain: akun dosen atau admin yang
+        // salah klik link dari navbar diarahkan keluar.
+        abort_unless($mahasiswa !== null, 403, 'Halaman ini hanya untuk akun mahasiswa.');
+
+        return view('absensi.scan-qr', [
+            'mahasiswa' => $mahasiswa,
+            'ruteSimpan' => route('absensi.scan-qr.store'),
+        ]);
+    }
+
+    /**
+     * Catat kehadiran dari hasil scan QR Sesi.
+     *
+     * Kode yang dibaca kamera adalah `sesi_absensis.kode_sesi` milik kelas
+     * mahasiswa ini. Karena hanya dosen atau admin yang menampilkan QR itu di
+     * depan kelas, pemindaian di sini sekaligus menandai mahasiswa benar-benar
+     * berada di kelas saat sesi berlangsung.
+     *
+     * Semua penolakan dikirim sebagai JSON 4xx dengan pesan yang bisa langsung
+     * dibaca mahasiswa di layar, bukan exception, supaya halaman scan tetap
+     * berjalan dan bisa segera memindai ulang.
+     */
+    public function storeScanQr(Request $request): JsonResponse
+    {
+        $mahasiswa = $request->user()?->mahasiswa;
+
+        abort_unless($mahasiswa !== null, 403, 'Halaman ini hanya untuk akun mahasiswa.');
+
+        $validated = $request->validate([
+            'kode' => ['required', 'string', 'max:64'],
+        ]);
+
+        $tolak = fn (string $pesan, int $status = 422): JsonResponse => response()->json([
+            'sukses' => false,
+            'pesan' => $pesan,
+        ], $status);
+
+        // Kehadiran hanya bermakna untuk akun aktif, sama dengan alur pindai
+        // barcode oleh petugas. Mahasiswa pindah atau nonaktif ditolak.
+        if ($mahasiswa->status !== 'Aktif') {
+            return $tolak('Status akunmu bukan Aktif, jadi kehadiran tidak dicatat.', 403);
+        }
+
+        /*
+         | Isi QR-nya adalah kode sesi, misalnya `JW12-2026-10-23`. Tanda
+         | hubungnya bagian dari kode itu, jadi hanya spasi di ujung yang
+         | dibuang — berbeda dengan kode NIM yang justru dibersihkan dari
+         | semua tanda.
+         */
+        $sesi = SesiAbsensi::query()
+            ->with('jadwal.kelas:id,nama_kelas')
+            ->where('kode_sesi', trim($validated['kode']))
+            ->first();
+
+        if ($sesi === null || $sesi->jadwal === null || $sesi->jadwal->kelas === null) {
+            return $tolak('QR tidak dikenal. Pastikan kamu memindai QR Sesi yang ditampilkan dosen di depan kelas.');
+        }
+
+        // QR milik kelas lain ditolak walaupun berhasil dibaca, supaya
+        // mahasiswa tidak bisa mencatat kehadiran untuk kelas yang bukan
+        // kelompoknya.
+        if ($sesi->jadwal->kelas->nama_kelas !== $mahasiswa->kelas) {
+            return $tolak('QR itu milik kelas '.$sesi->jadwal->kelas->nama_kelas.', bukan kelasmu ('.$mahasiswa->kelas.').');
+        }
+
+        $kondisi = $sesi->kondisiSekarang();
+
+        if ($kondisi === 'belum') {
+            return $tolak('Sesi '.$sesi->judul().' belum dimulai (mulai '.$sesi->waktu_mulai->format('H:i').'), jadi kehadiran belum bisa dicatat.');
+        }
+
+        if ($kondisi === 'selesai') {
+            return $tolak('Sesi '.$sesi->judul().' sudah berakhir pada '.$sesi->waktu_selesai->format('H:i').', jadi kehadiran tidak bisa dicatat lagi.');
+        }
+
+        // Satu mahasiswa satu catatan per sesi: scan ulang ditolak, bukan
+        // diam-diam menimpa data lama.
+        if ($this->absensiSesi($sesi, $mahasiswa) !== null) {
+            return $tolak('Kehadiran untuk '.$sesi->judul().' sudah tercatat, jadi tidak perlu presen lagi.');
+        }
+
+        $absensi = Absensi::create([
+            'mahasiswa_id' => $mahasiswa->getKey(),
+            'sesi_absensi_id' => $sesi->getKey(),
+            'waktu_absen' => now(),
+            'status' => 'hadir',
+        ]);
+
+        return response()->json([
+            'sukses' => true,
+            'pesan' => 'Kehadiran '.$sesi->judul().' tercatat pada '.$absensi->waktu_absen->format('H:i').' WIB.',
+            'mata_kuliah' => $sesi->judul(),
+            'waktu' => $absensi->waktu_absen->format('H:i'),
+        ]);
+    }
+
+    /**
      * Catat kehadiran berdasarkan ID Unik yang diketik mahasiswa.
      *
      * Statusnya selalu `hadir`, sama seperti hasil pindai QR. Bedanya hanya cara
@@ -137,6 +246,14 @@ class AbsensiMahasiswaController extends Controller
             return redirect()
                 ->route('absensi.id-unik')
                 ->with('gagal', 'Kode tidak cocok dengan kartu presensimu.');
+        }
+
+        // Kehadiran hanya bermakna untuk akun aktif, sama dengan alur scan.
+        // Mahasiswa pindah atau nonaktif sudah tidak lagi bagian kelas mana pun.
+        if ($mahasiswa->status !== 'Aktif') {
+            return redirect()
+                ->route('absensi.id-unik')
+                ->with('gagal', 'Status akunmu bukan Aktif, jadi kehadiran tidak bisa dicatat.');
         }
 
         $sesi = $this->sesiUntukPresensi($mahasiswa, $validated['sesi']);
@@ -184,7 +301,8 @@ class AbsensiMahasiswaController extends Controller
      * Riwayat absensi dan rekap untuk halaman notifikasi.
      *
      * Halaman ini hanya membaca, jadi tidak ada endpoint simpan. Isinya riwayat
-     * absensi yang dipaginasi, rekap bulan berjalan, dan rekap 7 hari terakhir
+     * absensi yang dipaginasi (bisa difilter per mata kuliah dan status lewat
+     * query string), rekap bulan berjalan, dan rekap 7 hari terakhir
      * supaya mahasiswa bisa lihat pola kehadiran tanpa membuka halaman lain.
      */
     public function notifikasi(Request $request): View
@@ -193,12 +311,29 @@ class AbsensiMahasiswaController extends Controller
 
         abort_unless($mahasiswa !== null, 403, 'Halaman ini hanya untuk akun mahasiswa.');
 
+        // Filter riwayat dibaca dari query string. Nilai yang tidak dikenal
+        // (status di luar empat status resmi, atau mata kuliah yang tidak
+        // pernah diikuti mahasiswa ini) diabaikan, supaya URL yang disunting
+        // sendiri tetap menampilkan riwayat utuh, bukan halaman kosong.
+        $pilihanMataKuliah = $this->pilihanMataKuliahRiwayat($mahasiswa);
+
+        $filter = [
+            'mata_kuliah' => in_array($request->query('mata_kuliah'), $pilihanMataKuliah, true)
+                ? $request->query('mata_kuliah')
+                : null,
+            'status' => in_array($request->query('status'), ['hadir', 'izin', 'sakit', 'alpha'], true)
+                ? $request->query('status')
+                : null,
+        ];
+
         return view('absensi.notifikasi', [
             'mahasiswa' => $mahasiswa,
             'hariIni' => $this->absensiHariIni($mahasiswa),
-            'riwayat' => $this->riwayatAbsensi($mahasiswa),
+            'riwayat' => $this->riwayatAbsensi($mahasiswa, $filter),
             'rekap' => $this->rekapBulanIni($mahasiswa),
             'mingguan' => $this->rekapMingguIni($mahasiswa),
+            'filter' => $filter,
+            'pilihanMataKuliah' => $pilihanMataKuliah,
         ]);
     }
 
@@ -256,21 +391,66 @@ class AbsensiMahasiswaController extends Controller
     }
 
     /**
-     * Catatan absensi terbaru, dipaginasi.
+     * Catatan absensi terbaru, dipaginasi, sesuai filter yang sedang aktif.
      *
      * Dipaginasi supaya tabelnya tidak melebar kalau mahasiswa sudah presen selama
      * berbulan-bulan. Sesi di-eager load karena setiap baris menampilkannya, dan
-     * jadwalnya ikut dibawa supaya riwayat menampilkan nama mata kuliah.
+     * jadwalnya ikut dibawa supaya riwayat menampilkan nama mata kuliah. Filter
+     * dipasang di query juga, supaya jumlah baris, halaman, dan tampilan selalu
+     * satu suara; `withQueryString()` supaya halaman berikutnya tetap membawa
+     * pilihan yang sedang dipakai.
      *
+     * @param  array{mata_kuliah: ?string, status: ?string}  $filter
      * @return LengthAwarePaginator<int, Absensi>
      */
-    protected function riwayatAbsensi(Mahasiswa $mahasiswa): LengthAwarePaginator
+    protected function riwayatAbsensi(Mahasiswa $mahasiswa, ?array $filter = null): LengthAwarePaginator
+    {
+        $filter ??= ['mata_kuliah' => null, 'status' => null];
+
+        $query = $mahasiswa->absensis()
+            ->with($this->sesiBerpengikut())
+            ->latest('waktu_absen');
+
+        if ($filter['mata_kuliah'] !== null) {
+            // Pilihan `TANPA_JADWAL` berarti sesi lama tanpa `jadwal_id`;
+            // sisanya dicocokkan lewat jadwal milik sesinya.
+            if ($filter['mata_kuliah'] === SesiAbsensi::TANPA_JADWAL) {
+                $query->whereHas('sesiAbsensi', fn ($sesi) => $sesi->whereNull('jadwal_id'));
+            } else {
+                $query->whereHas('sesiAbsensi.jadwal', fn ($jadwal) => $jadwal->where('mata_kuliah', $filter['mata_kuliah']));
+            }
+        }
+
+        if ($filter['status'] !== null) {
+            // Ditulis lengkap supaya tidak tertukar dengan status milik sesinya.
+            $query->where('absensis.status', $filter['status']);
+        }
+
+        return $query->paginate(10)->withQueryString();
+    }
+
+    /**
+     * Daftar mata kuliah untuk filter riwayat.
+     *
+     * Diambil dari riwayat mahasiswa ini sendiri, bukan dari seluruh jadwal:
+     * filter hanya berguna kalau pilihannya memang pernah diikuti. Sesi lama
+     * tanpa jadwal diberi pilihan sendiri dengan label yang sama seperti rekap
+     * per mata kuliah, supaya barisnya tetap bisa disaring.
+     *
+     * @return list<string>
+     */
+    protected function pilihanMataKuliahRiwayat(Mahasiswa $mahasiswa): array
     {
         return $mahasiswa->absensis()
-            ->with($this->sesiBerpengikut())
-            ->latest('waktu_absen')
-            ->paginate(10)
-            ->withQueryString();
+            ->join('sesi_absensis', 'sesi_absensis.id', '=', 'absensis.sesi_absensi_id')
+            ->leftJoin('jadwals', 'jadwals.id', '=', 'sesi_absensis.jadwal_id')
+            ->distinct()
+            ->pluck('jadwals.mata_kuliah')
+            ->map(fn ($mataKuliah) => $mataKuliah ?? SesiAbsensi::TANPA_JADWAL)
+            ->unique()
+            ->sort()
+            ->values()
+            ->all();
     }
 
     /**
@@ -312,15 +492,16 @@ class AbsensiMahasiswaController extends Controller
     }
 
     /**
-     * Rapikan kode yang diketik supaya perbandingannya tidak gagal karena spasi
-     * atau tanda hubung yang tidak disengaja.
+     * Rapikan kode yang diketik supaya perbandingannya tidak gagal karena
+     * spasi atau tanda pemisah yang tidak disengaja.
      *
-     * Spasi dan tanda hubung dibuang karena mahasiswa sering mengetik dengan format
-     * bergaya sendiri, misalnya "2024 0101" atau "2024-0101".
+     * Kamerapun kadang menambahkan karakter pemisah, sementara NIM di
+     * database disimpan polos. Aturannya sama dengan pemindai barcode petugas
+     * supaya satu kode yang sama selalu diterima di kedua halaman.
      */
     protected function normalisasiKode(string $kode): string
     {
-        return preg_replace('/[\s\-]+/', '', trim($kode)) ?? trim($kode);
+        return preg_replace('/[^A-Za-z0-9]/', '', $kode) ?? '';
     }
 
     /**
@@ -375,6 +556,14 @@ class AbsensiMahasiswaController extends Controller
             'sesi' => ['required', 'integer', Rule::exists('sesi_absensis', 'id')],
         ]);
 
+        // Pengajuan hanya berlaku untuk akun aktif; mahasiswa pindah atau
+        // nonaktif sudah tidak lagi bagian kelas mana pun.
+        if ($mahasiswa->status !== 'Aktif') {
+            return redirect()
+                ->route('absensi.izin-sakit')
+                ->with('gagal', 'Status akunmu bukan Aktif, jadi pengajuan tidak bisa dikirim.');
+        }
+
         $sesi = $this->sesiUntukPresensi($mahasiswa, $validated['sesi']);
 
         if ($sesi === null) {
@@ -424,21 +613,12 @@ class AbsensiMahasiswaController extends Controller
     }
 
     /**
-     * Sesi absensi yang sedang berjalan, atau null kalau belum ada.
-     *
-     * Pencariannya dipindah ke `SesiAbsensiService` supaya controller ini
-     * tidak perlu tahu detail rentang waktunya.
-     */
-    protected function sesiBerjalan(): ?SesiAbsensi
-    {
-        return $this->sesiAbsensi->sesiBerjalan();
-    }
-
-    /**
      * Jadwal kuliah hari ini milik kelas mahasiswa ini.
      *
      * Sesi presensi dibuat dari jadwal inilah yang membuat presensi menjadi per
      * mata kuliah: satu baris jadwal, satu sesi, satu catatan absensi.
+     * Jadwal tahun akademik lain sengaja tidak ikut: jadwal lama yang masih
+     * berstatus Aktif tidak boleh membuat sesi presensi di tahun sekarang.
      *
      * @return Collection<int, Jadwal>
      */
@@ -447,6 +627,7 @@ class AbsensiMahasiswaController extends Controller
         return Jadwal::query()
             ->with('dosen.user:id,name')
             ->where('status', 'Aktif')
+            ->where('tahun_akademik', now()->year)
             ->where('hari', SesiAbsensiService::namaHari(today()))
             ->whereHas('kelas', fn ($query) => $query->where('nama_kelas', $mahasiswa->kelas))
             ->orderBy('jam_mulai')
@@ -655,7 +836,12 @@ class AbsensiMahasiswaController extends Controller
      * absensi ke memori lalu dihitung di PHP. Satu baris = satu presensi per
      * mata kuliah, jadi angkanya memang menghitung catatan, bukan hari.
      *
-     * @return array{hadir:int,izin:int,sakit:int,alpha:int,total:int,persentase:int}
+     * `perMataKuliah` merinci angka yang sama per nama mata kuliah lewat
+     * relasi sesi → jadwal, supaya mahasiswa bisa melihat kehadirannya per
+     * perkuliahan, bukan hanya total bulanan. Baris lama tanpa jadwal masuk
+     * ke grup `SesiAbsensi::TANPA_JADWAL`.
+     *
+     * @return array{hadir:int,izin:int,sakit:int,alpha:int,total:int,persentase:int,perMataKuliah:list<array{mata_kuliah:string,hadir:int,izin:int,sakit:int,alpha:int,total:int,persentase:int}>}
      */
     protected function rekapBulanIni(Mahasiswa $mahasiswa): array
     {
@@ -681,6 +867,70 @@ class AbsensiMahasiswaController extends Controller
             'alpha' => $alpha,
             'total' => $total,
             'persentase' => $total > 0 ? (int) round($hadir / $total * 100) : 0,
+            'perMataKuliah' => $this->rekapPerMataKuliah($mahasiswa, $dari, $sampai),
         ];
+    }
+
+    /**
+     * Rincian rekap bulan berjalan per nama mata kuliah.
+     *
+     * Satu query agregat dengan join sesi → jadwal; status yang tidak
+     * dikenal dilewati supaya hanya empat status resmi yang tampil.
+     *
+     * @return list<array{mata_kuliah:string,hadir:int,izin:int,sakit:int,alpha:int,total:int,persentase:int}>
+     */
+    protected function rekapPerMataKuliah(Mahasiswa $mahasiswa, Carbon $dari, Carbon $sampai): array
+    {
+        $perMataKuliah = $mahasiswa->absensis()
+            ->join('sesi_absensis', 'absensis.sesi_absensi_id', '=', 'sesi_absensis.id')
+            ->leftJoin('jadwals', 'sesi_absensis.jadwal_id', '=', 'jadwals.id')
+            ->whereBetween('absensis.waktu_absen', [$dari, $sampai])
+            ->selectRaw('jadwals.mata_kuliah as mata_kuliah')
+            ->selectRaw('absensis.status as status')
+            ->selectRaw('count(*) as jumlah')
+            ->groupBy('jadwals.mata_kuliah', 'absensis.status')
+            ->get();
+
+        // Pemetaan status enum database ke kolom rekap. Kuncinya harus nama
+        // status, bukan urutan array, supaya `hadir` tidak jatuh ke indeks
+        // kosong dan lolos begitu saja dari loop ini.
+        $kolomStatus = ['hadir' => 'hadir', 'izin' => 'izin', 'sakit' => 'sakit', 'alpha' => 'alpha'];
+
+        $barisPerMataKuliah = [];
+
+        foreach ($perMataKuliah as $baris) {
+            $kolom = $kolomStatus[$baris->status] ?? null;
+
+            if ($kolom === null) {
+                continue;
+            }
+
+            $mataKuliah = $baris->mata_kuliah ?? SesiAbsensi::TANPA_JADWAL;
+            $jumlah = (int) $baris->jumlah;
+
+            $barisPerMataKuliah[$mataKuliah] ??= [
+                'mata_kuliah' => $mataKuliah,
+                'hadir' => 0,
+                'izin' => 0,
+                'sakit' => 0,
+                'alpha' => 0,
+                'total' => 0,
+            ];
+
+            $barisPerMataKuliah[$mataKuliah][$kolom] += $jumlah;
+            $barisPerMataKuliah[$mataKuliah]['total'] += $jumlah;
+        }
+
+        $daftar = array_values($barisPerMataKuliah);
+
+        foreach ($daftar as $indeks => $baris) {
+            $daftar[$indeks]['persentase'] = $baris['total'] > 0
+                ? (int) round($baris['hadir'] / $baris['total'] * 100)
+                : 0;
+        }
+
+        usort($daftar, fn (array $a, array $b): int => strnatcmp($a['mata_kuliah'], $b['mata_kuliah']));
+
+        return $daftar;
     }
 }

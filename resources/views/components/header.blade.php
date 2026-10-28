@@ -1,6 +1,6 @@
 @php
     // Judul & breadcrumb bisa dikirim halaman lewat @section('title') / @section('breadcrumb'),
-    // atau diset langsung: @php($pageTitle = 'Kelola Data Kelas')
+    // atau diset langsung: @php($pageTitle = 'Kelola Data Presensi')
     $pageTitle = $pageTitle ?? 'Dashboard';
     $breadcrumbItems = $breadcrumbItems ?? [['label' => $pageTitle, 'current' => true]];
 @endphp

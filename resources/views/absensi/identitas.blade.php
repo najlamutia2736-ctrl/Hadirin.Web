@@ -198,6 +198,23 @@
 
                 {{-- Panel samping --}}
                 <section class="space-y-4">
+                    {{-- Barcode milik sendiri --}}
+                    <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                        <h2 class="text-sm font-semibold text-slate-800">Barcode Presensi</h2>
+                        <p class="mt-1 text-xs leading-relaxed text-slate-500">
+                            Berbeda tiap mahasiswa karena berisikan NIM-mu. Tunjukkan ke petugas, lalu
+                            dipindai lewat menu Pindai Barcode untuk mencatat kehadiranmu.
+                        </p>
+
+                        <div class="mt-4 flex justify-center">
+                            <x-qr-mahasiswa :mahasiswa="$mahasiswa" :ukuran="200" />
+                        </div>
+
+                        <p class="mt-3 text-center font-mono text-sm font-bold tracking-wide text-slate-800">
+                            {{ $mahasiswa->nim }}
+                        </p>
+                    </div>
+
                     {{-- Data yang tidak bisa diubah sendiri --}}
                     <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                         <h2 class="text-sm font-semibold text-slate-800">Data Permanen</h2>

@@ -2,10 +2,11 @@
 
 use App\Models\Absensi;
 use App\Models\Dosen;
+use App\Models\Jadwal;
 use App\Models\Kelas;
+use App\Models\Mahasiswa;
 use App\Models\MataKuliah;
 use App\Models\SesiAbsensi;
-use App\Models\Mahasiswa;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -529,16 +530,16 @@ test('pengguna boleh disimpan ulang tanpa mengubah email nya', function () {
 });
 
 /*
-| Halaman Kelola Data Kelas. Dosen boleh mengelola mahasiswa di kelas yang diampu,
+| Halaman Kelola Data Presensi. Dosen boleh mengelola mahasiswa di kelas yang diampu,
 | dan tidak boleh menyentuh kelas milik dosen lain.
 */
 
 /*
-| Laporan Bulanan. Semuanya dihitung dari tabel `absensis` yang sama dengan
+| Laporan Presensi. Semuanya dihitung dari tabel `absensis` yang sama dengan
 | rekap admin, lalu dibatasi ke kelas milik dosen yang sedang login.
 */
 
-test('laporan bulanan menghitung kehadiran dari tabel absensi', function () {
+test('laporan presensi menghitung kehadiran dari tabel absensi', function () {
     $dosen = dosenDenganAkun();
     $kelas = Kelas::factory()->create(['nama_kelas' => 'Kelas A', 'status' => 'Aktif']);
     $kelas->dosen()->sync([$dosen->id]);
@@ -566,12 +567,12 @@ test('laporan bulanan menghitung kehadiran dari tabel absensi', function () {
     $this->actingAs($dosen->user)
         ->get(route('dosen.laporan'))
         ->assertOk()
-        ->assertSee('Laporan Bulanan')
+        ->assertSee('Laporan Presensi')
         ->assertSee('Mahasiswa Hadir')
         ->assertSee('Mahasiswa Alpa');
 });
 
-test('laporan bulanan memakai json saat diminta', function () {
+test('laporan presensi memakai json saat diminta', function () {
     $dosen = dosenDenganAkun();
     $kelas = Kelas::factory()->create(['nama_kelas' => 'Kelas A', 'status' => 'Aktif']);
     $kelas->dosen()->sync([$dosen->id]);
@@ -604,7 +605,7 @@ test('laporan bulanan memakai json saat diminta', function () {
         ->and($payload['perMahasiswa'][0]['hari'])->toBe(1);
 });
 
-test('laporan bulanan hanya menghitung kelas yang diampu dosen', function () {
+test('laporan presensi hanya menghitung kelas yang diampu dosen', function () {
     $dosen = dosenDenganAkun();
     $kelasMilik = Kelas::factory()->create(['nama_kelas' => 'Kelas A', 'status' => 'Aktif']);
     $kelasLain = Kelas::factory()->create(['nama_kelas' => 'Kelas B', 'status' => 'Aktif']);
@@ -694,7 +695,7 @@ test('mahasiswa tanpa catatan presensi tetap muncul di laporan dengan angka nol'
         ->and($payload['perKelas'])->toHaveCount(1);
 });
 
-test('export laporan bulanan mengirim csv per kelas dan per mahasiswa', function () {
+test('export laporan presensi mengirim csv per kelas dan per mahasiswa', function () {
     $dosen = dosenDenganAkun();
     $kelas = Kelas::factory()->create(['nama_kelas' => 'Kelas A', 'status' => 'Aktif']);
     $kelas->dosen()->sync([$dosen->id]);
@@ -729,6 +730,189 @@ test('export laporan bulanan mengirim csv per kelas dan per mahasiswa', function
         ->and($csv)->toContain('RINGKASAN PER MAHASISWA')
         ->and($csv)->toContain('Mahasiswa Ekspor')
         ->and($csv)->toContain('Kelas A');
+});
+
+/**
+ * Sesi presensi yang menautkan satu jadwal mata kuliah pada kelas tertentu.
+ *
+ * Berbeda dengan sesi uji lain yang dibuat tanpa jadwal, sesi ini memakai
+ * `jadwal_id` supaya absensinya masuk ke rekap per mata kuliah.
+ */
+function sesiBermataKuliah(Kelas $kelas, string $mataKuliah): SesiAbsensi
+{
+    $jadwal = Jadwal::factory()->create([
+        'kelas_id' => $kelas->getKey(),
+        'mata_kuliah' => $mataKuliah,
+    ]);
+
+    return SesiAbsensi::create([
+        'jadwal_id' => $jadwal->getKey(),
+        'kode_sesi' => 'MK-'.$jadwal->getKey(),
+        'waktu_mulai' => now()->startOfDay()->setTime(7, 0),
+        'waktu_selesai' => now()->startOfDay()->setTime(9, 0),
+        'status' => 'selesai',
+    ]);
+}
+
+test('laporan mengelompokkan absensi per mata kuliah', function () {
+    $dosen = dosenDenganAkun();
+    $kelas = Kelas::factory()->create(['nama_kelas' => 'Kelas A', 'status' => 'Aktif']);
+    $kelas->dosen()->sync([$dosen->id]);
+
+    $mahasiswa = mahasiswaDiKelas($kelas, 'Mahasiswa Per MK');
+
+    $sesi = sesiBermataKuliah($kelas, 'Aljabar Linear');
+
+    Absensi::create([
+        'mahasiswa_id' => $mahasiswa->getKey(),
+        'sesi_absensi_id' => $sesi->getKey(),
+        'waktu_absen' => now(),
+        'status' => 'hadir',
+    ]);
+
+    $payload = $this->actingAs($dosen->user)
+        ->getJson(route('dosen.laporan'))
+        ->assertOk()
+        ->json();
+
+    expect($payload['perMataKuliah'])->toHaveCount(1)
+        ->and($payload['perMataKuliah'][0]['mata_kuliah'])->toBe('Aljabar Linear')
+        ->and($payload['perMataKuliah'][0]['sesi'])->toBe(1)
+        ->and($payload['perMataKuliah'][0]['hadir'])->toBe(1)
+        ->and($payload['perMataKuliah'][0]['persentase'])->toBe(100)
+        ->and($payload['total']['sesi'])->toBe(1);
+});
+
+test('absensi lama tanpa jadwal masuk ke baris tanpa jadwal kuliah', function () {
+    $dosen = dosenDenganAkun();
+    $kelas = Kelas::factory()->create(['nama_kelas' => 'Kelas A', 'status' => 'Aktif']);
+    $kelas->dosen()->sync([$dosen->id]);
+
+    $mahasiswa = mahasiswaDiKelas($kelas, 'Mahasiswa Sesi Lama');
+
+    $sesi = SesiAbsensi::create([
+        'kode_sesi' => 'HARIAN-LAMA',
+        'waktu_mulai' => now()->startOfDay()->setTime(7, 0),
+        'waktu_selesai' => now()->startOfDay()->setTime(9, 0),
+        'status' => 'selesai',
+    ]);
+
+    Absensi::create([
+        'mahasiswa_id' => $mahasiswa->getKey(),
+        'sesi_absensi_id' => $sesi->getKey(),
+        'waktu_absen' => now(),
+        'status' => 'izin',
+    ]);
+
+    $payload = $this->actingAs($dosen->user)
+        ->getJson(route('dosen.laporan'))
+        ->assertOk()
+        ->json();
+
+    expect($payload['perMataKuliah'])->toHaveCount(1)
+        ->and($payload['perMataKuliah'][0]['mata_kuliah'])->toBe('Tanpa Jadwal Kuliah')
+        ->and($payload['perMataKuliah'][0]['izin'])->toBe(1);
+});
+
+test('filter mata kuliah membatasi laporan ke satu mata kuliah', function () {
+    $dosen = dosenDenganAkun();
+    $kelas = Kelas::factory()->create(['nama_kelas' => 'Kelas A', 'status' => 'Aktif']);
+    $kelas->dosen()->sync([$dosen->id]);
+
+    $mahasiswa = mahasiswaDiKelas($kelas, 'Mahasiswa Dua MK');
+
+    foreach (['Aljabar Linear', 'Basis Data'] as $mataKuliah) {
+        $sesi = sesiBermataKuliah($kelas, $mataKuliah);
+
+        Absensi::create([
+            'mahasiswa_id' => $mahasiswa->getKey(),
+            'sesi_absensi_id' => $sesi->getKey(),
+            'waktu_absen' => now(),
+            'status' => 'hadir',
+        ]);
+    }
+
+    $payload = $this->actingAs($dosen->user)
+        ->getJson(route('dosen.laporan', ['mata_kuliah' => 'Aljabar Linear']))
+        ->assertOk()
+        ->json();
+
+    expect($payload['mata_kuliah'])->toBe('Aljabar Linear')
+        ->and($payload['perMataKuliah'])->toHaveCount(1)
+        ->and($payload['perMataKuliah'][0]['mata_kuliah'])->toBe('Aljabar Linear')
+        ->and($payload['total']['hadir'])->toBe(1)
+        ->and($payload['pilihanMataKuliah'])->toBe(['Aljabar Linear', 'Basis Data']);
+
+    // Halaman yang dirender juga ikut menyaring tampilannya.
+    $this->actingAs($dosen->user)
+        ->get(route('dosen.laporan', ['mata_kuliah' => 'Aljabar Linear']))
+        ->assertOk()
+        ->assertSee('Rekap per Mata Kuliah')
+        ->assertSee('Aljabar Linear');
+});
+
+test('filter mata kuliah yang bukan pilihan laporan diabaikan', function () {
+    $dosen = dosenDenganAkun();
+    $kelas = Kelas::factory()->create(['nama_kelas' => 'Kelas A', 'status' => 'Aktif']);
+    $kelas->dosen()->sync([$dosen->id]);
+
+    $payload = $this->actingAs($dosen->user)
+        ->getJson(route('dosen.laporan', ['mata_kuliah' => 'Mata Kuliah Asing']))
+        ->assertOk()
+        ->json();
+
+    expect($payload['mata_kuliah'])->toBeNull();
+});
+
+test('halaman laporan menampilkan rekap per mata kuliah', function () {
+    $dosen = dosenDenganAkun();
+    $kelas = Kelas::factory()->create(['nama_kelas' => 'Kelas A', 'status' => 'Aktif']);
+    $kelas->dosen()->sync([$dosen->id]);
+
+    $mahasiswa = mahasiswaDiKelas($kelas, 'Mahasiswa Tampil MK');
+
+    $sesi = sesiBermataKuliah($kelas, 'Aljabar Linear');
+
+    Absensi::create([
+        'mahasiswa_id' => $mahasiswa->getKey(),
+        'sesi_absensi_id' => $sesi->getKey(),
+        'waktu_absen' => now(),
+        'status' => 'hadir',
+    ]);
+
+    $this->actingAs($dosen->user)
+        ->get(route('dosen.laporan'))
+        ->assertOk()
+        ->assertSee('Rekap per Mata Kuliah')
+        ->assertSee('Aljabar Linear')
+        ->assertSee('Mata Kuliah');
+});
+
+test('export laporan memuat ringkasan per mata kuliah', function () {
+    $dosen = dosenDenganAkun();
+    $kelas = Kelas::factory()->create(['nama_kelas' => 'Kelas A', 'status' => 'Aktif']);
+    $kelas->dosen()->sync([$dosen->id]);
+
+    $mahasiswa = mahasiswaDiKelas($kelas, 'Mahasiswa Ekspor MK');
+
+    $sesi = sesiBermataKuliah($kelas, 'Aljabar Linear');
+
+    Absensi::create([
+        'mahasiswa_id' => $mahasiswa->getKey(),
+        'sesi_absensi_id' => $sesi->getKey(),
+        'waktu_absen' => now(),
+        'status' => 'hadir',
+    ]);
+
+    $csv = $this->actingAs($dosen->user)
+        ->get(route('dosen.laporan.export'))
+        ->assertOk()
+        ->streamedContent();
+
+    expect($csv)
+        ->toContain('RINGKASAN PER MATA KULIAH')
+        ->toContain('Aljabar Linear')
+        ->toContain('"Filter Mata Kuliah";"Semua Mata Kuliah"');
 });
 
 test('dosen bisa menambah mahasiswa ke kelas yang diampu', function () {
@@ -931,6 +1115,51 @@ test('penambahan mahasiswa memvalidasi nim dan kelas', function () {
         ->assertJsonValidationErrors(['name', 'nim', 'class', 'gender']);
 });
 
+test('halaman tambah mahasiswa tampil dan membatasi pilihan kelas ke yang diampu', function () {
+    $dosen = dosenDenganAkun();
+    $kelasDiampu = Kelas::factory()->create(['nama_kelas' => 'Kelas A', 'status' => 'Aktif']);
+    Kelas::factory()->create(['nama_kelas' => 'Kelas B', 'status' => 'Aktif']);
+    $kelasDiampu->dosen()->sync([$dosen->id]);
+
+    $this->actingAs($dosen->user)
+        ->get(route('dosen.kelola.mahasiswa.create'))
+        ->assertOk()
+        ->assertSee('Tambah Mahasiswa')
+        // Formnya halaman penuh yang men-post langsung ke endpoint simpan,
+        // bukan modal mengambang.
+        ->assertSee(route('dosen.kelola.mahasiswa.store'), false)
+        // Pilihan kelasnya hanya kelas yang diampu, bukan seluruh kampus.
+        ->assertSee('Kelas A')
+        ->assertDontSee('Kelas B');
+});
+
+test('form halaman tambah membalas redirect dan menyimpan mahasiswa', function () {
+    $dosen = dosenDenganAkun();
+    $kelas = Kelas::factory()->create(['nama_kelas' => 'Kelas A', 'status' => 'Aktif']);
+    $kelas->dosen()->sync([$dosen->id]);
+
+    // Permintaan form (bukan JSON) harus dibalas halaman kelola, bukan JSON,
+    // supaya pengguna langsung melihat daftar terbarunya.
+    $this->actingAs($dosen->user)
+        ->post(route('dosen.kelola.mahasiswa.store'), [
+            'name' => 'Mahasiswa Form',
+            'nim' => '55667788',
+            'class' => 'Kelas A',
+            'gender' => 'L',
+            'parent' => 'Bapak Form',
+            'phone' => '0811111111',
+        ])
+        ->assertRedirect(route('dosen.kelola'))
+        ->assertSessionHas('success')
+        ->assertSessionHas('mahasiswa_baru');
+
+    $mahasiswa = Mahasiswa::query()->where('nim', '55667788')->firstOrFail();
+
+    expect($mahasiswa->kelas)->toBe('Kelas A')
+        ->and($mahasiswa->user->role)->toBe('Mahasiswa')
+        ->and($mahasiswa->user->name)->toBe('Mahasiswa Form');
+});
+
 test('halaman kelola menampilkan kelas dan mahasiswa dari database', function () {
     $dosen = dosenDenganAkun();
     $kelas = Kelas::factory()->create(['nama_kelas' => 'Kelas A', 'status' => 'Aktif']);
@@ -950,7 +1179,7 @@ test('halaman kelola menampilkan kelas dan mahasiswa dari database', function ()
 
 /*
 | Progres Presensi. Sumber angka tetap tabel `absensis`, dengan dua hal yang
-| membedakannya dari laporan bulanan: periodenya bisa beberapa periode
+| membedakannya dari tab rekap bulanan: periodenya bisa beberapa periode
 | sekaligus, dan ada pembanding dengan periode sebelumnya sepanjang yang
 | sama supaya dosen tahu arah kehadiran, bukan cuma angkanya.
 */
@@ -1215,13 +1444,12 @@ test('halaman progres absensi menampilkan ringkasan periode di layar', function 
     $this->actingAs($dosen->user)
         ->get(route('dosen.laporan', ['tab' => 'periode', 'periode' => '7']))
         ->assertOk()
-        // Judul halaman tetap "Laporan Bulanan" karena keduanya sudah digabung,
+        // Judul halaman tetap "Laporan Presensi" karena keduanya sudah digabung,
         // sementara isi tabnya yang berbeda.
-        ->assertSee('Laporan Bulanan')
+        ->assertSee('Laporan Presensi')
         ->assertSee('Progres Presensi')
-        ->assertSee('Rata-rata Kehadiran')
         ->assertSee('Tren Kehadiran Harian')
-        ->assertSee('Progres per Kelas')
+        ->assertSee('Ringkasan per Kelas')
         ->assertSee('Progres per Mahasiswa')
         ->assertSee('Mahasiswa Tampil Progres')
         // Periodenya ikut terbaca di dropdown, bukan hardcoded di view.
@@ -1235,7 +1463,7 @@ test('halaman progres absensi menampilkan ringkasan periode di layar', function 
 | lewat query `?tab=`, bukan halaman terpisah.
 */
 
-test('laporan bulanan dan progres absensi digabung jadi satu halaman', function () {
+test('laporan presensi dan progres absensi digabung jadi satu halaman', function () {
     $dosen = dosenDenganAkun();
     $kelas = Kelas::factory()->create(['nama_kelas' => 'Kelas A', 'status' => 'Aktif']);
     $kelas->dosen()->sync([$dosen->id]);
@@ -1247,9 +1475,9 @@ test('laporan bulanan dan progres absensi digabung jadi satu halaman', function 
         ->get(route('dosen.laporan'))
         ->assertOk();
 
-    $default->assertSee('Laporan Bulanan')
+    $default->assertSee('Laporan Presensi')
         ->assertSee('Periode Bulan')
-        ->assertSee('Rekap per Kelas')
+        ->assertSee('Ringkasan per Kelas')
         ->assertSee('Rincian per Mahasiswa')
         // Ekspor CSV hanya ada di tab bulanan.
         ->assertSee('Ekspor CSV')
@@ -1261,8 +1489,8 @@ test('laporan bulanan dan progres absensi digabung jadi satu halaman', function 
         ->get(route('dosen.laporan', ['tab' => 'periode']))
         ->assertOk();
 
-    $periode->assertSee('Laporan Bulanan')
-        ->assertSee('Progres per Kelas')
+    $periode->assertSee('Laporan Presensi')
+        ->assertSee('Ringkasan per Kelas')
         ->assertSee('Progres per Mahasiswa')
         ->assertSee('Presensi Hari Ini')
         // Tombol ekspor mengikuti periode bulanan, jadi tidak ada di tab ini.
@@ -1545,4 +1773,119 @@ test('kolom mata kuliah dosen lama diisi dari mata kuliah yang dipilih', functio
 
     expect($dosen->fresh()->mata_kuliah)->toBe('Kimia Industri')
         ->and($dosen->namaMataKuliah())->toBe('Kimia Industri');
+});
+
+/*
+| Rekap per jadwal dan per tanggal memecah catatan yang sama dengan rekap per
+| mata kuliah: satu sumber baris (`absensis` + join `sesi_absensis`/`jadwals`),
+| dua cara membaca, yaitu per pertemuan jadwal dan per hari, supaya laporan
+| presensi lebih jelas.
+*/
+
+test('laporan presensi menampilkan rekap per jadwal dan per tanggal', function () {
+    $dosen = dosenDenganAkun();
+    $kelas = Kelas::factory()->create(['nama_kelas' => 'Kelas A', 'status' => 'Aktif']);
+    $kelas->dosen()->sync([$dosen->id]);
+
+    $mahasiswaHadir = mahasiswaDiKelas($kelas, 'Mahasiswa Hadir Jadwal');
+    $mahasiswaAlpa = mahasiswaDiKelas($kelas, 'Mahasiswa Alpa Jadwal');
+
+    $jadwal = Jadwal::factory()->create([
+        'kelas_id' => $kelas->id,
+        'dosen_id' => $dosen->id,
+        'mata_kuliah' => 'Informatika',
+        'hari' => 'Senin',
+        'jam_mulai' => '07:00',
+        'jam_selesai' => '08:30',
+    ]);
+
+    $sesi = SesiAbsensi::create([
+        'kode_sesi' => 'SESI-PER-JADWAL',
+        'jadwal_id' => $jadwal->id,
+        'waktu_mulai' => now()->subHour(),
+        'waktu_selesai' => now(),
+        'status' => 'aktif',
+    ]);
+
+    foreach ([[$mahasiswaHadir, 'hadir'], [$mahasiswaAlpa, 'alpha']] as [$mahasiswa, $status]) {
+        Absensi::create([
+            'mahasiswa_id' => $mahasiswa->id,
+            'sesi_absensi_id' => $sesi->id,
+            'waktu_absen' => now(),
+            'status' => $status,
+        ]);
+    }
+
+    $this->actingAs($dosen->user)
+        ->get(route('dosen.laporan'))
+        ->assertOk()
+        // Kedua rekap kini satu panel dengan tab, bukan dua kartu terpisah.
+        ->assertSee('Rekap per Jadwal & Tanggal')
+        ->assertSee('data-rekapTab', false)
+        ->assertSee('data-rekapPanel', false)
+        ->assertSee('Rekap per Jadwal')
+        ->assertSee('Rekap per Tanggal')
+        ->assertSee('Senin, 07:00 - 08:30')
+        ->assertSee('Informatika &middot; Kelas A', false)
+        ->assertSee(now()->locale('id')->translatedFormat('l, d F Y'));
+
+    $payload = $this->actingAs($dosen->user)
+        ->getJson(route('dosen.laporan'))
+        ->assertOk()
+        ->json();
+
+    expect($payload['perJadwal'][0]['jadwal'])->toBe('Senin, 07:00 - 08:30')
+        ->and($payload['perJadwal'][0]['mata_kuliah'])->toBe('Informatika')
+        ->and($payload['perJadwal'][0]['kelas'])->toBe('Kelas A')
+        ->and($payload['perJadwal'][0]['sesi'])->toBe(1)
+        ->and($payload['perJadwal'][0]['persentase'])->toBe(50)
+        ->and($payload['perHari'][0]['sesi'])->toBe(1)
+        ->and($payload['perHari'][0]['namaTanggal'])->toBe(now()->locale('id')->translatedFormat('l, d F Y'));
+});
+
+test('catatan tanpa jadwal masuk grup tanpa jadwal pada rekap per jadwal', function () {
+    $dosen = dosenDenganAkun();
+    $kelas = Kelas::factory()->create(['nama_kelas' => 'Kelas A', 'status' => 'Aktif']);
+    $kelas->dosen()->sync([$dosen->id]);
+
+    $mahasiswa = mahasiswaDiKelas($kelas, 'Mahasiswa Riwayat Lama');
+
+    // Sesi lama sebelum `jadwal_id` ada, persis seperti data production.
+    $sesi = SesiAbsensi::create([
+        'kode_sesi' => 'SESI-TANPA-JADWAL',
+        'waktu_mulai' => now()->subHour(),
+        'waktu_selesai' => now(),
+        'status' => 'aktif',
+    ]);
+
+    Absensi::create([
+        'mahasiswa_id' => $mahasiswa->id,
+        'sesi_absensi_id' => $sesi->id,
+        'waktu_absen' => now(),
+        'status' => 'hadir',
+    ]);
+
+    $payload = $this->actingAs($dosen->user)
+        ->getJson(route('dosen.laporan'))
+        ->assertOk()
+        ->json();
+
+    expect($payload['perJadwal'])->toHaveCount(1)
+        ->and($payload['perJadwal'][0]['jadwal'])->toBe(SesiAbsensi::TANPA_JADWAL)
+        ->and($payload['perJadwal'][0]['mata_kuliah'])->toBeNull()
+        ->and($payload['perJadwal'][0]['persentase'])->toBe(100);
+});
+
+test('tab progres presensi juga menampilkan rekap per jadwal dan per tanggal', function () {
+    $dosen = dosenDenganAkun();
+    $kelas = Kelas::factory()->create(['nama_kelas' => 'Kelas A', 'status' => 'Aktif']);
+    $kelas->dosen()->sync([$dosen->id]);
+
+    mahasiswaDiKelas($kelas, 'Mahasiswa Progres Jadwal');
+
+    $this->actingAs($dosen->user)
+        ->get(route('dosen.laporan', ['tab' => 'periode']))
+        ->assertOk()
+        ->assertSee('Progres per Jadwal')
+        ->assertSee('Progres per Tanggal');
 });

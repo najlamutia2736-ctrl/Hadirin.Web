@@ -65,7 +65,24 @@ class MahasiswaController extends Controller
             'daftarKelas' => $daftarKelas,
             'daftarStatus' => $daftarStatus,
             'pilihanKelas' => $this->pilihanKelas(),
+            'mahasiswaBaru' => $this->mahasiswaBaru(),
         ]);
+    }
+
+    /**
+     * Mahasiswa yang baru saja ditambahkan lewat halaman ini.
+     *
+     * Id-nya di-flash oleh {@see store()} supaya halaman daftar bisa langsung
+     * membuka modal barcode untuknya, sesuai aturan bahwa tiap mahasiswa baru
+     * langsung punya barcode yang siap dipakai.
+     */
+    private function mahasiswaBaru(): ?Mahasiswa
+    {
+        $id = session('mahasiswa_baru');
+
+        return is_numeric($id)
+            ? Mahasiswa::with('user:id,name')->find($id)
+            : null;
     }
 
     /**
@@ -168,7 +185,7 @@ class MahasiswaController extends Controller
             'class.exists' => 'Kelas tersebut belum terdaftar di halaman Classes.',
         ]);
 
-        DB::transaction(function () use ($validated) {
+        $mahasiswa = DB::transaction(function () use ($validated): Mahasiswa {
             $user = User::create([
                 'name' => $validated['name'],
                 'email' => $validated['nim'].'@mahasiswa.kampus.ac.id',
@@ -177,7 +194,7 @@ class MahasiswaController extends Controller
                 'status' => 'Aktif',
             ]);
 
-            Mahasiswa::create([
+            return Mahasiswa::create([
                 'user_id' => $user->id,
                 'nim' => $validated['nim'],
                 'jenis_kelamin' => $validated['gender'],
@@ -188,9 +205,16 @@ class MahasiswaController extends Controller
             ]);
         });
 
+        /*
+         | Id mahasiswa barunya ikut di-flash supaya halaman daftar langsung
+         | membuka modal barcode. Barcode tiap mahasiswa berisikan NIM dan tidak
+         | perlu dibuat terpisah, jadi begitu datanya ada barcode pun langsung
+         | siap dipindai petugas.
+         */
         return redirect()
             ->route('cms.mahasiswa')
-            ->with('success', 'Mahasiswa berhasil ditambahkan.');
+            ->with('success', 'Mahasiswa berhasil ditambahkan.')
+            ->with('mahasiswa_baru', $mahasiswa->getKey());
     }
 
     public function tambahmahasiswa(Request $request): View

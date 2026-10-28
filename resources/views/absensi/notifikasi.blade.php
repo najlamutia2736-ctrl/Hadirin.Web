@@ -241,9 +241,68 @@
 
             {{-- Riwayat lengkap --}}
             <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                @php $adaFilter = $filter['mata_kuliah'] !== null || $filter['status'] !== null; @endphp
+
                 <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4">
                     <h2 class="text-sm font-semibold text-slate-800">Riwayat Presensi</h2>
-                    <span class="text-xs text-slate-500">{{ $riwayat->total() }} catatan</span>
+                    <span class="text-xs text-slate-500">
+                        {{ $riwayat->total() }} catatan
+                        @if ($adaFilter)
+                            &middot; difilter
+                        @endif
+                    </span>
+                </div>
+
+                {{-- Filter riwayat: hasilnya langsung menyaring tabel di bawah,
+                     dan pilihan yang sama ikut terbawa ke halaman paginasi
+                     berikutnya lewat query string. --}}
+                <div class="border-b border-slate-100 px-5 py-4">
+                    <form method="GET" action="{{ route('absensi.notifikasi') }}"
+                        class="flex flex-wrap items-end gap-3">
+                        <div>
+                            <label for="filterMataKuliah"
+                                class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                Mata Kuliah
+                            </label>
+                            <select id="filterMataKuliah" name="mata_kuliah"
+                                class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-200">
+                                <option value="">Semua mata kuliah</option>
+                                @foreach ($pilihanMataKuliah as $pilihan)
+                                    <option value="{{ $pilihan }}" @selected($filter['mata_kuliah'] === $pilihan)>
+                                        {{ $pilihan }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="filterStatus"
+                                class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                Status
+                            </label>
+                            <select id="filterStatus" name="status"
+                                class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-200">
+                                <option value="">Semua status</option>
+                                @foreach (['hadir' => 'Hadir', 'izin' => 'Izin', 'sakit' => 'Sakit', 'alpha' => 'Alpa'] as $nilai => $label)
+                                    <option value="{{ $nilai }}" @selected($filter['status'] === $nilai)>
+                                        {{ $label }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <button type="submit"
+                            class="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700">
+                            Terapkan
+                        </button>
+
+                        @if ($adaFilter)
+                            <a href="{{ route('absensi.notifikasi') }}"
+                                class="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">
+                                Reset filter
+                            </a>
+                        @endif
+                    </form>
                 </div>
 
                 @if ($riwayat->isEmpty())
@@ -252,15 +311,21 @@
                             class="mx-auto grid h-12 w-12 place-items-center rounded-full bg-slate-100 text-lg text-slate-400">
                             <i class="fas fa-bell"></i>
                         </span>
-                        <p class="mt-3 text-sm font-semibold text-slate-800">Belum ada riwayat</p>
-                        <p class="mt-1 text-xs text-slate-500">
-                            Riwayat muncul setelah presensi pertama tercatat.
+                        <p class="mt-3 text-sm font-semibold text-slate-800">
+                            {{ $adaFilter ? 'Tidak ada catatan yang cocok' : 'Belum ada riwayat' }}
                         </p>
-                        <a href="{{ route('absensi.index') }}"
-                            class="mt-4 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700">
-                            Mulai presen
-                            <i class="fas fa-arrow-right text-xs"></i>
-                        </a>
+                        <p class="mt-1 text-xs text-slate-500">
+                            {{ $adaFilter
+                                ? 'Ubah atau reset filter untuk melihat catatan lain.'
+                                : 'Riwayat muncul setelah presensi pertama tercatat.' }}
+                        </p>
+                        @unless ($adaFilter)
+                            <a href="{{ route('absensi.index') }}"
+                                class="mt-4 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700">
+                                Mulai presen
+                                <i class="fas fa-arrow-right text-xs"></i>
+                            </a>
+                        @endunless
                     </div>
                 @else
                     {{-- Tabel disembunyikan di layar kecil, replaced by daftar

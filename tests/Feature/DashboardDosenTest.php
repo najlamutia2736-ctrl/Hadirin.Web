@@ -10,8 +10,8 @@ test('tiga halaman dashboard dosen dapat diakses dan memakai layout sidebar', fu
     // kelola, dan laporan.
     $halaman = [
         'dosen.dashboard' => 'Dashboard',
-        'dosen.kelola' => 'Kelola Data Kelas',
-        'dosen.laporan' => 'Laporan Bulanan',
+        'dosen.kelola' => 'Kelola Data Presensi',
+        'dosen.laporan' => 'Laporan Presensi',
     ];
 
     loginDosen();
